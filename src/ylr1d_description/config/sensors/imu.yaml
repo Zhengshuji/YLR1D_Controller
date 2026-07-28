@@ -1,0 +1,11 @@
+# Sensor configuration: Link_IMUSensor
+# Generated automatically — edit this file to customize sensor parameters
+
+type: imu
+link_name: Link_IMUSensor
+update_rate: 50
+topic: /imu_data
+noise:
+  type: gaussian
+  mean: 0.0
+  stddev: 0.01

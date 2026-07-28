@@ -1,0 +1,22 @@
+# Sensor configuration: Link_RadarSensor
+# Generated automatically — edit this file to customize sensor parameters
+
+type: ray
+link_name: Link_RadarSensor
+update_rate: 10
+topic: /radar/scan
+ray:
+  scan:
+    horizontal:
+      samples: 360
+      resolution: 1
+      min_angle: -3.14159
+      max_angle: 3.14159
+  range:
+    min: 0.1
+    max: 30.0
+    resolution: 0.01
+noise:
+  type: gaussian
+  mean: 0.0
+  stddev: 0.01

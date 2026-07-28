@@ -1,0 +1,12 @@
+# Density configuration
+# Each material found in the URDF is listed below.
+# Edit the values to match your physical materials.
+# Links without a material use 'default'.
+density:
+  default: 1.0
+  Arm: 1.0
+  Base: 1.0
+  Body: 1.0
+  Finger: 1.0
+  Wheel: 1.0
+  WheelF: 1.0

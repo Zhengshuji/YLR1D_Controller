@@ -1,0 +1,15 @@
+# Sensor configuration: Link_RightCameraSensor
+# Generated automatically — edit this file to customize sensor parameters
+
+type: camera
+link_name: Link_RightCameraSensor
+update_rate: 30
+topic: /right_camera/image_raw
+camera:
+  horizontal_fov: 1.0472
+  image:
+    width: 640
+    height: 480
+  clip:
+    near: 0.1
+    far: 100.0
