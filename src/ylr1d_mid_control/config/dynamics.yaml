@@ -1,0 +1,117 @@
+Joint_Base_to_IMUSensor:
+  damping: 0
+  friction: 0
+Joint_Base_to_RFWheelF:
+  damping: 0
+  friction: 0
+Joint_RFWheelF_to_RFWheel:
+  damping: 0
+  friction: 0
+Joint_Base_to_LFWheelF:
+  damping: 0
+  friction: 0
+Joint_LFWheelF_to_LFWheel:
+  damping: 0
+  friction: 0
+Joint_Base_to_RBWheelF:
+  damping: 0
+  friction: 0
+Joint_RBWheelF_to_RBWheel:
+  damping: 0
+  friction: 0
+Joint_Base_to_LBWheelF:
+  damping: 0
+  friction: 0
+Joint_LBWheelF_to_LBWheel:
+  damping: 0
+  friction: 0
+Joint_Base_to_Body1:
+  damping: 0
+  friction: 0
+Joint_Body1_to_Body2:
+  damping: 0
+  friction: 0
+Joint_Body2_to_Body3:
+  damping: 0
+  friction: 0
+Joint_Body3_to_Body4:
+  damping: 0
+  friction: 0
+Joint_Body4_to_GlobalCameraSensor:
+  damping: 0
+  friction: 0
+Joint_Body2_to_LeftArm1:
+  damping: 0
+  friction: 0
+Joint_LeftArm1_to_LeftArm2:
+  damping: 0
+  friction: 0
+Joint_LeftArm2_to_LeftArm3:
+  damping: 0
+  friction: 0
+Joint_LeftArm3_to_LeftArm4:
+  damping: 0
+  friction: 0
+Joint_LeftArm4_to_LeftArm5:
+  damping: 0
+  friction: 0
+Joint_LeftArm5_to_LeftArm6:
+  damping: 0
+  friction: 0
+Joint_LeftArm6_to_LeftArm7:
+  damping: 0
+  friction: 0
+Joint_LeftArm7_to_LeftFinger1:
+  damping: 0
+  friction: 0
+Joint_LeftArm7_to_LeftFinger2:
+  damping: 0
+  friction: 0
+Joint_LeftArm7_to_LeftCameraSensor:
+  damping: 0
+  friction: 0
+Joint_Body2_RightArm1:
+  damping: 0
+  friction: 0
+Joint_RightArm1_to_RightArm2:
+  damping: 0
+  friction: 0
+Joint_RightArm2_to_RightArm3:
+  damping: 0
+  friction: 0
+Joint_RightArm3_to_RightArm4:
+  damping: 0
+  friction: 0
+Joint_RightArm4_to_RightArm5:
+  damping: 0
+  friction: 0
+Joint_RightArm5_to_RightArm6:
+  damping: 0
+  friction: 0
+Joint_RightArm6_to_RightArm7:
+  damping: 0
+  friction: 0
+Joint_RightArm7_to_RightFinger1:
+  damping: 0
+  friction: 0
+Joint_RightArm7_to_RightFinger2:
+  damping: 0
+  friction: 0
+Joint_RightArm7_to_RightCameraSensor:
+  damping: 0
+  friction: 0
+Joint_Base_to_RadarSensor:
+  damping: 0
+  friction: 0
+Joint_Base_to_LFUltrasonicSensor:
+  damping: 0
+  friction: 0
+Joint_Base_to_RFUltrasonicSensor:
+  damping: 0
+  friction: 0
+Joint_Base_to_LBUltrasonicSensor:
+  damping: 0
+  friction: 0
+Joint_Base_to_RBUltrasonicSensor:
+  damping: 0
+  friction: 0

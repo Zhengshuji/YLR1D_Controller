@@ -1,0 +1,117 @@
+Joint_Base_to_IMUSensor:
+  rising: 0
+  falling: 0
+Joint_Base_to_RFWheelF:
+  rising: 0
+  falling: 0
+Joint_RFWheelF_to_RFWheel:
+  rising: 0
+  falling: 0
+Joint_Base_to_LFWheelF:
+  rising: 0
+  falling: 0
+Joint_LFWheelF_to_LFWheel:
+  rising: 0
+  falling: 0
+Joint_Base_to_RBWheelF:
+  rising: 0
+  falling: 0
+Joint_RBWheelF_to_RBWheel:
+  rising: 0
+  falling: 0
+Joint_Base_to_LBWheelF:
+  rising: 0
+  falling: 0
+Joint_LBWheelF_to_LBWheel:
+  rising: 0
+  falling: 0
+Joint_Base_to_Body1:
+  rising: 0
+  falling: 0
+Joint_Body1_to_Body2:
+  rising: 0
+  falling: 0
+Joint_Body2_to_Body3:
+  rising: 0
+  falling: 0
+Joint_Body3_to_Body4:
+  rising: 0
+  falling: 0
+Joint_Body4_to_GlobalCameraSensor:
+  rising: 0
+  falling: 0
+Joint_Body2_to_LeftArm1:
+  rising: 0
+  falling: 0
+Joint_LeftArm1_to_LeftArm2:
+  rising: 0
+  falling: 0
+Joint_LeftArm2_to_LeftArm3:
+  rising: 0
+  falling: 0
+Joint_LeftArm3_to_LeftArm4:
+  rising: 0
+  falling: 0
+Joint_LeftArm4_to_LeftArm5:
+  rising: 0
+  falling: 0
+Joint_LeftArm5_to_LeftArm6:
+  rising: 0
+  falling: 0
+Joint_LeftArm6_to_LeftArm7:
+  rising: 0
+  falling: 0
+Joint_LeftArm7_to_LeftFinger1:
+  rising: 0
+  falling: 0
+Joint_LeftArm7_to_LeftFinger2:
+  rising: 0
+  falling: 0
+Joint_LeftArm7_to_LeftCameraSensor:
+  rising: 0
+  falling: 0
+Joint_Body2_RightArm1:
+  rising: 0
+  falling: 0
+Joint_RightArm1_to_RightArm2:
+  rising: 0
+  falling: 0
+Joint_RightArm2_to_RightArm3:
+  rising: 0
+  falling: 0
+Joint_RightArm3_to_RightArm4:
+  rising: 0
+  falling: 0
+Joint_RightArm4_to_RightArm5:
+  rising: 0
+  falling: 0
+Joint_RightArm5_to_RightArm6:
+  rising: 0
+  falling: 0
+Joint_RightArm6_to_RightArm7:
+  rising: 0
+  falling: 0
+Joint_RightArm7_to_RightFinger1:
+  rising: 0
+  falling: 0
+Joint_RightArm7_to_RightFinger2:
+  rising: 0
+  falling: 0
+Joint_RightArm7_to_RightCameraSensor:
+  rising: 0
+  falling: 0
+Joint_Base_to_RadarSensor:
+  rising: 0
+  falling: 0
+Joint_Base_to_LFUltrasonicSensor:
+  rising: 0
+  falling: 0
+Joint_Base_to_RFUltrasonicSensor:
+  rising: 0
+  falling: 0
+Joint_Base_to_LBUltrasonicSensor:
+  rising: 0
+  falling: 0
+Joint_Base_to_RBUltrasonicSensor:
+  rising: 0
+  falling: 0
