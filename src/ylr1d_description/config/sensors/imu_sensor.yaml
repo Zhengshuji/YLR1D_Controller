@@ -1,9 +1,9 @@
-# Sensor configuration: Link_IMUSensor
+# Sensor configuration: imu_sensor (on Link_IMUSensor)
 # Generated automatically — edit this file to customize sensor parameters
 
 type: imu
 link_name: Link_IMUSensor
-update_rate: 50
+update_rate: 116
 topic: /imu_data
 noise:
   type: gaussian

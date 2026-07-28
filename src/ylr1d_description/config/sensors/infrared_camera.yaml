@@ -1,0 +1,16 @@
+# Sensor configuration: infrared_camera (on Link_RightCameraSensor)
+# Generated automatically — edit this file to customize sensor parameters
+
+type: camera
+link_name: Link_RightCameraSensor
+update_rate: 15
+topic: /right_camera/infrared/image_raw
+camera:
+  horizontal_fov: 1.047
+  image:
+    width: 640
+    height: 480
+    format: R8G8B8
+  clip:
+    near: 0.1
+    far: 10.0

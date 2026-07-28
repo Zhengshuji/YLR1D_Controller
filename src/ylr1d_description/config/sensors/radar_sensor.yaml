@@ -1,14 +1,14 @@
-# Sensor configuration: Link_LFUltrasonicSensor
+# Sensor configuration: radar_sensor (on Link_RadarSensor)
 # Generated automatically — edit this file to customize sensor parameters
 
 type: ray
-link_name: Link_LFUltrasonicSensor
-update_rate: 10
-topic: /lf_ultrasonic/scan
+link_name: Link_RadarSensor
+update_rate: 12
+topic: /radar/scan
 ray:
   scan:
     horizontal:
-      samples: 360
+      samples: 2770
       resolution: 1
       min_angle: -3.14159
       max_angle: 3.14159

@@ -1,15 +1,16 @@
-# Sensor configuration: Link_RightCameraSensor
+# Sensor configuration: depth_camera (on Link_RightCameraSensor)
 # Generated automatically — edit this file to customize sensor parameters
 
-type: camera
+type: depth
 link_name: Link_RightCameraSensor
 update_rate: 30
-topic: /right_camera/image_raw
+topic: /right_camera/depth/image_raw
 camera:
-  horizontal_fov: 1.0472
+  horizontal_fov: 1.047
   image:
     width: 640
     height: 480
+    format: R8G8B8
   clip:
-    near: 0.1
-    far: 100.0
+    near: 0.2
+    far: 4.0
