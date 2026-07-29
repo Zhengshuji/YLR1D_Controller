@@ -20,6 +20,18 @@ def _resolve_yaml_refs(content: str, config_dir: str) -> str:
             if data is not None:
                 configs[name] = data
 
+    # Load sensor configs from config/sensors/*.yaml
+    sensors_dir = os.path.join(config_dir, "sensors")
+    if os.path.isdir(sensors_dir):
+        for fname in sorted(os.listdir(sensors_dir)):
+            if fname.endswith(".yaml"):
+                name = fname[:-5]  # strip .yaml → e.g. "rgb_camera"
+                path = os.path.join(sensors_dir, fname)
+                with open(path) as f:
+                    data = yaml.safe_load(f)
+                if data is not None:
+                    configs[name] = data
+
     def _resolve(match):
         expr = match.group(1).strip()
         if re.match(r'^[a-zA-Z_]\w*$', expr):

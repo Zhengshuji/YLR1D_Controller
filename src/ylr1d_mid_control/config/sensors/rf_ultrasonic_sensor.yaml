@@ -1,0 +1,11 @@
+# Sensor configuration: rf_ultrasonic_sensor (on Link_RFUltrasonicSensor)
+# Generated automatically — edit this file to customize sensor parameters
+
+type: sonar
+link_name: Link_RFUltrasonicSensor
+update_rate: 20
+topic: /rf_ultrasonic/range
+sonar:
+  min: 0.25
+  max: 4.5
+  radius: 0.5236

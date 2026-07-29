@@ -1,0 +1,16 @@
+# Sensor configuration: rgb_camera (on Link_RightCameraSensor)
+# Generated automatically — edit this file to customize sensor parameters
+
+type: camera
+link_name: Link_RightCameraSensor
+update_rate: 30
+topic: /right_camera/rgb/image_raw
+camera:
+  horizontal_fov: 1.047
+  image:
+    width: 1920
+    height: 1080
+    format: R8G8B8
+  clip:
+    near: 0.1
+    far: 100.0

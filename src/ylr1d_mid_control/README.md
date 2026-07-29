@@ -198,6 +198,16 @@ ylr1d_mid_control/
 │   ├── controllers.yaml                 # 原始方案：控制器类型 + 参数
 │   ├── effort_controllers.yaml          # 力控制方案
 │   ├── velocity_controllers.yaml        # 速度控制方案 [NEW]
+│   ├── sensors/                         # 传感器参数配置 [NEW]
+│   │   ├── rgb_camera.yaml              #   RGB 相机参数
+│   │   ├── depth_camera.yaml            #   深度相机参数
+│   │   ├── infrared_camera.yaml         #   红外相机参数
+│   │   ├── imu_sensor.yaml              #   IMU 参数
+│   │   ├── radar_sensor.yaml            #   雷达参数
+│   │   ├── lf_ultrasonic_sensor.yaml    #   前左超声波参数
+│   │   ├── rf_ultrasonic_sensor.yaml    #   前右超声波参数
+│   │   ├── lb_ultrasonic_sensor.yaml    #   后左超声波参数
+│   │   └── rb_ultrasonic_sensor.yaml    #   后右超声波参数
 │   ├── colors.yaml                      # 颜色配置
 │   ├── calibration.yaml                 # 校准参数
 │   ├── dynamics.yaml                    # 动力学参数
