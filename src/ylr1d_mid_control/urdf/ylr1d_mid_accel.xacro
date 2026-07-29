@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<robot xmlns:xacro="http://wiki.ros.org/xacro"
+       name="ylr1d">
+
+  <!-- ============================================ -->
+  <!-- Acceleration control variant of ylr1d_mid.   -->
+  <!--                                              -->
+  <!-- This file is processed by                    -->
+  <!-- gazebo_accel.launch.py, which:               -->
+  <!--   1. Reads ylr1d_mid.xacro                   -->
+  <!--   2. Injects <command_interface              -->
+  <!--        name="acceleration"/> into every      -->
+  <!--        joint of the ros2_control block       -->
+  <!--   3. Resolves YAML config refs               -->
+  <!--   4. Processes with xacro                    -->
+  <!-- ============================================ -->
+
+  <!-- Include the original robot model (macro def + instantiation) -->
+  <xacro:include href="ylr1d_mid.xacro"/>
+
+  <!-- NOTE: The original ylr1d_mid.xacro already defines a
+       <ros2_control name="GazeboSystem"> block with position
+       and velocity command interfaces, plus a <gazebo> plugin.
+
+       The gazebo_accel.launch.py injects additional
+       <command_interface name="acceleration"/> lines into that
+       block so both the original position/velocity controllers
+       AND the new acceleration controllers can coexist.
+
+       Acceleration controllers are defined in:
+         config/acceleration_controllers.yaml
+  -->
+
+</robot>

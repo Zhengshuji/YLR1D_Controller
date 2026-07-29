@@ -1,0 +1,93 @@
+controller_manager:
+  ros__parameters:
+    update_rate: 100
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    # ── Chassis: 4 steering joints (acceleration cmd) ────────
+    # Topic: /chassis_steering_accel_controller/commands
+    chassis_steering_accel_controller:
+      type: forward_command_controller/ForwardCommandController
+
+    # ── Chassis: 4 wheel rolling joints (acceleration cmd) ──
+    # Topic: /chassis_wheels_accel_controller/commands
+    chassis_wheels_accel_controller:
+      type: forward_command_controller/ForwardCommandController
+
+    # ── Torso: lift + yaw + 2x pitch (acceleration cmd) ────
+    # Topic: /torso_accel_controller/commands
+    torso_accel_controller:
+      type: forward_command_controller/ForwardCommandController
+
+    # ── Left arm: 7-DOF + 2 fingers (acceleration cmd) ─────
+    # Topic: /left_arm_accel_controller/commands
+    left_arm_accel_controller:
+      type: forward_command_controller/ForwardCommandController
+
+    # ── Right arm: 7-DOF + 2 fingers (acceleration cmd) ────
+    # Topic: /right_arm_accel_controller/commands
+    right_arm_accel_controller:
+      type: forward_command_controller/ForwardCommandController
+
+# ===========================================================
+# Per-controller parameters (loaded on each controller node)
+# ===========================================================
+
+joint_state_broadcaster:
+  ros__parameters: {}
+
+chassis_steering_accel_controller:
+  ros__parameters:
+    joints:
+      - Joint_Base_to_RFWheelF
+      - Joint_Base_to_LFWheelF
+      - Joint_Base_to_RBWheelF
+      - Joint_Base_to_LBWheelF
+    interface_name: acceleration
+
+chassis_wheels_accel_controller:
+  ros__parameters:
+    joints:
+      - Joint_RFWheelF_to_RFWheel
+      - Joint_LFWheelF_to_LFWheel
+      - Joint_RBWheelF_to_RBWheel
+      - Joint_LBWheelF_to_LBWheel
+    interface_name: acceleration
+
+torso_accel_controller:
+  ros__parameters:
+    joints:
+      - Joint_Base_to_Body1
+      - Joint_Body1_to_Body2
+      - Joint_Body2_to_Body3
+      - Joint_Body3_to_Body4
+    interface_name: acceleration
+
+left_arm_accel_controller:
+  ros__parameters:
+    joints:
+      - Joint_Body2_to_LeftArm1
+      - Joint_LeftArm1_to_LeftArm2
+      - Joint_LeftArm2_to_LeftArm3
+      - Joint_LeftArm3_to_LeftArm4
+      - Joint_LeftArm4_to_LeftArm5
+      - Joint_LeftArm5_to_LeftArm6
+      - Joint_LeftArm6_to_LeftArm7
+      - Joint_LeftArm7_to_LeftFinger1
+      - Joint_LeftArm7_to_LeftFinger2
+    interface_name: acceleration
+
+right_arm_accel_controller:
+  ros__parameters:
+    joints:
+      - Joint_Body2_RightArm1
+      - Joint_RightArm1_to_RightArm2
+      - Joint_RightArm2_to_RightArm3
+      - Joint_RightArm3_to_RightArm4
+      - Joint_RightArm4_to_RightArm5
+      - Joint_RightArm5_to_RightArm6
+      - Joint_RightArm6_to_RightArm7
+      - Joint_RightArm7_to_RightFinger1
+      - Joint_RightArm7_to_RightFinger2
+    interface_name: acceleration

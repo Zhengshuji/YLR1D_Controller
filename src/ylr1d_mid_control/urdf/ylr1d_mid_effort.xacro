@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<robot xmlns:xacro="http://wiki.ros.org/xacro"
+       name="ylr1d">
+
+  <!-- ============================================ -->
+  <!-- Force/torque control variant of ylr1d_mid.    -->
+  <!--                                              -->
+  <!-- Uses effort command interfaces so that       -->
+  <!-- forward_command_controller with               -->
+  <!-- interface_name: effort writes direct          -->
+  <!-- force/torque values to Gazebo joints via      -->
+  <!-- gazebo_ros2_control/GazeboSystem.             -->
+  <!--                                              -->
+  <!-- Processed by gazebo_effort.launch.py, which   -->
+  <!-- injects <command_interface name="effort"/>    -->
+  <!-- into every joint of the ros2_control block.   -->
+  <!-- ============================================ -->
+
+  <xacro:include href="ylr1d_mid.xacro"/>
+
+</robot>
