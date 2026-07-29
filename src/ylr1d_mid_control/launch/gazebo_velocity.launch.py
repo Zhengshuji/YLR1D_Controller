@@ -38,15 +38,25 @@ def _resolve_yaml_refs(content: str, config_dir: str) -> str:
     return re.sub(r'\$\{([^}]+)\}', _resolve, content)
 
 
-def _inject_acceleration_interfaces(content: str) -> str:
-    """Inject <command_interface name='acceleration'/> after each
-    existing position/velocity command interface in the ros2_control block."""
+def _inject_velocity_interfaces(content: str) -> str:
+    """Inject <command_interface name='velocity'/> after each existing
+    position command interface in the ros2_control block.
+
+    Wheel rolling joints already have velocity in the xacro, so only
+    inject after position interfaces to avoid duplicates.
+    """
     return re.sub(
-        # Match <command_interface name="position"/> or <command_interface name="velocity"/>
-        r'(<command_interface name="(?:position|velocity)"/>)',
-        lambda m: m.group(1) + '\n      <command_interface name="acceleration"/>',
+        r'(<command_interface name="position"/>)',
+        lambda m: m.group(1) + '\n      <command_interface name="velocity"/>',
         content,
     )
+
+
+def _resolve_package_uris(content: str, pkg_name: str) -> str:
+    """Replace package://<pkg_name>/ URIs with absolute file paths using ament_index."""
+    from ament_index_python.packages import get_package_share_directory
+    pkg_path = get_package_share_directory(pkg_name)
+    return content.replace(f"package://{pkg_name}", pkg_path)
 
 
 def generate_launch_description():
@@ -67,20 +77,22 @@ def generate_launch_description():
     model_path = os.path.join(pkg_desc, "meshes")
     env["GAZEBO_MODEL_PATH"] = model_path + ":" + env.get("GAZEBO_MODEL_PATH", "")
 
-    # ── Read original xacro and inject acceleration interfaces ──
+    # ── Read original xacro and inject velocity interfaces ──
     original_xacro_path = os.path.join(pkg_share, "urdf", "ylr1d_mid.xacro")
     config_dir = os.path.join(pkg_share, "config")
-    accel_controllers_yaml_path = os.path.join(pkg_share, "config", "acceleration_controllers.yaml")
+    velocity_controllers_yaml_path = os.path.join(pkg_share, "config", "velocity_controllers.yaml")
 
     with open(original_xacro_path) as f:
         raw = f.read()
 
     # Step 1: resolve YAML config references (${links.X.Y}, etc.)
     resolved = _resolve_yaml_refs(raw, config_dir)
-    # Step 2: point controllers path to the acceleration controller config
-    resolved = resolved.replace("${controllers_yaml_path}", accel_controllers_yaml_path)
-    # Step 3: inject <command_interface name="acceleration"/> into ros2_control block
-    resolved = _inject_acceleration_interfaces(resolved)
+    # Step 2: point controllers path to the velocity controller config
+    resolved = resolved.replace("${controllers_yaml_path}", velocity_controllers_yaml_path)
+    # Step 3: inject <command_interface name="velocity"/> into ros2_control block
+    resolved = _inject_velocity_interfaces(resolved)
+    # Step 4: resolve package:// URIs to absolute file paths so Gazebo can find meshes
+    resolved = _resolve_package_uris(resolved, "ylr1d_description")
 
     tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".xacro", delete=False)
     tmp.write(resolved)
@@ -122,7 +134,7 @@ def generate_launch_description():
         output="screen",
     )
 
-    # ── Spawn acceleration controllers (after Gazebo is ready) ──
+    # ── Spawn velocity controllers (after Gazebo is ready) ──
     spawn_controllers = TimerAction(
         period=8.0,
         actions=[
@@ -132,35 +144,35 @@ def generate_launch_description():
                 arguments=["joint_state_broadcaster"],
                 output="screen",
             ),
-            # === Acceleration controllers ===
+            # === Velocity controllers ===
             Node(
                 package="controller_manager",
                 executable="spawner",
-                arguments=["chassis_steering_accel_controller"],
+                arguments=["chassis_steering_velocity_controller"],
                 output="screen",
             ),
             Node(
                 package="controller_manager",
                 executable="spawner",
-                arguments=["chassis_wheels_accel_controller"],
+                arguments=["chassis_wheels_velocity_controller"],
                 output="screen",
             ),
             Node(
                 package="controller_manager",
                 executable="spawner",
-                arguments=["torso_accel_controller"],
+                arguments=["torso_velocity_controller"],
                 output="screen",
             ),
             Node(
                 package="controller_manager",
                 executable="spawner",
-                arguments=["left_arm_accel_controller"],
+                arguments=["left_arm_velocity_controller"],
                 output="screen",
             ),
             Node(
                 package="controller_manager",
                 executable="spawner",
-                arguments=["right_arm_accel_controller"],
+                arguments=["right_arm_velocity_controller"],
                 output="screen",
             ),
         ],
