@@ -41,6 +41,8 @@
 - `left_arm_controller`: `[Body2_to_LeftArm1..7, LeftFinger1, LeftFinger2]`
 - `right_arm_controller`: `[Body2_RightArm1..7, RightFinger1, RightFinger2]`
 
+> **夹爪说明：** 左右臂各附带 2 个夹爪（棱柱关节），范围 ±0.05m，单位**米**。data 数组最后 2 个值对应夹爪，前 7 个为旋转关节（弧度）。
+
 ```bash
 # 启动
 ros2 launch ylr1d_mid_control gazebo.launch.py
@@ -86,9 +88,9 @@ ros2 topic pub --rate 10 /chassis_wheels_controller/commands \
 
 关节顺序与原始方案一致。
 
+> **夹爪说明：** 同上，data 数组最后 2 个值为夹爪（棱柱关节，单位 m），范围 ±0.05m。
+
 ```bash
-# 启动
-ros2 launch ylr1d_mid_control gazebo_effort.launch.py
 
 # ── 转向轮偏角力矩（Nm） ──
 ros2 topic pub /chassis_steering_effort_controller/commands \

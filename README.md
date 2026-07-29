@@ -1,25 +1,23 @@
-# 简介
-该项目用于实现ylr1d机器人的控制
+# YLR1D 机器人控制项目
 
-# 快速开始（验证中层）
+## 包结构
+
+| 包名 | 说明 |
+|------|------|
+| `ylr1d_description` | 机器人模型定义：URDF/xacro、3D 网格、传感器参数、颜色/动力学/限位等配置 |
+| `ylr1d_mid_control` | 中层控制：Gazebo 仿真 + ros2_control 关节控制，提供三种控制方案 |
+
+> `ylr1d_mid_control` 的详细文档（控制器清单、关节顺序、控制命令、关键文件等）
+> 见 `src/ylr1d_mid_control/README.md`。
+
+## 快速开始
 
 ```bash
-# 在 WSL Ubuntu 22.04 中
-
-# 1. 构建
 source /opt/ros/humble/setup.bash
 cd ~/WorkSpace/test_ylr1d
 colcon build
-
-# 2. 启动仿真
 source install/setup.bash
 ros2 launch ylr1d_mid_control gazebo.launch.py
-
-# 3. 另开终端，发送测试指令
-source ~/WorkSpace/test_ylr1d/install/setup.bash
-ros2 topic pub /torso_controller/commands \
-  std_msgs/Float64MultiArray "data: [0.2, 0.5, -0.3, 0.1]" --once
 ```
-注意：
-1. 需要注意是否包含gazebo运行所需要的python环境
-2. 需要注意GAZEBO_MODEL_PATH是否包含目标文件夹src。否则会无法加载模型文件
+
+**注意：** 需要 gazebo 的 Python 环境，且 `GAZEBO_MODEL_PATH` 需包含 src 目录。
