@@ -23,4 +23,3 @@ ros2 topic pub /torso_controller/commands \
 注意：
 1. 需要注意是否包含gazebo运行所需要的python环境
 2. 需要注意GAZEBO_MODEL_PATH是否包含目标文件夹src。否则会无法加载模型文件
-3. 
