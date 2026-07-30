@@ -74,6 +74,11 @@ def generate_launch_description():
     env = os.environ.copy()
     env["LIBGL_ALWAYS_SOFTWARE"] = "1"
     env["GAZEBO_MODEL_DATABASE_URI"] = ""
+    
+    pkg_desc = get_package_share_directory("ylr1d_description")
+    model_path = os.path.join(pkg_desc, "meshes")
+    env["GAZEBO_MODEL_PATH"] = model_path + ":" + env.get("GAZEBO_MODEL_PATH", "")
+
     lib_paths = [p for p in ["/opt/ros/humble/lib"] if os.path.isdir(p)]
     existing_ld = env.get("LD_LIBRARY_PATH", "")
     if lib_paths:
@@ -103,7 +108,7 @@ def generate_launch_description():
     # Step 3: inject <command_interface name="effort"/> into ros2_control block
     resolved = _inject_effort_interfaces(resolved)
     # Step 4: resolve package:// URIs to absolute file paths so Gazebo can find meshes
-    resolved = _resolve_package_uris(resolved, "ylr1d_description")
+    # resolved = _resolve_package_uris(resolved, "ylr1d_description")
 
     tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".xacro", delete=False)
     tmp.write(resolved)
