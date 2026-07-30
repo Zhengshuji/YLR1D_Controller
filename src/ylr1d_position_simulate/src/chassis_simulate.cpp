@@ -25,6 +25,7 @@ ChassisSimulateNode::ChassisSimulateNode() : Node("chassis_simulate") {
      "Joint_Base_to_RBWheelF", "Joint_Base_to_LBWheelF"},
     PID(skp, ski, skd, s_accel, s_vel),
     "/chassis_steering_controller/commands", this);
+  steering_.set_limits({{-3.14, 3.14}, {-3.14, 3.14}, {-3.14, 3.14}, {-3.14, 3.14}});
 
   wheels_.setup(
     {"Joint_RFWheelF_to_RFWheel", "Joint_LFWheelF_to_LFWheel",

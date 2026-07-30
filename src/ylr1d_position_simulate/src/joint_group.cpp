@@ -45,19 +45,38 @@ void PositionJointGroup::set_desired(const sensor_msgs::msg::JointState & msg) {
   for (size_t i = 0; i < msg.name.size(); ++i) {
     auto it = name_to_idx_.find(msg.name[i]);
     if (it != name_to_idx_.end() && i < msg.position.size()) {
-      joints_[it->second].desired = msg.position[i];
+      double val = msg.position[i];
+      // 输入限幅
+      if (it->second < lower_limits_.size()) {
+        val = std::clamp(val, lower_limits_[it->second], upper_limits_[it->second]);
+      }
+      joints_[it->second].desired = val;
     }
+  }
+}
+
+void PositionJointGroup::set_limits(const std::vector<std::pair<double, double>> & limits) {
+  lower_limits_.resize(joints_.size(), 0.0);
+  upper_limits_.resize(joints_.size(), 0.0);
+  for (size_t i = 0; i < limits.size() && i < joints_.size(); ++i) {
+    lower_limits_[i] = limits[i].first;
+    upper_limits_[i] = limits[i].second;
   }
 }
 
 void PositionJointGroup::update(double dt) {
   if (!initialized_) return;
-  for (auto & j : joints_) {
+  for (size_t i = 0; i < joints_.size(); ++i) {
+    auto & j = joints_[i];
     double error = j.desired - j.position;
     double accel = j.pid.compute(error, dt);
     j.velocity += accel * dt;
     j.velocity = std::clamp(j.velocity, -j.pid.max_vel_, j.pid.max_vel_);
     j.position += j.velocity * dt;
+    // 输出限幅
+    if (i < lower_limits_.size()) {
+      j.position = std::clamp(j.position, lower_limits_[i], upper_limits_[i]);
+    }
   }
 }
 

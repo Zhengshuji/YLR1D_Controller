@@ -32,6 +32,9 @@ public:
   /// 设置期望位置
   void set_desired(const sensor_msgs::msg::JointState & msg);
 
+  /// 设置位置限幅 [lower, upper] per joint (长度须与 setup names 一致)
+  void set_limits(const std::vector<std::pair<double, double>> & limits);
+
   /// 执行一步更新
   void update(double dt);
 
@@ -57,6 +60,8 @@ private:
   std::map<std::string, size_t> name_to_idx_;
   rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr pub_;
   bool initialized_{false};
+  std::vector<double> lower_limits_;   // 位置下限 (size=0 表示不限幅)
+  std::vector<double> upper_limits_;   // 位置上限
 };
 
 /// 速度 PID 关节组

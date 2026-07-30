@@ -19,6 +19,7 @@ ArmSimulateNode::ArmSimulateNode() : Node("arm_simulate") {
     {"Joint_Base_to_Body1", "Joint_Body1_to_Body2",
      "Joint_Body2_to_Body3", "Joint_Body3_to_Body4"},
     pid, "/torso_controller/commands", this);
+  torso_.set_limits({{-0.30, 0.30}, {-3.14, 3.14}, {-1.57, 1.57}, {-1.57, 1.57}});
 
   left_arm_.setup(
     {"Joint_Body2_to_LeftArm1", "Joint_LeftArm1_to_LeftArm2",
@@ -27,6 +28,9 @@ ArmSimulateNode::ArmSimulateNode() : Node("arm_simulate") {
      "Joint_LeftArm6_to_LeftArm7", "Joint_LeftArm7_to_LeftFinger1",
      "Joint_LeftArm7_to_LeftFinger2"},
     pid, "/left_arm_controller/commands", this);
+  left_arm_.set_limits({
+    {-2.62, 2.62}, {-1.57, 1.83}, {-2.62, 2.62}, {-1.57, 1.57},
+    {-2.62, 2.62}, {-2.09, 2.09}, {-6.28, 6.28}, {-0.05, 0.05}, {-0.05, 0.05}});
 
   right_arm_.setup(
     {"Joint_Body2_RightArm1", "Joint_RightArm1_to_RightArm2",
@@ -35,6 +39,9 @@ ArmSimulateNode::ArmSimulateNode() : Node("arm_simulate") {
      "Joint_RightArm6_to_RightArm7", "Joint_RightArm7_to_RightFinger1",
      "Joint_RightArm7_to_RightFinger2"},
     pid, "/right_arm_controller/commands", this);
+  right_arm_.set_limits({
+    {-2.62, 2.62}, {-1.57, 1.83}, {-2.62, 2.62}, {-1.57, 1.57},
+    {-2.62, 2.62}, {-2.09, 2.09}, {-6.28, 6.28}, {-0.05, 0.05}, {-0.05, 0.05}});
 
   // 订阅
   desired_sub_ = create_subscription<sensor_msgs::msg::JointState>(
