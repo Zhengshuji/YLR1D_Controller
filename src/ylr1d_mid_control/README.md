@@ -88,34 +88,52 @@ ros2 topic pub --rate 10 /chassis_wheels_controller/commands \
 
 关节顺序与原始方案一致。
 
+> **前置依赖：** `gazebo_effort.launch.py` 需要 `ylr1d_base_control` 包中的 `joint_state_filter` 可执行程序。如果修改了 `ylr1d_base_control` 的源码，需要先构建该包：`colcon build --packages-select ylr1d_base_control`，否则 `joint_state_filter` 启动会失败。
+
 > **夹爪说明：** 同上，data 数组最后 2 个值为夹爪（棱柱关节，单位 m），范围 ±0.05m。
 
+**注意事项：**
+- `--once` 发送单次命令，ForwardCommandController 会保持最后一次收到的值。但关节受重力/碰撞影响，单次命令可能不足以克服阻力 — 测试时建议用 `--rate` 持续发送
+- `Joint_Base_to_Body1` 有机械限位 `[−0.3, 0.3] rad`（见 `limits.yaml`），施加正向力矩时关节会立刻卡在 0.3 rad 处
+- 启动后需等待全部控制器变为 `active` 才能发送命令（WSL 下约 30-60s，与主机性能有关）
+
 ```bash
+# 启动
+ros2 launch ylr1d_mid_control gazebo_effort.launch.py
 
-# ── 转向轮偏角力矩（Nm） ──
-ros2 topic pub /chassis_steering_effort_controller/commands \
-  std_msgs/Float64MultiArray "{data: [0.5, -0.5, 0.5, -0.5]}" --once
+# 等待，确认所有控制器已激活
+ros2 control list_controllers
+# 期望输出：全部显示 "active"
 
-# ── 车轮驱动力矩（Nm） ──
-ros2 topic pub /chassis_wheels_effort_controller/commands \
-  std_msgs/Float64MultiArray "{data: [1.0, 1.0, 1.0, 1.0]}" --once
+# ── 测试：转向轮偏角力矩（Nm），建议至少 30Nm 才能看到明显转动 ──
+ros2 topic pub --rate 20 /chassis_steering_effort_controller/commands \
+  std_msgs/Float64MultiArray "{data: [30.0, 30.0, 30.0, 30.0]}"
 
-# ── 躯干升降关节施加 20N（棱柱关节为力），其余关节 0 ──
-ros2 topic pub /torso_effort_controller/commands \
-  std_msgs/Float64MultiArray "{data: [20.0, 0.0, 0.0, 0.0]}" --once
+# ── 测试：车轮驱动力矩（Nm） ──
+ros2 topic pub --rate 20 /chassis_wheels_effort_controller/commands \
+  std_msgs/Float64MultiArray "{data: [20.0, 20.0, 20.0, 20.0]}"
 
-# ── 左臂各关节施加 0.5Nm ──
-ros2 topic pub /left_arm_effort_controller/commands \
-  std_msgs/Float64MultiArray "{data: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.0, 0.0]}" --once
+# ── 测试：躯干正向力矩（注意 Joint_Base_to_Body1 上限 0.3 rad，
+#    先试负向力矩离开限位再正转） ──
+ros2 topic pub --rate 20 /torso_effort_controller/commands \
+  std_msgs/Float64MultiArray "{data: [-100.0, 0.0, 0.0, 0.0]}"
 
-# ── 右臂各关节施加 -0.3Nm ──
-ros2 topic pub /right_arm_effort_controller/commands \
-  std_msgs/Float64MultiArray "{data: [-0.3, -0.3, -0.3, -0.3, -0.3, -0.3, -0.3, 0.0, 0.0]}" --once
+# ── 左臂各关节施加力矩 ──
+ros2 topic pub --rate 20 /left_arm_effort_controller/commands \
+  std_msgs/Float64MultiArray "{data: [5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 0.0, 0.0]}"
 
-# ── 以 10Hz 持续发送 ──
-ros2 topic pub --rate 10 /chassis_wheels_effort_controller/commands \
-  std_msgs/Float64MultiArray "{data: [1.0, 1.0, 1.0, 1.0]}"
+# ── 验证：查看关节位置变化 ──
+ros2 topic echo /joint_states --once
 ```
+
+**与 base_control_node 配合使用：**
+`gazebo_effort.launch.py` 仅启动底层 effort 控制器，不启动 PD 控制节点。如果希望上层发 position/velocity 命令、底层自动做 PD 转换，应使用 `ylr1d_base_control` 包的 `gazebo_base_control.launch.py`：
+
+```bash
+ros2 launch ylr1d_base_control gazebo_base_control.launch.py
+```
+
+该 launch 内部会 include `gazebo_effort.launch.py` 并启动 `base_control_node`（C++ 实现，100Hz PD 循环）。
 
 ---
 
@@ -242,7 +260,7 @@ colcon build --packages-select ylr1d_mid_control
 # 2. 启动（以速度控制为例）
 ros2 launch ylr1d_mid_control gazebo_velocity.launch.py
 
-# 3. 等待 Gazebo 启动 + 控制器加载（约 10-15s，WSL 下可能需要更久）
+# 3. 等待 Gazebo 启动 + 控制器加载（10-15s，WSL 下可能需要 30-60s，取决于主机性能）
 
 # 4. 确认所有控制器已激活
 ros2 control list_controllers
@@ -266,6 +284,8 @@ ros2 topic echo /joint_states --once
 - **RViz 网格加载** `Error retrieving file ... .STL` 为文件名大小写问题，不影响仿真与控制
 - **root link 惯性** `[WARN] [kdl_parser]` KDL 不支持 root link 带惯性，不影响仿真
 - **pose/info 队列告警** `[Wrn] [Publisher.cc:135] Queue limit reached` 为正常节流，不报错
+- **关节限位** `Joint_Base_to_Body1` 的上下限为 `[-0.3, 0.3] rad`（见 `limits.yaml`），施加正向力矩会立即卡住，调试时建议先用负向力矩离开限位
+- **时序跳跃** `[WARN] [robot_state_publisher]: Moved backwards in time` 由 joint_state_filter 引入的微小延迟引起，不影响控制
 
 ---
 
@@ -321,7 +341,39 @@ ros2 topic echo /joint_states --once
 
 另外，也可以修改环境变量 `GAZEBO_MODEL_PATH` ，保证功能包能够被找到。
 
-### 7. WSL 下 Gazebo 进程冲突
+### 7. 棱柱关节 TF_NAN 错误（JointState NaN → 0.0 过滤器）
+
+**症状**: robot_state_publisher 持续报 `"TF_NAN"` 错误，RViz 中棱柱关节变换显示 NaN，数千条警告刷屏。
+
+**根因**: GazeboSystem 硬件接口在实体生成（spawn）阶段初始化关节状态。由于 spawn 时仿真处于暂停状态，GazeboSystem 将棱柱关节（Prismatic Joint）的位置初始化为 NaN。即使 spawn 后调用 `-unpause` 恢复仿真，已初始化的 NaN 值也不会刷新，导致 robot_state_publisher 持续发布 NaN 变换。
+
+**影响关节**（5 个棱柱关节）:
+- `Joint_Base_to_Body1`（躯干升降）
+- `LeftFinger1` / `LeftFinger2`（左夹爪）
+- `RightFinger1` / `RightFinger2`（右夹爪）
+
+**修复**: 在 `ylr1d_base_control` 包中新增 `joint_state_filter` 节点：
+- 订阅 `/joint_states`（Gazebo 原始输出）
+- 将所有 NaN 替换为 0.0
+- 发布到 `/joint_states_filtered`
+- 通过 ROS2 话题重映射 `remappings=[("joint_states", "/joint_states_filtered")]` 让 robot_state_publisher 使用过滤后的话题
+
+**关键细节**:
+- 使用 `remappings`（话题重映射）而非 `joint_state_topic` 参数，因为后者在 ROS2 Humble 中不被支持
+- 过滤器同时处理 position/velocity/effort 三个数组中的 NaN
+- 此方案与 Gazebo 状态无关，鲁棒性高
+
+```python
+# launch 文件中的关键配置
+robot_state_publisher = Node(
+    package="robot_state_publisher",
+    executable="robot_state_publisher",
+    parameters=[{"robot_description": robot_desc}],
+    remappings=[("joint_states", "/joint_states_filtered")],
+)
+```
+
+### 8. WSL 下 Gazebo 进程冲突
 
 **症状**: 第二次运行 launch 时 `spawn_entity` 报 `"Entity already exists"`，Gazebo 进程崩溃。
 

@@ -60,6 +60,13 @@ def _inject_effort_interfaces(content: str) -> str:
     )
 
 
+def _resolve_package_uris(content: str, pkg_name: str) -> str:
+    """Replace package://<pkg_name>/ URIs with absolute file paths using ament_index."""
+    from ament_index_python.packages import get_package_share_directory
+    pkg_path = get_package_share_directory(pkg_name)
+    return content.replace(f"package://{pkg_name}", pkg_path)
+
+
 def generate_launch_description():
     package_name = "ylr1d_mid_control"
     robot_name = "ylr1d"
@@ -75,8 +82,11 @@ def generate_launch_description():
     pkg_share = get_package_share_directory(package_name)
     pkg_desc = get_package_share_directory("ylr1d_description")
 
-    model_path = os.path.join(pkg_desc, "meshes")
-    env["GAZEBO_MODEL_PATH"] = model_path + ":" + env.get("GAZEBO_MODEL_PATH", "")
+    # model:// URIs are not used by this robot — package:// URIs are
+    # resolved to absolute paths via _resolve_package_uris below,
+    # so GAZEBO_MODEL_PATH is left unset to avoid Gazebo scanning
+    # unrelated share/ subdirectories (which triggers noisy
+    # "Missing model.config" errors).
 
     # ── Read original xacro and inject effort interfaces ────
     original_xacro_path = os.path.join(pkg_share, "urdf", "ylr1d_mid.xacro")
@@ -92,6 +102,8 @@ def generate_launch_description():
     resolved = resolved.replace("${controllers_yaml_path}", effort_controllers_yaml_path)
     # Step 3: inject <command_interface name="effort"/> into ros2_control block
     resolved = _inject_effort_interfaces(resolved)
+    # Step 4: resolve package:// URIs to absolute file paths so Gazebo can find meshes
+    resolved = _resolve_package_uris(resolved, "ylr1d_description")
 
     tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".xacro", delete=False)
     tmp.write(resolved)
@@ -113,6 +125,13 @@ def generate_launch_description():
         package="robot_state_publisher",
         executable="robot_state_publisher",
         parameters=[{"robot_description": robot_desc}],
+        remappings=[("joint_states", "/joint_states_filtered")],
+        output="screen",
+    )
+
+    joint_state_filter = Node(
+        package="ylr1d_base_control",
+        executable="joint_state_filter",
         output="screen",
     )
 
@@ -129,7 +148,11 @@ def generate_launch_description():
     spawn_entity = Node(
         package="gazebo_ros",
         executable="spawn_entity.py",
-        arguments=["-entity", robot_name, "-file", urdf_tmp.name],
+        arguments=[
+            "-entity", robot_name, "-file", urdf_tmp.name,
+            "-x", "0", "-y", "0", "-z", "0.3",
+            "-unpause",
+        ],
         output="screen",
     )
 
@@ -191,6 +214,7 @@ def generate_launch_description():
     # ── Assemble ──────────────────────────────────────────────
     ld = LaunchDescription()
     ld.add_action(robot_state_publisher)
+    ld.add_action(joint_state_filter)
     ld.add_action(start_gazebo)
     ld.add_action(TimerAction(period=5.0, actions=[spawn_entity]))
     ld.add_action(spawn_controllers)
