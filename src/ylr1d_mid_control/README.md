@@ -88,7 +88,7 @@ ros2 topic pub --rate 10 /chassis_wheels_controller/commands \
 
 关节顺序与原始方案一致。
 
-> **前置依赖：** `gazebo_effort.launch.py` 需要 `ylr1d_base_control` 包中的 `joint_state_filter` 可执行程序。如果修改了 `ylr1d_base_control` 的源码，需要先构建该包：`colcon build --packages-select ylr1d_base_control`，否则 `joint_state_filter` 启动会失败。
+> **注意：** `joint_state_filter` 节点已内置于 `ylr1d_mid_control` 包中，无需依赖 `ylr1d_base_control`。
 
 > **夹爪说明：** 同上，data 数组最后 2 个值为夹爪（棱柱关节，单位 m），范围 ±0.05m。
 

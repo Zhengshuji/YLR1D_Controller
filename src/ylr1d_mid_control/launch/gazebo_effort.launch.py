@@ -130,7 +130,7 @@ def generate_launch_description():
     )
 
     joint_state_filter = Node(
-        package="ylr1d_base_control",
+        package="ylr1d_mid_control",
         executable="joint_state_filter",
         output="screen",
     )
