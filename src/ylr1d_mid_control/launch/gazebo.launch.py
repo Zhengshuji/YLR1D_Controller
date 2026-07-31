@@ -110,7 +110,8 @@ def generate_launch_description():
     # the CLI arg parsing bug).
     start_gazebo = ExecuteProcess(
         cmd=[
-            "gazebo", "--verbose",
+            "gzserver", "--verbose",
+            #"gazebo", "--verbose",
             "-s", "libgazebo_ros_init.so",
             "-s", "libgazebo_ros_factory.so",
         ],

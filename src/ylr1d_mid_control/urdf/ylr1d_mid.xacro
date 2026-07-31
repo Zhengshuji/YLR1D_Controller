@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<robot xmlns:xacro="http://wiki.ros.org/xacro"
-       name="ylr1d">
-
+<robot xmlns:xacro="http://wiki.ros.org/xacro" name="ylr1d">
   <!-- ============================================ -->
   <!-- YAML config values (links.yaml, colors.yaml,  -->
   <!-- limits.yaml, scale.yaml) are passed via xacro -->
@@ -9,6 +7,17 @@
   <!-- ============================================ -->
 
   <xacro:macro name="ylr1d" params="prefix">
+  
+<!-- 添加空的虚拟连接 -->
+<!--
+<link name="${prefix}base_footprint" />
+<joint name="${prefix}base_footprint_joint" type="fixed">
+    <origin xyz="0 0 0.3" rpy="0 0 0" />
+    <parent link="${prefix}base_footprint" />
+    <child link="${prefix}Link_Base" />
+</joint>
+-->
+
 <link name="${prefix}Link_Base">
     <inertial>
       <origin xyz="0.037265 0.00025041 0.20252" rpy="0 0 0"/>
