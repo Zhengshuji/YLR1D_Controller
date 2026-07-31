@@ -58,14 +58,6 @@ static std::vector<JointDef> right_arm_joints = {
   {"Joint_RightArm7_to_RightFinger2","Finger2", false, true,  0.0, 0.015},
 };
 
-// Unit strings per joint kind
-static QString posUnit(bool is_prismatic) {
-  return is_prismatic ? QStringLiteral("m") : QStringLiteral("rad");
-}
-static QString velUnit(bool is_prismatic) {
-  return is_prismatic ? QStringLiteral("m/s") : QStringLiteral("rad/s");
-}
-
 // ============================================================
 // HmiWindow
 // ============================================================
@@ -112,7 +104,7 @@ HmiWindow::~HmiWindow() {
 }
 
 // ============================================================
-// Lite layout: 2x2 group cards (Observe on top, Control below)
+// Lite layout: four tabs (Observe on top, Control below)
 // ============================================================
 void HmiWindow::buildUiLite() {
   setWindowTitle("YLR1D HMI (lite)");
@@ -148,6 +140,7 @@ void HmiWindow::buildUiLite() {
   }
   main_layout->addWidget(tabs, 1);
 
+  buildToolBar();
   buildStatusBar();
 }
 
@@ -342,26 +335,24 @@ void HmiWindow::addControlRow(QVBoxLayout * parent, const JointDef & d, size_t i
   ji.label = d.label;
   ji.is_velocity = d.is_velocity;
   ji.is_prismatic = d.is_prismatic;
+  ji.lower = d.lower;
+  ji.upper = d.upper;
   ji.slider = slider;
   ji.spin = spin;
 
+  // Slider always works in SI (rad / m); spinbox shows converted units
   if (d.is_velocity) {
     slider->setRange(-500, 500);
-    spin->setRange(-5.0, 5.0);
-    spin->setSingleStep(0.1);
-    spin->setSuffix(QStringLiteral(" rad/s"));
   } else {
     slider->setRange(
       static_cast<int>(d.lower * 100),
       static_cast<int>(d.upper * 100));
-    spin->setRange(d.lower, d.upper);
-    spin->setSingleStep(0.05);
-    spin->setSuffix(QStringLiteral(" ") + posUnit(d.is_prismatic));
   }
+  applySpinRange(ji);  // range / suffix / value in current display units
 
   connect(slider, &QSlider::valueChanged, this, [this, idx](int v) {
     if (!joints_[idx].spin->hasFocus())
-      joints_[idx].spin->setValue(static_cast<double>(v) / 100.0);
+      joints_[idx].spin->setValue(toDisplay(v / 100.0, joints_[idx].is_prismatic));
     onSliderChanged(v);
   });
   connect(spin, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
@@ -384,9 +375,159 @@ void HmiWindow::buildStatusBar() {
   pub_status_lbl_->setTextInteractionFlags(Qt::TextSelectableByMouse);
   bar->addWidget(pub_status_lbl_);
 
-  auto mode_lbl = new QLabel(QStringLiteral("Send: auto 5 Hz"));
-  mode_lbl->setStyleSheet(QStringLiteral("color:#888;"));
-  bar->addPermanentWidget(mode_lbl);
+  mode_lbl_ = new QLabel();
+  mode_lbl_->setStyleSheet(QStringLiteral("color:#888;"));
+  bar->addPermanentWidget(mode_lbl_);
+  updateModeLabel();
+}
+
+// ============================================================
+// Toolbar: units / rate / auto-send switch / send-now
+// ============================================================
+void HmiWindow::buildToolBar() {
+  auto tb = addToolBar(QStringLiteral("Main"));
+  tb->setMovable(false);
+  tb->setToolButtonStyle(Qt::ToolButtonTextOnly);
+
+  // ── Units ────────────────────────────────────────────────
+  tb->addWidget(new QLabel(QStringLiteral(" Units: ")));
+  angle_unit_cb_ = new QComboBox();
+  angle_unit_cb_->addItem(QStringLiteral("rad"), QVariant::fromValue(static_cast<int>(AngleUnit::Rad)));
+  angle_unit_cb_->addItem(QStringLiteral("deg"), QVariant::fromValue(static_cast<int>(AngleUnit::Deg)));
+  angle_unit_cb_->setCurrentIndex(0);
+  tb->addWidget(angle_unit_cb_);
+
+  length_unit_cb_ = new QComboBox();
+  length_unit_cb_->addItem(QStringLiteral("m"), QVariant::fromValue(static_cast<int>(LengthUnit::Meter)));
+  length_unit_cb_->addItem(QStringLiteral("mm"), QVariant::fromValue(static_cast<int>(LengthUnit::Millimeter)));
+  length_unit_cb_->setCurrentIndex(0);
+  tb->addWidget(length_unit_cb_);
+
+  tb->addSeparator();
+
+  // ── Send rate ────────────────────────────────────────────
+  tb->addWidget(new QLabel(QStringLiteral(" Rate: ")));
+  rate_cb_ = new QComboBox();
+  for (int hz : {1, 2, 5, 10, 20})
+    rate_cb_->addItem(QString::number(hz) + QStringLiteral(" Hz"), hz);
+  rate_cb_->setCurrentIndex(2);  // 5 Hz default
+  tb->addWidget(rate_cb_);
+
+  tb->addSeparator();
+
+  // ── Auto-send master switch (with indicator) ─────────────
+  auto_ind_lbl_ = new QLabel(QStringLiteral("●"));
+  auto_ind_lbl_->setStyleSheet(QStringLiteral("color:#2e7d32; font-weight:bold;"));
+  tb->addWidget(auto_ind_lbl_);
+  auto_btn_ = new QToolButton();
+  auto_btn_->setCheckable(true);
+  auto_btn_->setChecked(true);
+  auto_btn_->setText(QStringLiteral("Auto: ON"));
+  tb->addWidget(auto_btn_);
+
+  // ── Manual send now ──────────────────────────────────────
+  send_now_btn_ = new QToolButton();
+  send_now_btn_->setText(QStringLiteral("Send Now"));
+  tb->addWidget(send_now_btn_);
+
+  connect(angle_unit_cb_, QOverload<int>::of(&QComboBox::currentIndexChanged),
+          this, &HmiWindow::onAngleUnitChanged);
+  connect(length_unit_cb_, QOverload<int>::of(&QComboBox::currentIndexChanged),
+          this, &HmiWindow::onLengthUnitChanged);
+  connect(rate_cb_, QOverload<int>::of(&QComboBox::currentIndexChanged),
+          this, &HmiWindow::onRateChanged);
+  connect(auto_btn_, &QToolButton::toggled, this, &HmiWindow::onAutoToggled);
+  connect(send_now_btn_, &QToolButton::clicked, this, &HmiWindow::onSendNow);
+}
+
+// ============================================================
+// Unit conversion (internal storage is always SI: rad / m)
+// ============================================================
+double HmiWindow::angleFactor() const {
+  return angle_unit_ == AngleUnit::Deg ? (180.0 / 3.14159265358979323846) : 1.0;
+}
+double HmiWindow::lengthFactor() const {
+  return length_unit_ == LengthUnit::Millimeter ? 1000.0 : 1.0;
+}
+double HmiWindow::toDisplay(double si, bool is_prismatic) const {
+  return si * (is_prismatic ? lengthFactor() : angleFactor());
+}
+double HmiWindow::toSI(double display, bool is_prismatic) const {
+  return display / (is_prismatic ? lengthFactor() : angleFactor());
+}
+QString HmiWindow::unitStr(bool is_prismatic) const {
+  if (is_prismatic)
+    return length_unit_ == LengthUnit::Millimeter ? QStringLiteral("mm")
+                                                  : QStringLiteral("m");
+  return angle_unit_ == AngleUnit::Deg ? QStringLiteral("deg")
+                                       : QStringLiteral("rad");
+}
+
+// Set spinbox range / suffix / current value from SI limits and desired
+void HmiWindow::applySpinRange(JointInfo & j) {
+  if (!j.spin) return;
+  double sf = j.is_prismatic ? lengthFactor() : angleFactor();
+  double lo = j.is_velocity ? -5.0 : j.lower;
+  double hi = j.is_velocity ? 5.0 : j.upper;
+  j.spin->setRange(lo * sf, hi * sf);
+  j.spin->setSingleStep((j.is_velocity ? 0.1 : 0.05) * sf);
+  if (j.is_velocity)
+    j.spin->setSuffix(QStringLiteral(" %1/s").arg(unitStr(j.is_prismatic)));
+  else
+    j.spin->setSuffix(QStringLiteral(" %1").arg(unitStr(j.is_prismatic)));
+  // Value change here is ignored by onSpinChanged (spin has no focus)
+  j.spin->setValue(toDisplay(j.desired, j.is_prismatic));
+}
+
+void HmiWindow::refreshDisplays() {
+  for (auto & j : joints_) applySpinRange(j);
+  updateModeLabel();
+}
+
+void HmiWindow::updateModeLabel() {
+  if (!mode_lbl_) return;
+  bool on = auto_btn_ && auto_btn_->isChecked();
+  int hz = rate_cb_ ? rate_cb_->currentData().toInt() : 5;
+  mode_lbl_->setText(on ? QStringLiteral("Send: auto %1 Hz").arg(hz)
+                        : QStringLiteral("Send: manual"));
+}
+
+// ============================================================
+// Toolbar slots
+// ============================================================
+void HmiWindow::onAngleUnitChanged(int) {
+  angle_unit_ = static_cast<AngleUnit>(angle_unit_cb_->currentData().toInt());
+  refreshDisplays();
+}
+void HmiWindow::onLengthUnitChanged(int) {
+  length_unit_ = static_cast<LengthUnit>(length_unit_cb_->currentData().toInt());
+  refreshDisplays();
+}
+void HmiWindow::onRateChanged(int) {
+  int hz = rate_cb_->currentData().toInt();
+  if (auto_btn_ && auto_btn_->isChecked())
+    send_timer_->start(1000 / hz);
+  updateModeLabel();
+}
+void HmiWindow::onAutoToggled(bool on) {
+  if (auto_ind_lbl_) {
+    auto_ind_lbl_->setText(on ? QStringLiteral("●") : QStringLiteral("○"));
+    auto_ind_lbl_->setStyleSheet(on ? QStringLiteral("color:#2e7d32; font-weight:bold;")
+                                    : QStringLiteral("color:#888; font-weight:bold;"));
+  }
+  if (auto_btn_)
+    auto_btn_->setText(on ? QStringLiteral("Auto: ON") : QStringLiteral("Auto: OFF"));
+  if (on) {
+    int hz = rate_cb_ ? rate_cb_->currentData().toInt() : 5;
+    send_timer_->start(1000 / hz);
+  } else {
+    send_timer_->stop();
+  }
+  updateModeLabel();
+}
+void HmiWindow::onSendNow() {
+  publishDesired();
+  ++send_count_;
 }
 
 // ============================================================
@@ -405,8 +546,10 @@ void HmiWindow::onRosSpin() {
         auto it = name_to_idx_.find(name.toStdString());
         if (it == name_to_idx_.end()) continue;
         const auto & j = joints_[it->second];
-        item->setText(1, QString::number(j.position, 'f', 4) + QStringLiteral(" ") + posUnit(j.is_prismatic));
-        item->setText(2, QString::number(j.velocity, 'f', 4) + QStringLiteral(" ") + velUnit(j.is_prismatic));
+        item->setText(1, QString::number(toDisplay(j.position, j.is_prismatic), 'f', 4)
+                       + QStringLiteral(" ") + unitStr(j.is_prismatic));
+        item->setText(2, QString::number(toDisplay(j.velocity, j.is_prismatic), 'f', 4)
+                       + QStringLiteral(" ") + unitStr(j.is_prismatic) + QStringLiteral("/s"));
       }
     }
   }
@@ -421,9 +564,11 @@ void HmiWindow::onRosSpin() {
       if (it == name_to_idx_.end()) continue;
       const auto & j = joints_[it->second];
       table->item(r, 1)->setText(
-        QString::number(j.position, 'f', 4) + QStringLiteral(" ") + posUnit(j.is_prismatic));
+        QString::number(toDisplay(j.position, j.is_prismatic), 'f', 4)
+        + QStringLiteral(" ") + unitStr(j.is_prismatic));
       table->item(r, 2)->setText(
-        QString::number(j.velocity, 'f', 4) + QStringLiteral(" ") + velUnit(j.is_prismatic));
+        QString::number(toDisplay(j.velocity, j.is_prismatic), 'f', 4)
+        + QStringLiteral(" ") + unitStr(j.is_prismatic) + QStringLiteral("/s"));
     }
   }
 
@@ -460,8 +605,8 @@ void HmiWindow::onSliderChanged(int value) {
 void HmiWindow::onSpinChanged(double value) {
   for (auto & j : joints_) {
     if (j.spin && j.spin->hasFocus()) {
-      j.desired = value;
-      int sv = static_cast<int>(value * 100);
+      j.desired = toSI(value, j.is_prismatic);
+      int sv = static_cast<int>(j.desired * 100);
       if (j.slider && j.slider->value() != sv) j.slider->setValue(sv);
       desired_dirty_ = true;
       break;

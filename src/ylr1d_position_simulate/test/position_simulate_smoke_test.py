@@ -173,11 +173,11 @@ def main():
             "Joint_Base_to_RFWheelF/limit/upper": 3.14,
             "Joint_Base_to_RFWheelF/limit/velocity": 3.0,
             "Joint_Base_to_RFWheelF/limit/accelerate": 5.0,
-            "Joint_Base_to_RFWheelF/pid/kp": 4.0,
-            "Joint_Base_to_RFWheelF/pid/kd": 0.2,
+            "Joint_Base_to_RFWheelF/pid/kp": 150.0,
+            "Joint_Base_to_RFWheelF/pid/kd": 20.0,
             # Joint_Base_to_Body1 属 arm 节点管理，此处不声明，不在此校验
             "Joint_RFWheelF_to_RFWheel/limit/accelerate": 10.0,
-            "Joint_RFWheelF_to_RFWheel/pid/kp": 2.0,
+            "Joint_RFWheelF_to_RFWheel/pid/kp": 4.0,
         }
         vals = node.get_param("chassis_simulate", list(chassis_params.keys()))
         for name, got in zip(chassis_params.keys(), vals):
@@ -187,15 +187,15 @@ def main():
             print(f"  {'PASS' if good else 'FAIL'} {name} = {got} (期望 {exp})")
         # 臂节点读其关节的 pid（夹爪 kp=2.0 与普通臂 4.0 不同 -> 证明逐关节独立）
         vals = node.get_param("arm_simulate", [
-            "Joint_Body2_to_LeftArm1/pid/kp",   # 期望 4.0
-            "Joint_LeftArm7_to_LeftFinger1/pid/kp",  # 期望 2.0
+            "Joint_Body2_to_LeftArm1/pid/kp",   # 期望 150.0
+            "Joint_LeftArm7_to_LeftFinger1/pid/kp",  # 期望 10.0
             "Joint_Base_to_Body1/limit/velocity",    # 期望 0.6782
         ])
         for name, got, exp in zip(
                 ["Joint_Body2_to_LeftArm1/pid/kp",
                  "Joint_LeftArm7_to_LeftFinger1/pid/kp",
                  "Joint_Base_to_Body1/limit/velocity"],
-                vals, [4.0, 2.0, 0.6782]):
+                vals, [150.0, 10.0, 0.6782]):
             good = got is not None and abs(got - exp) < 1e-9
             ok = ok and good
             print(f"  {'PASS' if good else 'FAIL'} {name} = {got} (期望 {exp})")

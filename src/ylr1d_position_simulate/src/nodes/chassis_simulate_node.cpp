@@ -1,12 +1,12 @@
-#include "ylr1d_position_simulate/node_chassis_simulate.hpp"
-#include "ylr1d_position_simulate/param_reader.hpp"
+#include "ylr1d_position_simulate/nodes/chassis_simulate_node.hpp"
+#include "ylr1d_position_simulate/params/param_reader.hpp"
 
 #include <memory>
 #include <vector>
 
 namespace ylr1d_position_simulate {
 
-Node_ChassisSimulate::Node_ChassisSimulate() : Node("chassis_simulate") {
+ChassisSimulateNode::ChassisSimulateNode() : Node("chassis_simulate") {
   double loop_hz = declare_parameter("loop_hz", 100.0);
   dt_ = 1.0 / loop_hz;
 
@@ -14,9 +14,9 @@ Node_ChassisSimulate::Node_ChassisSimulate() : Node("chassis_simulate") {
   const std::vector<std::string> steering_names = {
     "Joint_Base_to_RFWheelF", "Joint_Base_to_LFWheelF",
     "Joint_Base_to_RBWheelF", "Joint_Base_to_LBWheelF"};
-  std::vector<JointSimParams> steering_params;
+  std::vector<JointParams> steering_params;
   for (const auto & n : steering_names) {
-    steering_params.push_back(read_position_params(*this, n));
+    steering_params.push_back(read_joint_params(*this, n, defaultPositionParams()));
   }
   steering_.setup(steering_names, steering_params,
                   "/chassis_steering_controller/commands", this);
@@ -25,9 +25,9 @@ Node_ChassisSimulate::Node_ChassisSimulate() : Node("chassis_simulate") {
   const std::vector<std::string> wheel_names = {
     "Joint_RFWheelF_to_RFWheel", "Joint_LFWheelF_to_LFWheel",
     "Joint_RBWheelF_to_RBWheel", "Joint_LBWheelF_to_LBWheel"};
-  std::vector<VelocitySimParams> wheel_params;
+  std::vector<JointParams> wheel_params;
   for (const auto & n : wheel_names) {
-    wheel_params.push_back(read_velocity_params(*this, n));
+    wheel_params.push_back(read_joint_params(*this, n, defaultVelocityParams()));
   }
   wheels_.setup(wheel_names, wheel_params,
                 "/chassis_wheels_controller/commands", this);
@@ -51,7 +51,7 @@ Node_ChassisSimulate::Node_ChassisSimulate() : Node("chassis_simulate") {
               loop_hz, 4ul, 4ul);
 }
 
-void Node_ChassisSimulate::init_callback(const sensor_msgs::msg::JointState::SharedPtr msg) {
+void ChassisSimulateNode::init_callback(const sensor_msgs::msg::JointState::SharedPtr msg) {
   if (initialized_) return;
   steering_.init_from(*msg);
   if (steering_.initialized()) {
@@ -61,12 +61,12 @@ void Node_ChassisSimulate::init_callback(const sensor_msgs::msg::JointState::Sha
   }
 }
 
-void Node_ChassisSimulate::desired_callback(const sensor_msgs::msg::JointState::SharedPtr msg) {
+void ChassisSimulateNode::desired_callback(const sensor_msgs::msg::JointState::SharedPtr msg) {
   steering_.set_desired(*msg);
   wheels_.set_desired(*msg);
 }
 
-void Node_ChassisSimulate::update() {
+void ChassisSimulateNode::update() {
   if (!initialized_) return;
   steering_.update(dt_);  steering_.publish();
   wheels_.update(dt_);    wheels_.publish();
@@ -79,11 +79,3 @@ void Node_ChassisSimulate::update() {
 }
 
 }  // namespace ylr1d_position_simulate
-
-int main(int argc, char *argv[]) {
-  rclcpp::init(argc, argv);
-  auto node = std::make_shared<ylr1d_position_simulate::Node_ChassisSimulate>();
-  rclcpp::spin(node);
-  rclcpp::shutdown();
-  return 0;
-}

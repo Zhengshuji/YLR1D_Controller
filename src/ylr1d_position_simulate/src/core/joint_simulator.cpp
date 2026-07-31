@@ -1,13 +1,13 @@
-#include "ylr1d_position_simulate/joint_simulator.hpp"
+#include "ylr1d_position_simulate/core/joint_simulator.hpp"
 
 #include <algorithm>
 
 namespace ylr1d_position_simulate {
 
-void JointSimulator::configure(const JointSimParams & params) {
+void JointSimulator::configure(const JointParams & params) {
   params_ = params;
   pid_.set_gains(params.kp, params.ki, params.kd);
-  pid_.set_limits(params.max_accel, params.max_vel);
+  pid_.set_limits(params.max_accel);
   pid_.reset();
 }
 

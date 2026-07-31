@@ -15,6 +15,7 @@
 
 ```
 ┌──────────────────────────────────────────────────┐
+│  Toolbar: [Units: rad|m] [Rate: 5 Hz] [● Auto] [Send Now]│
 │  [Chassis] [Torso] [Left Arm] [Right Arm]  ← 标签页 │
 │  ╔═ Chassis (8) ══════════════════════════════╗   │
 │  ║ Observe                                    ║   │
@@ -50,10 +51,16 @@
 - 中部：`● /desired_joint_states` 订阅者数 + 累计发送次数（绿点=有订阅者）
 - 右侧：当前发送模式 `Send: auto 5 Hz`
 
-### 4. 发送方式（GUI 触发 + 固定低频）
+### 4. 发送方式（GUI 触发 + 低频合并发送）
 - 拖动 Slider / 修改 SpinBox **不立即发布**，仅置脏标记
-- 由 5 Hz 定时器（200 ms）合并发送一次到 `/desired_joint_states`
+- 由发送定时器（默认 5 Hz / 200 ms）合并发送一次到 `/desired_joint_states`
 - 避免高频拖动时对话题洪泛
+
+### 5. 工具栏
+- **Units**：角度单位切换 `rad / deg`，长度单位切换 `m / mm`（仅影响显示，内部存储保持 SI）
+- **Rate**：发送频率选择 `1 / 2 / 5 / 10 / 20 Hz`（改变发送定时器间隔）
+- **Auto**：持续发送总开关（`● Auto: ON` / `○ Auto: OFF` 带指示）；关闭后停止定时发送，仅剩手动发送
+- **Send Now**：手动发送按钮，立即发布当前期望值一次
 
 ---
 
@@ -103,7 +110,7 @@
 - **转向关节**（`Joint_Base_to_*WheelF` ×4）：`position` 字段
 - **轮子关节**（`Joint_*WheelF_to_*Wheel` ×4）：`velocity` 字段
 - **躯干/臂关节**（其余 22 关节）：`position` 字段
-- 发布方式：**GUI 操作触发 + 5 Hz 定时合并发送**（拖动时不全量洪泛）
+- 发布方式：**GUI 操作触发 + 定时合并发送**（默认 5 Hz，可由工具栏 Rate 调整；Auto 开关控制是否持续发送）
 
 ---
 

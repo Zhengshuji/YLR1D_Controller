@@ -15,6 +15,9 @@
 #include <QTableWidget>
 #include <QTabWidget>
 #include <QTimer>
+#include <QComboBox>
+#include <QToolBar>
+#include <QToolButton>
 #include <array>
 #include <map>
 #include <memory>
@@ -39,12 +42,19 @@ struct JointInfo {
   QString label;          // display short name
   bool is_velocity{false};   // true = wheel (velocity control)
   bool is_prismatic{false};  // true = translational joint (unit: m / m/s)
+  double lower{-3.14};       // position limits in SI (rad / m)
+  double upper{3.14};
   double position{0.0};
   double velocity{0.0};
   double desired{0.0};
   QSlider * slider{nullptr};
   QDoubleSpinBox * spin{nullptr};
 };
+
+/// Display unit for revolute joints
+enum class AngleUnit { Rad, Deg };
+/// Display unit for prismatic joints
+enum class LengthUnit { Meter, Millimeter };
 
 /// HMI main window base — shared ROS + observer/controller builders.
 /// Subclasses must call the desired layout builder (buildUiLite or custom).
@@ -94,13 +104,44 @@ private:
   // Status bar labels
   QLabel * js_status_lbl_{nullptr};
   QLabel * pub_status_lbl_{nullptr};
+  QLabel * mode_lbl_{nullptr};
+
+  // Toolbar widgets
+  QComboBox * angle_unit_cb_{nullptr};
+  QComboBox * length_unit_cb_{nullptr};
+  QComboBox * rate_cb_{nullptr};
+  QToolButton * auto_btn_{nullptr};
+  QLabel * auto_ind_lbl_{nullptr};
+  QToolButton * send_now_btn_{nullptr};
+
+  // Display units (internal storage stays SI: rad / m)
+  AngleUnit angle_unit_{AngleUnit::Rad};
+  LengthUnit length_unit_{LengthUnit::Meter};
 
   // UI build helpers
   void buildStatusBar();
+  void buildToolBar();
   QWidget * buildCard(int group_idx, const QString & title,
                       const QString & title_color,
                       const std::vector<JointDef> & defs);
   void addControlRow(QVBoxLayout * parent, const JointDef & d, size_t idx);
+
+  // Unit conversion helpers (internal SI <-> display)
+  double angleFactor() const;    // 1 (rad) or 180/pi (deg)
+  double lengthFactor() const;   // 1 (m) or 1000 (mm)
+  double toDisplay(double si, bool is_prismatic) const;
+  double toSI(double display, bool is_prismatic) const;
+  QString unitStr(bool is_prismatic) const;
+  void applySpinRange(JointInfo & j);
+  void refreshDisplays();
+  void updateModeLabel();
+
+  // Toolbar slots
+  void onAngleUnitChanged(int index);
+  void onLengthUnitChanged(int index);
+  void onRateChanged(int index);
+  void onAutoToggled(bool on);
+  void onSendNow();
 
   // Publish desired joint states (only if dirty, called by send_timer_)
   void onSendTimer();

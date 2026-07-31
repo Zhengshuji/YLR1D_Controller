@@ -1,12 +1,12 @@
-#include "ylr1d_position_simulate/pid.hpp"
+#include "ylr1d_position_simulate/core/pid.hpp"
+
 #include <algorithm>
 #include <cmath>
 
 namespace ylr1d_position_simulate {
 
-PID::PID(double kp, double ki, double kd, double max_accel, double max_vel)
-  : max_accel_(max_accel), max_vel_(max_vel),
-    kp_(kp), kd_(kd), ki_(ki) {}
+PID::PID(double kp, double ki, double kd, double max_accel)
+  : kp_(kp), kd_(kd), ki_(ki), max_accel_(max_accel) {}
 
 double PID::compute(double error, double dt) {
   // 比例项
@@ -41,9 +41,8 @@ void PID::set_gains(double kp, double ki, double kd) {
   kd_ = kd;
 }
 
-void PID::set_limits(double max_accel, double max_vel) {
+void PID::set_limits(double max_accel) {
   max_accel_ = max_accel;
-  max_vel_ = max_vel;
 }
 
 }  // namespace ylr1d_position_simulate

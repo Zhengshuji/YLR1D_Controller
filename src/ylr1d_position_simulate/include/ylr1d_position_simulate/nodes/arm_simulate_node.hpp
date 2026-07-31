@@ -1,7 +1,7 @@
-#ifndef YLR1D_POSITION_SIMULATE__NODE_ARM_SIMULATE_HPP_
-#define YLR1D_POSITION_SIMULATE__NODE_ARM_SIMULATE_HPP_
+#ifndef YLR1D_POSITION_SIMULATE__NODES__ARM_SIMULATE_NODE_HPP_
+#define YLR1D_POSITION_SIMULATE__NODES__ARM_SIMULATE_NODE_HPP_
 
-#include "ylr1d_position_simulate/joint_group.hpp"
+#include "ylr1d_position_simulate/groups/joint_group.hpp"
 
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
@@ -21,9 +21,9 @@ enum ArmGroup : size_t {
 };
 
 /// 机械臂模拟节点：躯干(4) + 左臂(9) + 右臂(9)，用数组 + 枚举统一管理
-class Node_ArmSimulate : public rclcpp::Node {
+class ArmSimulateNode : public rclcpp::Node {
 public:
-  Node_ArmSimulate();
+  ArmSimulateNode();
 
 private:
   void init_callback(const sensor_msgs::msg::JointState::SharedPtr msg);
@@ -42,4 +42,4 @@ private:
 
 }  // namespace ylr1d_position_simulate
 
-#endif  // YLR1D_POSITION_SIMULATE__NODE_ARM_SIMULATE_HPP_
+#endif  // YLR1D_POSITION_SIMULATE__NODES__ARM_SIMULATE_NODE_HPP_

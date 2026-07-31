@@ -68,11 +68,17 @@ def generate_launch_description():
     pkg_desc = get_package_share_directory("ylr1d_description")
 
     model_path = os.path.join(pkg_desc, "meshes")
-    env["GAZEBO_MODEL_PATH"] = model_path + ":" + env.get("GAZEBO_MODEL_PATH", "")
+    # Gazebo rewrites package://ylr1d_description URIs into model://ylr1d_description.
+    # For that URI to resolve, GAZEBO_MODEL_PATH must contain a directory whose
+    # child is ylr1d_description (here: the share dir holding the package).
+    share_path = os.path.dirname(pkg_desc)
+    env["GAZEBO_MODEL_PATH"] = (model_path + ":" + share_path + ":"
+                                + env.get("GAZEBO_MODEL_PATH", ""))
+    world_path = os.path.join(pkg_desc, "worlds", "empty.world")
 
-    # ── Process xacro ──────────────────────────────────────────
-    xacro_path = os.path.join(pkg_share, "urdf", "ylr1d_mid.xacro")
-    config_dir = os.path.join(pkg_share, "config")
+    # ── Process xacro (model assets come from ylr1d_description) ──
+    xacro_path = os.path.join(pkg_desc, "urdf", "ylr1d.xacro")
+    config_dir = os.path.join(pkg_desc, "config")
     controllers_yaml_path = os.path.join(pkg_share, "config", "controllers.yaml")
 
     with open(xacro_path) as f:
@@ -112,6 +118,7 @@ def generate_launch_description():
         cmd=[
             "gzserver", "--verbose",
             #"gazebo", "--verbose",
+            world_path,
             "-s", "libgazebo_ros_init.so",
             "-s", "libgazebo_ros_factory.so",
         ],
@@ -173,8 +180,8 @@ def generate_launch_description():
         ],
     )
 
-    # RViz
-    rviz_path = os.path.join(pkg_share, "rviz", "display.rviz")
+    # RViz (config from ylr1d_description)
+    rviz_path = os.path.join(pkg_desc, "rviz", "display.rviz")
     rviz2 = Node(
         package="rviz2",
         executable="rviz2",

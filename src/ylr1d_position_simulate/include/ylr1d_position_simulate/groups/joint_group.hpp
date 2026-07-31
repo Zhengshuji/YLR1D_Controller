@@ -1,7 +1,8 @@
-#ifndef YLR1D_POSITION_SIMULATE__JOINT_GROUP_HPP_
-#define YLR1D_POSITION_SIMULATE__JOINT_GROUP_HPP_
+#ifndef YLR1D_POSITION_SIMULATE__GROUPS__JOINT_GROUP_HPP_
+#define YLR1D_POSITION_SIMULATE__GROUPS__JOINT_GROUP_HPP_
 
-#include "ylr1d_position_simulate/joint_simulator.hpp"
+#include "ylr1d_position_simulate/core/joint_params.hpp"
+#include "ylr1d_position_simulate/core/joint_simulator.hpp"
 
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
@@ -25,7 +26,7 @@ public:
   /// @param topic   发布到的 controller command topic
   /// @param node    父节点（用于创建 publisher）
   void setup(const std::vector<std::string> & names,
-             const std::vector<JointSimParams> & params,
+             const std::vector<JointParams> & params,
              const std::string & topic,
              rclcpp::Node * node);
 
@@ -58,15 +59,6 @@ private:
   bool initialized_{false};
 };
 
-/// 单关节速度仿真参数
-struct VelocitySimParams {
-  double kp{2.0};
-  double ki{0.0};
-  double kd{0.05};
-  double max_accel{20.0};
-  double max_vel{5.0};
-};
-
 /// 速度 PID 关节组
 /// 统一管理一组速度关节（轮子）：期望速度 -> PID -> 加速度 -> 速度(限幅)
 class VelocityJointGroup {
@@ -78,7 +70,7 @@ public:
   /// @param topic   发布到的 controller command topic
   /// @param node    父节点（用于创建 publisher）
   void setup(const std::vector<std::string> & names,
-             const std::vector<VelocitySimParams> & params,
+             const std::vector<JointParams> & params,
              const std::string & topic,
              rclcpp::Node * node);
 
@@ -104,4 +96,4 @@ private:
 
 }  // namespace ylr1d_position_simulate
 
-#endif  // YLR1D_POSITION_SIMULATE__JOINT_GROUP_HPP_
+#endif  // YLR1D_POSITION_SIMULATE__GROUPS__JOINT_GROUP_HPP_

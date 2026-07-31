@@ -1,5 +1,5 @@
-#include "ylr1d_position_simulate/node_arm_simulate.hpp"
-#include "ylr1d_position_simulate/param_reader.hpp"
+#include "ylr1d_position_simulate/nodes/arm_simulate_node.hpp"
+#include "ylr1d_position_simulate/params/param_reader.hpp"
 
 #include <memory>
 #include <vector>
@@ -34,15 +34,15 @@ const std::array<ArmGroupSpec, ARM_GROUP_COUNT> kArmGroupSpecs = {{
 
 }  // namespace
 
-Node_ArmSimulate::Node_ArmSimulate() : Node("arm_simulate") {
+ArmSimulateNode::ArmSimulateNode() : Node("arm_simulate") {
   double loop_hz = declare_parameter("loop_hz", 100.0);
   dt_ = 1.0 / loop_hz;
 
   // 数组 + 枚举统一配置三组（躯干 / 左臂 / 右臂）
   for (size_t g = 0; g < ARM_GROUP_COUNT; ++g) {
-    std::vector<JointSimParams> params;
+    std::vector<JointParams> params;
     for (const auto & n : kArmGroupSpecs[g].joints) {
-      params.push_back(read_position_params(*this, n));
+      params.push_back(read_joint_params(*this, n, defaultPositionParams()));
     }
     groups_[g].setup(kArmGroupSpecs[g].joints, params, kArmGroupSpecs[g].topic, this);
   }
@@ -66,7 +66,7 @@ Node_ArmSimulate::Node_ArmSimulate() : Node("arm_simulate") {
               loop_hz, ARM_GROUP_COUNT, 4ul + 9ul + 9ul);
 }
 
-void Node_ArmSimulate::init_callback(const sensor_msgs::msg::JointState::SharedPtr msg) {
+void ArmSimulateNode::init_callback(const sensor_msgs::msg::JointState::SharedPtr msg) {
   if (initialized_) return;
   bool all = true;
   for (auto & g : groups_) {
@@ -80,13 +80,13 @@ void Node_ArmSimulate::init_callback(const sensor_msgs::msg::JointState::SharedP
   }
 }
 
-void Node_ArmSimulate::desired_callback(const sensor_msgs::msg::JointState::SharedPtr msg) {
+void ArmSimulateNode::desired_callback(const sensor_msgs::msg::JointState::SharedPtr msg) {
   for (auto & g : groups_) {
     g.set_desired(*msg);
   }
 }
 
-void Node_ArmSimulate::update() {
+void ArmSimulateNode::update() {
   if (!initialized_) return;
   for (auto & g : groups_) {
     g.update(dt_);
@@ -102,11 +102,3 @@ void Node_ArmSimulate::update() {
 }
 
 }  // namespace ylr1d_position_simulate
-
-int main(int argc, char *argv[]) {
-  rclcpp::init(argc, argv);
-  auto node = std::make_shared<ylr1d_position_simulate::Node_ArmSimulate>();
-  rclcpp::spin(node);
-  rclcpp::shutdown();
-  return 0;
-}

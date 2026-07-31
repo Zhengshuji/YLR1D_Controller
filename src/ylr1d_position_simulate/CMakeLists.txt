@@ -12,9 +12,9 @@ find_package(sensor_msgs REQUIRED)
 
 # ── 公共库: PID + JointSimulator + JointGroup ─────
 add_library(ylr1d_simulate_common
-  src/pid.cpp
-  src/joint_simulator.cpp
-  src/joint_group.cpp
+  src/core/pid.cpp
+  src/core/joint_simulator.cpp
+  src/groups/joint_group.cpp
 )
 target_include_directories(ylr1d_simulate_common PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -24,20 +24,20 @@ ament_target_dependencies(ylr1d_simulate_common
   "rclcpp" "std_msgs" "sensor_msgs")
 
 # ── chassis_simulate ──────────────────────────────
-add_executable(chassis_simulate src/node_chassis_simulate.cpp)
+add_executable(chassis_simulate
+  src/nodes/chassis_simulate_node.cpp
+  src/main_chassis.cpp
+)
 target_link_libraries(chassis_simulate ylr1d_simulate_common)
-target_include_directories(chassis_simulate PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
 ament_target_dependencies(chassis_simulate
   "rclcpp" "std_msgs" "sensor_msgs")
 
 # ── arm_simulate ──────────────────────────────────
-add_executable(arm_simulate src/node_arm_simulate.cpp)
+add_executable(arm_simulate
+  src/nodes/arm_simulate_node.cpp
+  src/main_arm.cpp
+)
 target_link_libraries(arm_simulate ylr1d_simulate_common)
-target_include_directories(arm_simulate PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
 ament_target_dependencies(arm_simulate
   "rclcpp" "std_msgs" "sensor_msgs")
 

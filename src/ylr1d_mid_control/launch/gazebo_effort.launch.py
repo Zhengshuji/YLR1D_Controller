@@ -77,7 +77,12 @@ def generate_launch_description():
     
     pkg_desc = get_package_share_directory("ylr1d_description")
     model_path = os.path.join(pkg_desc, "meshes")
-    env["GAZEBO_MODEL_PATH"] = model_path + ":" + env.get("GAZEBO_MODEL_PATH", "")
+    # Gazebo rewrites package://ylr1d_description URIs into model://ylr1d_description.
+    # For that URI to resolve, GAZEBO_MODEL_PATH must contain a directory whose
+    # child is ylr1d_description (here: the share dir holding the package).
+    share_path = os.path.dirname(pkg_desc)
+    env["GAZEBO_MODEL_PATH"] = (model_path + ":" + share_path + ":"
+                                + env.get("GAZEBO_MODEL_PATH", ""))
 
     lib_paths = [p for p in ["/opt/ros/humble/lib"] if os.path.isdir(p)]
     existing_ld = env.get("LD_LIBRARY_PATH", "")
@@ -86,6 +91,7 @@ def generate_launch_description():
 
     pkg_share = get_package_share_directory(package_name)
     pkg_desc = get_package_share_directory("ylr1d_description")
+    world_path = os.path.join(pkg_desc, "worlds", "empty.world")
 
     # model:// URIs are not used by this robot — package:// URIs are
     # resolved to absolute paths via _resolve_package_uris below,
@@ -93,9 +99,9 @@ def generate_launch_description():
     # unrelated share/ subdirectories (which triggers noisy
     # "Missing model.config" errors).
 
-    # ── Read original xacro and inject effort interfaces ────
-    original_xacro_path = os.path.join(pkg_share, "urdf", "ylr1d_mid.xacro")
-    config_dir = os.path.join(pkg_share, "config")
+    # ── Read original xacro (from ylr1d_description) and inject effort interfaces ────
+    original_xacro_path = os.path.join(pkg_desc, "urdf", "ylr1d.xacro")
+    config_dir = os.path.join(pkg_desc, "config")
     effort_controllers_yaml_path = os.path.join(pkg_share, "config", "effort_controllers.yaml")
 
     with open(original_xacro_path) as f:
@@ -143,6 +149,7 @@ def generate_launch_description():
     start_gazebo = ExecuteProcess(
         cmd=[
             "gazebo", "--verbose",
+            world_path,
             "-s", "libgazebo_ros_init.so",
             "-s", "libgazebo_ros_factory.so",
         ],
@@ -205,8 +212,8 @@ def generate_launch_description():
         ],
     )
 
-    # RViz
-    rviz_path = os.path.join(pkg_share, "rviz", "display.rviz")
+    # RViz (config from ylr1d_description)
+    rviz_path = os.path.join(pkg_desc, "rviz", "display.rviz")
     rviz2 = Node(
         package="rviz2",
         executable="rviz2",

@@ -1,4 +1,4 @@
-#include "ylr1d_position_simulate/joint_group.hpp"
+#include "ylr1d_position_simulate/groups/joint_group.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -10,14 +10,14 @@ namespace ylr1d_position_simulate {
 // ===================================================================
 
 void PositionJointGroup::setup(const std::vector<std::string> & names,
-                               const std::vector<JointSimParams> & params,
+                               const std::vector<JointParams> & params,
                                const std::string & topic,
                                rclcpp::Node * node) {
   joints_.reserve(names.size());
   for (size_t i = 0; i < names.size(); ++i) {
     Joint j;
     j.name = names[i];
-    j.sim.configure(i < params.size() ? params[i] : JointSimParams{});
+    j.sim.configure(i < params.size() ? params[i] : JointParams{});
     joints_.push_back(std::move(j));
     name_to_idx_[names[i]] = i;
   }
@@ -80,15 +80,15 @@ void PositionJointGroup::fill_state_msg(sensor_msgs::msg::JointState & msg) cons
 // ===================================================================
 
 void VelocityJointGroup::setup(const std::vector<std::string> & names,
-                               const std::vector<VelocitySimParams> & params,
+                               const std::vector<JointParams> & params,
                                const std::string & topic,
                                rclcpp::Node * node) {
   joints_.reserve(names.size());
   for (size_t i = 0; i < names.size(); ++i) {
     Joint j;
     j.name = names[i];
-    const VelocitySimParams & p = i < params.size() ? params[i] : VelocitySimParams{};
-    j.pid = PID(p.kp, p.ki, p.kd, p.max_accel, p.max_vel);
+    const JointParams & p = i < params.size() ? params[i] : JointParams{};
+    j.pid = PID(p.kp, p.ki, p.kd, p.max_accel);
     j.max_accel = p.max_accel;
     j.max_vel = p.max_vel;
     joints_.push_back(std::move(j));

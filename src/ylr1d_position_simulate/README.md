@@ -12,14 +12,14 @@
 │                  ylr1d_position_simulate                     │
 │         config/*.yaml → <关节名>/limit/*、<关节名>/pid/*      │
 │                                                             │
-│  Node_ChassisSimulate (chassis_simulate 节点)               │
+│  ChassisSimulateNode (chassis_simulate 节点)                 │
 │    ├─ PositionJointGroup (转向×4)  JointSimulator→位置      │
 │    │   订阅: /joint_states (反馈)                            │
 │    │   发布: /chassis_steering_controller/commands           │
 │    └─ VelocityJointGroup (轮子×4)  PID→加速度→速度          │
 │        发布: /chassis_wheels_controller/commands             │
 │                                                             │
-│  Node_ArmSimulate (arm_simulate 节点)                       │
+│  ArmSimulateNode (arm_simulate 节点)                        │
 │    └─ std::array<PositionJointGroup, ARM_GROUP_COUNT>        │
 │       groups_  [TORSO=0 | LEFT_ARM=1 | RIGHT_ARM=2]         │
 │         躯干×4 / 左臂×9 / 右臂×9，每关节 JointSimulator→位置 │
@@ -44,11 +44,11 @@
 
 | 节点 | 订阅 | 发布 | 控制频率 |
 |------|------|------|----------|
-| `chassis_simulate`（类 `Node_ChassisSimulate`） | `/joint_states`<br>`/desired_joint_states` | `/chassis_steering_controller/commands`<br>`/chassis_wheels_controller/commands` | 100Hz |
-| `arm_simulate`（类 `Node_ArmSimulate`） | `/joint_states`<br>`/desired_joint_states` | `/torso_controller/commands`<br>`/left_arm_controller/commands`<br>`/right_arm_controller/commands` | 100Hz |
+| `chassis_simulate`（类 `ChassisSimulateNode`） | `/joint_states`<br>`/desired_joint_states` | `/chassis_steering_controller/commands`<br>`/chassis_wheels_controller/commands` | 100Hz |
+| `arm_simulate`（类 `ArmSimulateNode`） | `/joint_states`<br>`/desired_joint_states` | `/torso_controller/commands`<br>`/left_arm_controller/commands`<br>`/right_arm_controller/commands` | 100Hz |
 
 > 可执行名（`chassis_simulate` / `arm_simulate`）与 ROS 节点名保持不变，外部引用稳定；
-> 内部类名统一为 `Node_ChassisSimulate` / `Node_ArmSimulate`，与节点定义分离。
+> 内部类名统一为 `ChassisSimulateNode` / `ArmSimulateNode`（Node 后缀）。
 
 ## 配置文件（config/）
 
@@ -61,7 +61,8 @@
 | `velocity_control_limits.yaml` | 4 个轮子 `limit: {velocity, accelerate}` | 速度/加速度限幅（连续关节无位置限位） |
 | `pid.yaml` | 全部 30 关节 `pid: {kp, ki, kd}` | 每关节独立 PID 增益 |
 
-节点按关节 `declare_parameter` 读取（默认值与旧版硬编码一致，yaml 缺失时仍可运行）。
+节点按关节 `declare_parameter` 读取，默认值取自预设 struct（`defaultPositionParams` /
+`defaultVelocityParams`，见 [参数](#参数)），yaml 缺失时仍可运行。
 参数仅在**节点构造时读取一次**，运行中 `ros2 param set` 修改**不会生效**，调参需修改 yaml 后重启节点。
 
 ### limit 参数
@@ -81,7 +82,8 @@
 | `pid/ki` | 0.0 | 0.0 | 积分增益 |
 | `pid/kd` | 0.2 | 0.05 | 微分增益 |
 
-> 转向 / 躯干 / 臂关节 `4/0/0.2`，轮子与夹爪 `2/0/0.05`（见 `pid.yaml`）。
+> 上表为**预设默认值**（yaml 缺失时生效）。当前 `pid.yaml` 实际调参：转向/躯干/臂关节
+> kp=150、kd=20，轮子 kp=4、kd=0.1，夹爪 kp=10、kd=20（每关节独立，见 `pid.yaml`）。
 
 ## 关节完整列表（30 关节）
 
@@ -257,15 +259,55 @@ velocity: [0.0, 0.0, 0.0, 0.0]
 由 launch 从 `config/` 下三个 yaml 加载（详见上文 [配置文件（config/）](#配置文件config)）。
 
 - `loop_hz`（默认 100.0）：控制频率，launch 中设置
-- 其余均为逐关节参数；`declare_parameter` 默认值与旧版硬编码一致，yaml 缺失时节点仍可运行
+- 其余均为逐关节参数，`param_reader.hpp` 的 `read_joint_params(node, name, preset)` 读取
+
+参数回退为**两层**（默认值只在 `core/joint_params.hpp` 的预设 struct 中定义一次）：
+
+```
+yaml (<关节名>/limit/*、<关节名>/pid/*)
+  → 节点参数 (declare_parameter 默认 = 预设 struct)
+    → 预设 struct defaultPositionParams / defaultVelocityParams
+```
+
+- 位置关节用 `defaultPositionParams()`（kp=4/ki=0/kd=0.2，max_accel=50/max_vel=3，含位置限位）
+- 轮子用 `defaultVelocityParams()`（kp=2/ki=0/kd=0.05，max_accel=20/max_vel=5，无位置限位）
+- yaml 缺失时节点按预设值仍可运行；`read_joint_params` 按预设 `has_position_limit`
+  决定是否读取 `limit/lower`、`limit/upper`
 
 ## 类结构
 
 分层设计：**仿真核心（纯 C++，不依赖 rclcpp）** → **组类（桥接层，持有 publisher）** → **节点类**。
+目录按层分目录：`core/`（纯仿真）→ `groups/`（组类）→ `params/`（参数读取）→ `nodes/`（节点类），
+`main()` 独立到 `src/main_*.cpp` 入口文件。
 
 ```
-JointSimulator    (底层仿真控制器, 纯 C++)       [joint_simulator.{hpp,cpp}]
-  - configure(params)  : 配置 PID 增益 + 限幅
+include/ylr1d_position_simulate/
+├── core/
+│   ├── joint_params.hpp    # JointParams 结构体 + 预设函数（默认值唯一来源）
+│   ├── pid.hpp             # PID (纯 C++, kp/ki/kd + max_accel)
+│   └── joint_simulator.hpp # 位置仿真器 (纯 C++)
+├── groups/
+│   └── joint_group.hpp     # PositionJointGroup / VelocityJointGroup
+├── params/
+│   └── param_reader.hpp    # read_joint_params(node, name, preset)
+└── nodes/
+    ├── chassis_simulate_node.hpp
+    └── arm_simulate_node.hpp
+src/
+├── core/    pid.cpp / joint_simulator.cpp
+├── groups/  joint_group.cpp
+├── nodes/   chassis_simulate_node.cpp / arm_simulate_node.cpp   (无 main)
+└── main_chassis.cpp / main_arm.cpp                              (独立入口)
+```
+
+```
+JointParams   (纯 C++, 参数统一结构体)
+  - kp/ki/kd、max_accel、max_vel、has_position_limit、lower/upper
+  - defaultPositionParams() : 位置关节预设 (4/0/0.2, 50/3, 含限位)
+  - defaultVelocityParams() : 轮子预设 (2/0/0.05, 20/5, 无限位)
+
+JointSimulator    (位置仿真器, 纯 C++)                 [core/joint_simulator.{hpp,cpp}]
+  - configure(const JointParams&) : 配置 PID 增益 + 限幅
   - initialize(pos)    : 从当前实际位置初始化
   - set_target(target) : 设定期望位置
   - update(dt) → 真实位置
@@ -273,10 +315,10 @@ JointSimulator    (底层仿真控制器, 纯 C++)       [joint_simulator.{hpp,c
   - position() / velocity() / initialized()
   - 对 PID 类封装，输出结果为真实位置（要求 3）
 
-PID               (纯 C++)
-  - compute(error, dt) → 加速度 (带 max_accel / max_vel 限幅)
+PID               (纯 C++, PID(kp, ki, kd, max_accel))
+  - compute(error, dt) → 加速度 (带 max_accel 限幅)
 
-PositionJointGroup   (一组位置关节, 每关节一个 JointSimulator)
+PositionJointGroup   (一组位置关节, 每关节一个 JointSimulator)   [groups/joint_group.{hpp,cpp}]
   - setup(names, per_joint_params, topic, node) : 配置逐关节参数、建 publisher
   - init_from(msg)   : 从 JointState 读取当前值
   - set_desired(msg) : 按关节名设定期望位置
@@ -285,21 +327,23 @@ PositionJointGroup   (一组位置关节, 每关节一个 JointSimulator)
   - fill_state_msg() : 填充 /simulated_* 状态
 
 VelocityJointGroup   (一组速度关节, 每关节独立 PID + 限幅)
-  - setup(names, per_joint_velocity_params, topic, node)
+  - setup(names, per_joint_params, topic, node)
   - set_desired(msg) : 按关节名设定期望速度
   - update(dt)       : PID → 加速度 → 速度(±max_vel 限幅)
   - publish()        : 发布 Float64MultiArray（当前速度）
 
-Node_ChassisSimulate   (节点, chassis_simulate)   [node_chassis_simulate.{hpp,cpp}]
+ChassisSimulateNode   (节点, chassis_simulate)   [nodes/chassis_simulate_node.{hpp,cpp}]
   - PositionJointGroup steering_ + VelocityJointGroup wheels_
 
-Node_ArmSimulate       (节点, arm_simulate)       [node_arm_simulate.{hpp,cpp}]
+ArmSimulateNode       (节点, arm_simulate)       [nodes/arm_simulate_node.{hpp,cpp}]
   - enum ArmGroup : size_t { TORSO=0, LEFT_ARM=1, RIGHT_ARM=2, ARM_GROUP_COUNT=3 }
   - std::array<PositionJointGroup, ARM_GROUP_COUNT> groups_
   - kArmGroupSpecs[3] 静态表（话题 + 关节名），构造/初始化/更新/发布统一遍历
 ```
 
-类定义与节点分离（要求 5）：仿真核心与组类只描述行为，节点类 `Node_*` 负责订阅/发布/定时器。
+类定义与节点分离：仿真核心与组类只描述行为，节点类负责订阅/发布/定时器；
+`main()` 独立到 `src/main_*.cpp`（`rclcpp::init → 构造节点 → spin → shutdown`），
+节点类可作库复用与单测。
 
 ## 多线程决策
 
