@@ -4,7 +4,6 @@
 #include <QHBoxLayout>
 #include <QSplitter>
 #include <QHeaderView>
-#include <QGridLayout>
 #include <QStatusBar>
 #include <QPalette>
 #include <QAbstractItemView>
@@ -37,26 +36,26 @@ static std::vector<JointDef> torso_joints = {
 
 static std::vector<JointDef> left_arm_joints = {
   {"Joint_Body2_to_LeftArm1",    "Shoulder1", false, false, -2.62,  2.62},
-  {"Joint_LeftArm1_to_LeftArm2", "Shoulder2", false, false, -1.83,  1.83},
+  {"Joint_LeftArm1_to_LeftArm2", "Shoulder2", false, false, -1.57,  1.83},
   {"Joint_LeftArm2_to_LeftArm3", "Shoulder3", false, false, -2.62,  2.62},
   {"Joint_LeftArm3_to_LeftArm4", "Elbow1",    false, false, -1.57,  1.57},
   {"Joint_LeftArm4_to_LeftArm5", "Elbow2",    false, false, -2.62,  2.62},
   {"Joint_LeftArm5_to_LeftArm6", "Wrist1",    false, false, -2.09,  2.09},
   {"Joint_LeftArm6_to_LeftArm7", "Wrist2",    false, false, -6.28,  6.28},
-  {"Joint_LeftArm7_to_LeftFinger1","Finger1", false, true,  -0.05,  0.05},
-  {"Joint_LeftArm7_to_LeftFinger2","Finger2", false, true,  -0.05,  0.05},
+  {"Joint_LeftArm7_to_LeftFinger1","Finger1", false, true,  -0.015, 0.0},
+  {"Joint_LeftArm7_to_LeftFinger2","Finger2", false, true,  -0.015, 0.0},
 };
 
 static std::vector<JointDef> right_arm_joints = {
   {"Joint_Body2_to_RightArm1",   "Shoulder1", false, false, -2.62,  2.62},
-  {"Joint_RightArm1_to_RightArm2","Shoulder2", false, false, -1.83,  1.83},
+  {"Joint_RightArm1_to_RightArm2","Shoulder2", false, false, -1.57,  1.83},
   {"Joint_RightArm2_to_RightArm3","Shoulder3", false, false, -2.62,  2.62},
   {"Joint_RightArm3_to_RightArm4","Elbow1",    false, false, -1.57,  1.57},
   {"Joint_RightArm4_to_RightArm5","Elbow2",    false, false, -2.62,  2.62},
   {"Joint_RightArm5_to_RightArm6","Wrist1",    false, false, -2.09,  2.09},
   {"Joint_RightArm6_to_RightArm7","Wrist2",    false, false, -6.28,  6.28},
-  {"Joint_RightArm7_to_RightFinger1","Finger1", false, true,  -0.05,  0.05},
-  {"Joint_RightArm7_to_RightFinger2","Finger2", false, true,  -0.05,  0.05},
+  {"Joint_RightArm7_to_RightFinger1","Finger1", false, true,  0.0, 0.015},
+  {"Joint_RightArm7_to_RightFinger2","Finger2", false, true,  0.0, 0.015},
 };
 
 // Unit strings per joint kind
@@ -117,7 +116,7 @@ HmiWindow::~HmiWindow() {
 // ============================================================
 void HmiWindow::buildUiLite() {
   setWindowTitle("YLR1D HMI (lite)");
-  resize(1280, 860);
+  resize(1200, 800);
 
   auto central = new QWidget(this);
   setCentralWidget(central);
@@ -125,26 +124,29 @@ void HmiWindow::buildUiLite() {
   main_layout->setContentsMargins(6, 6, 6, 2);
   main_layout->setSpacing(6);
 
-  auto grid = new QGridLayout();
-  grid->setSpacing(8);
+  // Four tabs, one joint group per tab
+  auto tabs = new QTabWidget();
+  tabs->setDocumentMode(true);
 
-  struct CardSpec {
+  struct TabSpec {
     QString title;
     QString color;
     std::vector<JointDef> * defs;
   };
-  CardSpec cards[4] = {
-    {QStringLiteral("Chassis · 底盘 (8)"), QStringLiteral("#2d6cdf"), &chassis_joints},
-    {QStringLiteral("Torso · 躯干 (4)"),   QStringLiteral("#1e9e4a"), &torso_joints},
-    {QStringLiteral("Left Arm · 左臂 (9)"), QStringLiteral("#e07b00"), &left_arm_joints},
-    {QStringLiteral("Right Arm · 右臂 (9)"), QStringLiteral("#8e44ad"), &right_arm_joints},
+  TabSpec tab_specs[4] = {
+    {QStringLiteral("Chassis"),   QStringLiteral("#2d6cdf"), &chassis_joints},
+    {QStringLiteral("Torso"),     QStringLiteral("#1e9e4a"), &torso_joints},
+    {QStringLiteral("Left Arm"),  QStringLiteral("#e07b00"), &left_arm_joints},
+    {QStringLiteral("Right Arm"), QStringLiteral("#8e44ad"), &right_arm_joints},
   };
 
   for (int i = 0; i < 4; ++i) {
-    grid->addWidget(buildCard(i, cards[i].title, cards[i].color, *cards[i].defs),
-                    i / 2, i % 2);
+    QString card_title = tab_specs[i].title +
+      QStringLiteral(" (%1)").arg(static_cast<int>(tab_specs[i].defs->size()));
+    tabs->addTab(buildCard(i, card_title, tab_specs[i].color, *tab_specs[i].defs),
+                 tab_specs[i].title);
   }
-  main_layout->addLayout(grid, 1);
+  main_layout->addWidget(tabs, 1);
 
   buildStatusBar();
 }
@@ -173,8 +175,8 @@ QWidget * HmiWindow::buildCard(int group_idx, const QString & title,
   auto obs_lay = new QVBoxLayout(obs_wrap);
   obs_lay->setContentsMargins(0, 0, 0, 0);
   obs_lay->setSpacing(2);
-  // 单位在表格每行值后标注（平移关节 m/m/s，旋转关节 rad/rad/s）
-  auto obs_label = new QLabel(QStringLiteral("<b>观测 Observe</b>"));
+  // Units are shown per-row (translational joints: m / m/s, revolute: rad / rad/s)
+  auto obs_label = new QLabel(QStringLiteral("<b>Observe</b>"));
   obs_label->setStyleSheet(QStringLiteral("color:%1;").arg(title_color));
   obs_lay->addWidget(obs_label);
 
@@ -210,7 +212,7 @@ QWidget * HmiWindow::buildCard(int group_idx, const QString & title,
   auto ctrl_lay = new QVBoxLayout(ctrl_wrap);
   ctrl_lay->setContentsMargins(0, 0, 0, 0);
   ctrl_lay->setSpacing(2);
-  auto ctrl_label = new QLabel(QStringLiteral("<b>控制 Control</b>"));
+  auto ctrl_label = new QLabel(QStringLiteral("<b>Control</b>"));
   ctrl_label->setStyleSheet(QStringLiteral("color:%1;").arg(title_color));
   ctrl_lay->addWidget(ctrl_label);
 
@@ -231,7 +233,7 @@ QWidget * HmiWindow::buildCard(int group_idx, const QString & title,
   splitter->addWidget(ctrl_wrap);
   splitter->setStretchFactor(0, 1);
   splitter->setStretchFactor(1, 2);
-  splitter->setSizes({180, 260});
+  splitter->setSizes({280, 420});
 
   lay->addWidget(splitter);
   return card;
@@ -382,7 +384,7 @@ void HmiWindow::buildStatusBar() {
   pub_status_lbl_->setTextInteractionFlags(Qt::TextSelectableByMouse);
   bar->addWidget(pub_status_lbl_);
 
-  auto mode_lbl = new QLabel(QStringLiteral("发送: GUI 触发 · 5 Hz"));
+  auto mode_lbl = new QLabel(QStringLiteral("Send: auto 5 Hz"));
   mode_lbl->setStyleSheet(QStringLiteral("color:#888;"));
   bar->addPermanentWidget(mode_lbl);
 }

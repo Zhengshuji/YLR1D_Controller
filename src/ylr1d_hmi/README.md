@@ -15,25 +15,28 @@
 
 ```
 ┌──────────────────────────────────────────────────┐
-│  ╔═ Chassis·底盘(8)═╗  ╔═ Torso·躯干(4)═╗        │
-│  ║ 观测 | 控制       ║  ║ 观测 | 控制     ║        │
-│  ║ RF_Steer 0.00rad │  ║ Lift 0.00m      ║        │
-│  ║ [slider][0.00]   │  ║ [slider][0.00]  ║        │
-│  ╚══════════════════╝  ╚═════════════════╝        │
-│  ╔═ Left Arm·左臂(9)═╗ ╔═ Right Arm·右臂(9)═╗     │
-│  ║ 观测 | 控制        ║ ║ 观测 | 控制         ║    │
-│  ║ Shoulder1 ...     ║ ║ Shoulder1 ...      ║    │
-│  ║ [slider][0.00]    ║ ║ [slider][0.00]     ║    │
-│  ╚═══════════════════╝ ╚════════════════════╝    │
+│  [Chassis] [Torso] [Left Arm] [Right Arm]  ← 标签页 │
+│  ╔═ Chassis (8) ══════════════════════════════╗   │
+│  ║ Observe                                    ║   │
+│  ║  RF_Steer   0.000 rad   0.000 rad/s        ║   │
+│  ║  RF_Wheel   0.000 rad   0.000 rad/s        ║   │
+│  ║  ...                                       ║   │
+│  ║ ────────────────────────────────────────── ║   │
+│  ║ Control                                    ║   │
+│  ║  RF_Steer  [========]  0.000 rad           ║   │
+│  ║  RF_Wheel  [========]  0.000 rad/s         ║   │
+│  ║  ...                                       ║   │
+│  ╚════════════════════════════════════════════╝   │
 └──────────────────────────────────────────────────┘
-   状态栏: ● /joint_states · 2 pub · 123 msg | ● /desired_joint_states · 1 sub · sent 45 | 发送: GUI 触发 · 5 Hz
+   状态栏: ● /joint_states · 2 pub · 123 msg | ● /desired_joint_states · 1 sub · sent 45 | Send: auto 5 Hz
 ```
 
-### 1. 布局（2×2 板块卡片）
-- 四个板块各一张卡片，2×2 均分窗口：**Chassis·底盘(8)**（蓝）、**Torso·躯干(4)**（绿）、**Left Arm·左臂(9)**（橙）、**Right Arm·右臂(9)**（紫）
-- 卡片以彩色边框 + 彩色标题区分，避免四板块千篇一律
+### 1. 布局（四标签页）
+- 主区域为 `QTabWidget`，四个标签页：**Chassis**（蓝）、**Torso**（绿）、**Left Arm**（橙）、**Right Arm**（紫）
+- 每个标签页只显示一个板块，避免单窗口信息过载；标签页标题即板块名（英文，避免 WSL 中文字体乱码）
+- 板块内仍以彩色卡片区分
 
-### 2. 卡片内部：上观测 / 下控制
+### 2. 标签页内部：上观测 / 下控制
 - **观测区（上方，只读表格）**：本组一个 `QTableWidget`，每行 `[名称] [Position] [Velocity]`
   - 值后带单位：**平移关节（Lift、Finger）显示 `m` / `m/s`，旋转关节显示 `rad` / `rad/s`**
   - 50Hz 刷新（与 ROS spin 定时器同步），订阅 `/joint_states`
@@ -45,7 +48,7 @@
 ### 3. 状态栏
 - 左侧：`● /joint_states` 发布者数 + 累计接收帧数（绿点=有发布者，红点=无）
 - 中部：`● /desired_joint_states` 订阅者数 + 累计发送次数（绿点=有订阅者）
-- 右侧：当前发送模式 `GUI 触发 · 5 Hz`
+- 右侧：当前发送模式 `Send: auto 5 Hz`
 
 ### 4. 发送方式（GUI 触发 + 固定低频）
 - 拖动 Slider / 修改 SpinBox **不立即发布**，仅置脏标记
@@ -73,18 +76,18 @@
 
 ## 关节限位
 
-限位与 `ylr1d_mid_control/config/limits.yaml`（Gazebo 实际加载）保持一致：
+限位以 `ylr1d_position_simulate/config/position_control_limits.yaml` 为基准（Finger 按需求取 0.015）：
 
 | 分组 | 关节数 | 位置限位 | 单位 | 说明 |
 |------|--------|----------|------|------|
 | 底盘-转向 | 4 | ±3.14 | rad | 全向转向 |
 | 底盘-轮子 | 4 | ±5.0 | rad/s | 速度控制，连续旋转 |
 | 躯干 | 4 | Lift: ±0.30 / Yaw: ±3.14 / Pitch1/2: ±1.57 | Lift 为 m，其余 rad | |
-| 左臂 | 9 | Shoulder1: ±2.62 / Shoulder2: ±1.83 / Shoulder3: ±2.62 / Elbow1: ±1.57 / Elbow2: ±2.62 / Wrist1: ±2.09 / Wrist2: ±6.28 / Finger1/2: ±0.05 | Finger 为 m，其余 rad | |
-| 右臂 | 9 | 同左臂 | 同左臂 | 右手 Finger1/2 同为 ±0.05 m |
+| 左臂 | 9 | Shoulder1: ±2.62 / Shoulder2: -1.57~1.83 / Shoulder3: ±2.62 / Elbow1: ±1.57 / Elbow2: ±2.62 / Wrist1: ±2.09 / Wrist2: ±6.28 / Finger1/2: -0.015~0 | Finger 为 m，其余 rad | |
+| 右臂 | 9 | 同左臂 | 同左臂 | 右手 Finger1/2: 0~0.015 m |
 
 > 平移关节（Lift、四个 Finger）单位 m；旋转关节单位 rad；速度单位 rad/s（平移关节 m/s）。
-> 夹爪左右指限位**对称**：±0.05 m。
+> 夹爪（Finger）限位：左指 `[-0.015, 0]`，右指 `[0, 0.015]`。
 
 ---
 

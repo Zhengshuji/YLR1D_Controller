@@ -13,6 +13,7 @@
 #include <QGroupBox>
 #include <QScrollArea>
 #include <QTableWidget>
+#include <QTabWidget>
 #include <QTimer>
 #include <array>
 #include <map>
