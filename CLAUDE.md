@@ -1,21 +1,25 @@
 # CLAUDE.md — YLR1D 项目备忘录
 
+> **路径约定**：本文中 `<WS_ROOT>` 指工作空间根目录（如 `/home/zsj/WorkSpace/test_ylr1d`）。
+> 工作空间重命名后，将 `<WS_ROOT>` 替换为新路径即可，代码与文档均不依赖具体路径。
+
 ## 环境与执行
 
 ### WSL 执行命令
 本项目在 WSL Ubuntu-22.04 中运行。从 Windows CLI 调用 WSL 时必须添加 `MSYS2_ARG_CONV_EXCL="*"` 防止 Git Bash/MSYS2 路径转换：
 
 ```bash
-MSYS2_ARG_CONV_EXCL="*" wsl.exe -d Ubuntu-22.04 bash -c 'source /home/zsj/WorkSpace/test_ylr1d/install/setup.bash; ros2 ...'
+MSYS2_ARG_CONV_EXCL="*" wsl.exe -d Ubuntu-22.04 bash -c 'source <WS_ROOT>/install/setup.bash; ros2 ...'
 ```
 
 ### 环境初始化
 ```bash
-source /home/zsj/WorkSpace/test_ylr1d/install/setup.bash
-export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/home/zsj/WorkSpace/test_ylr1d/src
+cd <WS_ROOT>
+source install/setup.bash
+export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:$(pwd)/src
 ```
 
-脚本 `colcon_build.sh` 中有完整的环境配置参考。
+脚本 `colcon_build.sh` 中有完整的环境配置参考（脚本会自动定位工作空间根目录）。
 
 ### 注意
 - WSL 下 GPU 渲染受限，Gazebo 需 `LIBGL_ALWAYS_SOFTWARE=1`
@@ -25,12 +29,22 @@ export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/home/zsj/WorkSpace/test_ylr1d/src
 
 ## 包结构速览
 
-- **`ylr1d_mid_control`**: 中间层控制器，管理 Gazebo + ros2_control 的配置/启动。提供三种控制方案：position/velocity（原始）、effort（力控）、velocity（速度控制）
-- **`ylr1d_description`**: URDF 模型文件、mesh 文件
-- **`ylr1d_position_simulate`**: 软件仿真层，模拟硬件位置/速度闭环。订阅 `/desired_joint_states` + `/joint_states`，PID 过渡后发布 5 组 ForwardCommandController 命令话题。参数从 `config/` 三个 yaml 加载（`<关节名>/limit/*`、`<关节名>/pid/*`）。**必须通过 `position_simulate.launch.py` 启动**。无头验证：`test/position_simulate_smoke_test.py`
+四个包，职责分层（模型资产 → 物理层 → 控制层 → 人机界面）：
+
+```
+ylr1d_description  ylr1d_plant  ylr1d_control_sim  ylr1d_hmi
+      │                │               │                │
+  模型资产(单一来源)  物理层(中控)    控制层(软仿真)    人机界面
+  xacro/mesh/config  Gazebo+ros2_control  PID过渡→5组命令   Qt5观测+控制
+```
+
+- **`ylr1d_description`**: 模型资产单一来源（xacro、meshes、模型 config yaml、sensors、rviz、world）。`ylr1d_plant` 与展示 launch 均从这里取资产
+- **`ylr1d_plant`**: 物理层/中控，管理 Gazebo + ros2_control 的配置与启动。提供 `gazebo.launch.py`（position 接口）与 `gazebo_effort.launch.py`（effort 力控）两套方案；内含 `joint_state_filter`（NaN → 0.0）
+- **`ylr1d_control_sim`**: 控制层/软仿真，模拟硬件位置/速度闭环。订阅 `/desired_joint_states` + `/joint_states`，PID 过渡后发布 5 组 ForwardCommandController 命令话题。参数从 `config/` 三个 yaml 加载（`<关节名>/limit/*`、`<关节名>/pid/*`）。**必须通过 `position_simulate.launch.py` 启动**。无头验证：`test/position_simulate_smoke_test.py`
 - **`ylr1d_hmi`**: Qt5 人机交互界面，关节状态观测 + 关节控制器。Lite 版（`hmi.launch.py`）正常，RViz2 版存在构建/运行问题
 
-> 注：旧的 `ylr1d_base_control`（PD 节点 + `joint_state_filter`）已不在 `src/` 下；`joint_state_filter`（NaN → 0.0）现集成在 `ylr1d_mid_control` 的 `gazebo_effort.launch.py` 中（见陷阱 7）。
+> 注：`joint_state_filter`（NaN → 0.0）集成在 `ylr1d_plant` 的 `gazebo_effort.launch.py` 中（见陷阱 7）。
+> 旧包名 `ylr1d_mid_control` → `ylr1d_plant`，`ylr1d_position_simulate` → `ylr1d_control_sim`。
 
 ---
 
@@ -38,7 +52,7 @@ export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/home/zsj/WorkSpace/test_ylr1d/src
 
 ### 启动
 ```bash
-ros2 launch ylr1d_mid_control gazebo_effort.launch.py
+ros2 launch ylr1d_plant gazebo_effort.launch.py
 ```
 
 ### 验证控制器激活（等待输出全部为 active）
@@ -68,7 +82,7 @@ ros2 topic echo /joint_states --once
 ## 已知弯路 / 常见陷阱
 
 ### 1. WSL 路径转换（MSYS2_ARG_CONV_EXCL）
-**问题**: Git Bash 自动将 `/home/zsj/...` 转换为 `C:/Program Files/Git/home/zsj/...`
+**问题**: Git Bash 自动将 `/home/...` 转换为 `C:/Program Files/Git/home/...`
 **解决**: 所有 `wsl.exe` 调用前加 `MSYS2_ARG_CONV_EXCL="*"`
 
 ### 2. gzserver 生命周期
@@ -106,9 +120,9 @@ pkill -f gzserver; pkill -f gzclient
 **问题**: spawner 在 Gazebo 完全加载前启动会连不上 controller_manager 服务
 **解决**: launch 文件中使用 `TimerAction(period=8.0)` 延迟 spawner 启动
 
-### 10. position_simulate 必须经 launch 启动
+### 10. control_sim 必须经 launch 启动
 **问题**: 直接 `ros2 run`（不经 launch）时 `config/*.yaml` 未加载，位置关节按默认限位 [0,0] 且限位开启，所有位置关节被钳死到 0
-**解决**: 始终用 `ros2 launch ylr1d_position_simulate position_simulate.launch.py` 启动；改参数需改 `config/*.yaml` 后重启节点（运行中 `ros2 param set` 不生效）
+**解决**: 始终用 `ros2 launch ylr1d_control_sim position_simulate.launch.py` 启动；改参数需改 `config/*.yaml` 后重启节点（运行中 `ros2 param set` 不生效）
 
 ### 11. pkill -f 会自匹配（WSL bash）
 **问题**: `pkill -f chassis_simulate` 会匹配到 bash 自身命令行里的同名模式，把执行 shell 杀掉（exit 15）

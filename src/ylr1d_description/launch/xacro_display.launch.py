@@ -67,7 +67,7 @@ def generate_launch_description():
     env["GAZEBO_MODEL_PATH"] = (model_path + ":" + share_path + ":"
                                 + env.get("GAZEBO_MODEL_PATH", ""))
 
-    # ── Process xacro (same pipeline as ylr1d_mid_control) ─────
+    # ── Process xacro (same pipeline as ylr1d_plant) ─────
     config_dir = os.path.join(pkg_share, "config")
     xacro_path = os.path.join(pkg_share, "urdf", "ylr1d.xacro")
     with open(xacro_path) as f:

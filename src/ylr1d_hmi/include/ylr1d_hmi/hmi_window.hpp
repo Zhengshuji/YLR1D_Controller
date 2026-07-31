@@ -26,7 +26,7 @@
 
 namespace ylr1d_hmi {
 
-/// Static joint definition (limits/unit from ylr1d_mid_control/config/limits.yaml)
+/// Static joint definition (limits/unit from ylr1d_description/config/limits.yaml)
 struct JointDef {
   std::string name;
   QString label;

@@ -83,7 +83,7 @@
 
 ## 关节限位
 
-限位以 `ylr1d_position_simulate/config/position_control_limits.yaml` 为基准（Finger 按需求取 0.015）：
+限位以 `ylr1d_control_sim/config/position_control_limits.yaml` 为基准（Finger 按需求取 0.015）：
 
 | 分组 | 关节数 | 位置限位 | 单位 | 说明 |
 |------|--------|----------|------|------|
@@ -118,7 +118,7 @@
 
 ```bash
 # 终端 1: 启动 Gazebo + 控制器
-ros2 launch ylr1d_mid_control gazebo_effort.launch.py
+ros2 launch ylr1d_plant gazebo_effort.launch.py
 
 # 终端 2: 启动 HMI（Lite 版）
 ros2 launch ylr1d_hmi hmi.launch.py

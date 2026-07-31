@@ -14,7 +14,7 @@ namespace ylr1d_hmi {
 // ============================================================
 // Joint group definitions
 // Limits/units are kept in sync with
-//   src/ylr1d_mid_control/config/limits.yaml  (what Gazebo actually loads)
+//   src/ylr1d_description/config/limits.yaml  (what Gazebo actually loads)
 // ============================================================
 static std::vector<JointDef> chassis_joints = {
   {"Joint_Base_to_RFWheelF",    "RF_Steer",  false, false, -3.14, 3.14},

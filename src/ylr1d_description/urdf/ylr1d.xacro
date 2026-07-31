@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <robot xmlns:xacro="http://wiki.ros.org/xacro" name="ylr1d">
   <!-- ============================================ -->
-  <!-- DESCRIPTION PACKAGE MODEL                     -->
-  <!-- This file is a copy of ylr1d_mid.xacro from  -->
-  <!-- ylr1d_mid_control, kept identical so that    -->
-  <!-- ylr1d_description can be used to display the  -->
-  <!-- robot in RViz2 and Gazebo.                    -->
+  <!-- MODEL ASSET SOURCE                            -->
+  <!-- ylr1d_description is the single source of     -->
+  <!-- model assets (xacro + config yaml + meshes).  -->
+  <!-- ylr1d_plant consumes this xacro and injects   -->
+  <!-- its own config/controllers.yaml to run        -->
+  <!-- Gazebo + ros2_control.                        -->
   <!--                                               -->
   <!-- Contents:                                    -->
   <!--  - Link/joint kinematics & inertia,          -->
