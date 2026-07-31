@@ -123,7 +123,10 @@ def generate_launch_description():
     spawn_entity = Node(
         package="gazebo_ros",
         executable="spawn_entity.py",
-        arguments=["-entity", robot_name, "-file", urdf_tmp.name],
+        arguments=[
+            "-entity", robot_name, "-file", urdf_tmp.name, 
+            "-x", "0", "-y", "0", "-z", "0.3",
+        ],
         output="screen",
     )
 

@@ -62,7 +62,7 @@
 | `pid.yaml` | 全部 30 关节 `pid: {kp, ki, kd}` | 每关节独立 PID 增益 |
 
 节点按关节 `declare_parameter` 读取（默认值与旧版硬编码一致，yaml 缺失时仍可运行）。
-可通过 `ros2 param get <节点> <关节名>/pid/kp` 在线查询、`ros2 param set` 在线整定。
+参数仅在**节点构造时读取一次**，运行中 `ros2 param set` 修改**不会生效**，调参需修改 yaml 后重启节点。
 
 ### limit 参数
 
@@ -315,8 +315,29 @@ Node_ArmSimulate       (节点, arm_simulate)       [node_arm_simulate.{hpp,cpp}
 
 ## 已知限制
 
-- 节点启动后需等待 `/joint_states` 首个消息完成内部状态初始化后才开始输出
-- 初始化期间（Gazebo 控制器未 active 时）timer 空转不发布
-- 轮子无初始化逻辑（连续关节无初始位置），从 0 速度开始
+### 启动与配置
+
+- **必须通过 `position_simulate.launch.py` 启动**以加载 `config/` 三个 yaml。直接 `ros2 run`
+  时 yaml 未加载，位置关节按默认值 `lower=0`、`upper=0` 且位置限位开启，**所有 26 个位置关节会被钳死到 0**。
+- yaml 中漏关节或关节名拼错**不会报错**：该关节静默使用 `declare_parameter` 默认值（配合上一条可能锁死关节）。
+  请保持 30 关节配置完整，改配置后用 `ros2 param list` 核对关节参数齐全。
+- 参数仅在节点构造时读取一次，运行中 `ros2 param set` **不生效**，调参需改 yaml 后重启节点。
+- 订阅用相对话题名 `desired_joint_states` / `joint_states`，发布 `simulated_*_states` 同为相对名。
+  节点应运行在根命名空间 `/`；放入子命名空间（如 `__ns:=/sim`）会导致订阅解析到 `/sim/...` 而断链。
+
+### 初始化与话题
+
+- 节点启动后需等待 `/joint_states` 首个消息完成内部状态初始化后才开始输出；初始化期间 timer 空转不发布
+- 轮子无初始化逻辑（连续关节无初始位置），从 0 速度开始，不与 Gazebo 当前轮速衔接
+- `/simulated_chassis_states` / `/simulated_arm_states` 为调试用途：关节顺序与 `/joint_states` 不同
+  （底盘在前），且轮子 position 恒为 0。**勿按索引拼接成 30 关节全集**，请按 `name` 数组查名
 - 位置限位（含 `Joint_Base_to_Body1` 的 ±0.3）在 `JointSimulator::update()` 内硬钳制，
   越限目标只会停在限位处；HMI 仍应遵守限位以得到合理轨迹
+
+### 仿真语义
+
+- 控制步长固定为 `dt = 1/loop_hz`，不测量真实经过时间；系统繁忙时模拟可能比真实时间慢（漂移）
+- 仿真层 `max_accel` / `max_vel` 只是**运动学限幅器**，不代表 Gazebo 端真实电机/关节物理极限。
+  仿真结果用于验证控制逻辑，**不能**用于验证执行器真实性能
+- PID 微分项为裸离散差分（`(error - prev_error)/dt`），无低通滤波。当前纯仿真无传感器噪声，影响可忽略；
+  若未来直接以带噪声的 `/joint_states` 做反馈，kd 项会放大噪声，需自行加滤波
