@@ -239,17 +239,13 @@ ylr1d_mid_control/
 │   ├── gazebo_effort.launch.py          # 力控制启动
 │   └── gazebo_velocity.launch.py        # 速度控制启动 [NEW]
 ├── urdf/
-│   ├── ylr1d_mid.xacro                  # 基础 URDF + ros2_control 硬件接口定义
-│   ├── ylr1d_mid_effort.xacro           # 力控制 xacro 入口（include 基础文件）
+│   └── ylr1d_mid.xacro                  # 基础 URDF + ros2_control 硬件接口定义
 ├── rviz/
 │   └── display.rviz                     # RViz 显示配置
 ├── verify_urdf.py                       # URDF 验证脚本
 └── README.md
 ```
 
-> **注意**：`ylr1d_mid_effort.xacro` 和 `ylr1d_mid_accel.xacro` 只是 `include` 基础 `ylr1d_mid.xacro` 的入口文件，实际接口注入逻辑在各自的 launch 文件中完成，而非在 xacro 层处理。
-
----
 
 ## 测试步骤
 
