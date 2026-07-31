@@ -1,0 +1,14 @@
+<?xml version="1.0" ?>
+<!-- Minimal Gazebo world for displaying the robot.
+     Only a ground plane and sun; default physics. Lowest possible
+     rendering/physics overhead while keeping the model visible. -->
+<sdf version="1.6">
+  <world name="display">
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+    <include>
+      <uri>model://sun</uri>
+    </include>
+  </world>
+</sdf>

@@ -1,17 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
-<robot xmlns:xacro="http://wiki.ros.org/xacro"
-       name="ylr1d">
-
+<robot xmlns:xacro="http://wiki.ros.org/xacro" name="ylr1d">
+  <!-- ============================================ -->
+  <!-- DESCRIPTION PACKAGE MODEL                     -->
+  <!-- This file is a copy of ylr1d_mid.xacro from  -->
+  <!-- ylr1d_mid_control, kept identical so that    -->
+  <!-- ylr1d_description can be used to display the  -->
+  <!-- robot in RViz2 and Gazebo.                    -->
+  <!--                                               -->
+  <!-- Contents:                                    -->
+  <!--  - Link/joint kinematics & inertia,          -->
+  <!--    parameterized from config YAML files      -->
+  <!--    (links/colors/limits/scale/calibration/   -->
+  <!--    dynamics) via launch mappings             -->
+  <!--  - Gazebo sensor plugins (cameras, radar,    -->
+  <!--    IMU, ultrasonic)                          -->
+  <!--  - ros2_control <ros2_control> and <gazebo>  -->
+  <!--    blocks defining control interfaces        -->
+  <!--                                               -->
+  <!-- The placeholder ${controllers_yaml_path} is  -->
+  <!-- substituted by the launch file at runtime     -->
+  <!-- with the path to config/controllers.yaml.    -->
+  <!-- ============================================ -->
   <!-- ============================================ -->
   <!-- YAML config values (links.yaml, colors.yaml,  -->
   <!-- limits.yaml, scale.yaml) are passed via xacro -->
   <!-- mappings from the launch file at runtime.     -->
-  <!-- Edit those YAML files under config/ to tune   -->
-  <!-- physical properties without touching the      -->
-  <!-- model file itself.                            -->
   <!-- ============================================ -->
 
   <xacro:macro name="ylr1d" params="prefix">
+  
+<!-- 添加空的虚拟连接 -->
+<!--
+<link name="${prefix}base_footprint" />
+<joint name="${prefix}base_footprint_joint" type="fixed">
+    <origin xyz="0 0 0.3" rpy="0 0 0" />
+    <parent link="${prefix}base_footprint" />
+    <child link="${prefix}Link_Base" />
+</joint>
+-->
+
 <link name="${prefix}Link_Base">
     <inertial>
       <origin xyz="0.037265 0.00025041 0.20252" rpy="0 0 0"/>
@@ -1095,8 +1122,650 @@
     <calibration rising="${calibration.Joint_Base_to_RBUltrasonicSensor.rising}" falling="${calibration.Joint_Base_to_RBUltrasonicSensor.falling}"/>
     <dynamics damping="${dynamics.Joint_Base_to_RBUltrasonicSensor.damping}" friction="${dynamics.Joint_Base_to_RBUltrasonicSensor.friction}"/>
   </joint>
+    <gazebo reference="${prefix}Link_GlobalCameraSensor">
+    <sensor type="camera" name="rgb_camera">
+      <always_on>true</always_on>
+      <update_rate>30</update_rate>
+      <topic>/global_camera/rgb/image_raw</topic>
+      <frame_name>${prefix}Link_GlobalCameraSensor</frame_name>
+      <camera>
+        <horizontal_fov>1.047</horizontal_fov>
+        <image>
+          <width>1920</width>
+          <height>1080</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.1</near>
+          <far>100.0</far>
+        </clip>
+      </camera>
+      <plugin name="global_camera_rgb_camera_plugin" filename="libgazebo_ros_camera.so">
+        <camera_name>global_camera/rgb</camera_name>
+        <cameraName>global_camera/rgb</cameraName>
+        <image_topic_name>image_raw</image_topic_name>
+        <imageTopicName>image_raw</imageTopicName>
+        <camera_info_topic_name>camera_info</camera_info_topic_name>
+        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+        <frame_name>${prefix}Link_GlobalCameraSensor</frame_name>
+        <frameName>${prefix}Link_GlobalCameraSensor</frameName>
+      </plugin>
+    </sensor>
+    <sensor type="depth" name="depth_camera">
+      <always_on>true</always_on>
+      <update_rate>30</update_rate>
+      <topic>/global_camera/depth/image_raw</topic>
+      <frame_name>${prefix}Link_GlobalCameraSensor</frame_name>
+      <camera>
+        <horizontal_fov>1.047</horizontal_fov>
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.2</near>
+          <far>4.0</far>
+        </clip>
+      </camera>
+      <plugin name="global_camera_depth_camera_plugin" filename="libgazebo_ros_camera.so">
+        <camera_name>global_camera/depth</camera_name>
+        <cameraName>global_camera/depth</cameraName>
+        <image_topic_name>image_raw</image_topic_name>
+        <imageTopicName>image_raw</imageTopicName>
+        <camera_info_topic_name>camera_info</camera_info_topic_name>
+        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+        <point_cloud_topic_name>points</point_cloud_topic_name>
+        <pointCloudTopicName>points</pointCloudTopicName>
+        <frame_name>${prefix}Link_GlobalCameraSensor</frame_name>
+        <frameName>${prefix}Link_GlobalCameraSensor</frameName>
+      </plugin>
+    </sensor>
+    <sensor type="camera" name="infrared_camera">
+      <always_on>true</always_on>
+      <update_rate>15</update_rate>
+      <topic>/global_camera/infrared/image_raw</topic>
+      <frame_name>${prefix}Link_GlobalCameraSensor</frame_name>
+      <camera>
+        <horizontal_fov>1.047</horizontal_fov>
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.1</near>
+          <far>10.0</far>
+        </clip>
+      </camera>
+      <plugin name="global_camera_infrared_camera_plugin" filename="libgazebo_ros_camera.so">
+        <camera_name>global_camera/infrared</camera_name>
+        <cameraName>global_camera/infrared</cameraName>
+        <image_topic_name>image_raw</image_topic_name>
+        <imageTopicName>image_raw</imageTopicName>
+        <camera_info_topic_name>camera_info</camera_info_topic_name>
+        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+        <frame_name>${prefix}Link_GlobalCameraSensor</frame_name>
+        <frameName>${prefix}Link_GlobalCameraSensor</frameName>
+      </plugin>
+    </sensor>
+  </gazebo>
+  <gazebo reference="${prefix}Link_LeftCameraSensor">
+    <sensor type="camera" name="rgb_camera">
+      <always_on>true</always_on>
+      <update_rate>30</update_rate>
+      <topic>/left_camera/rgb/image_raw</topic>
+      <frame_name>${prefix}Link_LeftCameraSensor</frame_name>
+      <camera>
+        <horizontal_fov>1.047</horizontal_fov>
+        <image>
+          <width>1920</width>
+          <height>1080</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.1</near>
+          <far>100.0</far>
+        </clip>
+      </camera>
+      <plugin name="left_camera_rgb_camera_plugin" filename="libgazebo_ros_camera.so">
+        <camera_name>left_camera/rgb</camera_name>
+        <cameraName>left_camera/rgb</cameraName>
+        <image_topic_name>image_raw</image_topic_name>
+        <imageTopicName>image_raw</imageTopicName>
+        <camera_info_topic_name>camera_info</camera_info_topic_name>
+        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+        <frame_name>${prefix}Link_LeftCameraSensor</frame_name>
+        <frameName>${prefix}Link_LeftCameraSensor</frameName>
+      </plugin>
+    </sensor>
+    <sensor type="depth" name="depth_camera">
+      <always_on>true</always_on>
+      <update_rate>30</update_rate>
+      <topic>/left_camera/depth/image_raw</topic>
+      <frame_name>${prefix}Link_LeftCameraSensor</frame_name>
+      <camera>
+        <horizontal_fov>1.047</horizontal_fov>
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.2</near>
+          <far>4.0</far>
+        </clip>
+      </camera>
+      <plugin name="left_camera_depth_camera_plugin" filename="libgazebo_ros_camera.so">
+        <camera_name>left_camera/depth</camera_name>
+        <cameraName>left_camera/depth</cameraName>
+        <image_topic_name>image_raw</image_topic_name>
+        <imageTopicName>image_raw</imageTopicName>
+        <camera_info_topic_name>camera_info</camera_info_topic_name>
+        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+        <point_cloud_topic_name>points</point_cloud_topic_name>
+        <pointCloudTopicName>points</pointCloudTopicName>
+        <frame_name>${prefix}Link_LeftCameraSensor</frame_name>
+        <frameName>${prefix}Link_LeftCameraSensor</frameName>
+      </plugin>
+    </sensor>
+    <sensor type="camera" name="infrared_camera">
+      <always_on>true</always_on>
+      <update_rate>15</update_rate>
+      <topic>/left_camera/infrared/image_raw</topic>
+      <frame_name>${prefix}Link_LeftCameraSensor</frame_name>
+      <camera>
+        <horizontal_fov>1.047</horizontal_fov>
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.1</near>
+          <far>10.0</far>
+        </clip>
+      </camera>
+      <plugin name="left_camera_infrared_camera_plugin" filename="libgazebo_ros_camera.so">
+        <camera_name>left_camera/infrared</camera_name>
+        <cameraName>left_camera/infrared</cameraName>
+        <image_topic_name>image_raw</image_topic_name>
+        <imageTopicName>image_raw</imageTopicName>
+        <camera_info_topic_name>camera_info</camera_info_topic_name>
+        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+        <frame_name>${prefix}Link_LeftCameraSensor</frame_name>
+        <frameName>${prefix}Link_LeftCameraSensor</frameName>
+      </plugin>
+    </sensor>
+  </gazebo>
+  <gazebo reference="${prefix}Link_RightCameraSensor">
+    <sensor type="camera" name="rgb_camera">
+      <always_on>true</always_on>
+      <update_rate>30</update_rate>
+      <topic>/right_camera/rgb/image_raw</topic>
+      <frame_name>${prefix}Link_RightCameraSensor</frame_name>
+      <camera>
+        <horizontal_fov>1.047</horizontal_fov>
+        <image>
+          <width>1920</width>
+          <height>1080</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.1</near>
+          <far>100.0</far>
+        </clip>
+      </camera>
+      <plugin name="right_camera_rgb_camera_plugin" filename="libgazebo_ros_camera.so">
+        <camera_name>right_camera/rgb</camera_name>
+        <cameraName>right_camera/rgb</cameraName>
+        <image_topic_name>image_raw</image_topic_name>
+        <imageTopicName>image_raw</imageTopicName>
+        <camera_info_topic_name>camera_info</camera_info_topic_name>
+        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+        <frame_name>${prefix}Link_RightCameraSensor</frame_name>
+        <frameName>${prefix}Link_RightCameraSensor</frameName>
+      </plugin>
+    </sensor>
+    <sensor type="depth" name="depth_camera">
+      <always_on>true</always_on>
+      <update_rate>30</update_rate>
+      <topic>/right_camera/depth/image_raw</topic>
+      <frame_name>${prefix}Link_RightCameraSensor</frame_name>
+      <camera>
+        <horizontal_fov>1.047</horizontal_fov>
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.2</near>
+          <far>4.0</far>
+        </clip>
+      </camera>
+      <plugin name="right_camera_depth_camera_plugin" filename="libgazebo_ros_camera.so">
+        <camera_name>right_camera/depth</camera_name>
+        <cameraName>right_camera/depth</cameraName>
+        <image_topic_name>image_raw</image_topic_name>
+        <imageTopicName>image_raw</imageTopicName>
+        <camera_info_topic_name>camera_info</camera_info_topic_name>
+        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+        <point_cloud_topic_name>points</point_cloud_topic_name>
+        <pointCloudTopicName>points</pointCloudTopicName>
+        <frame_name>${prefix}Link_RightCameraSensor</frame_name>
+        <frameName>${prefix}Link_RightCameraSensor</frameName>
+      </plugin>
+    </sensor>
+    <sensor type="camera" name="infrared_camera">
+      <always_on>true</always_on>
+      <update_rate>15</update_rate>
+      <topic>/right_camera/infrared/image_raw</topic>
+      <frame_name>${prefix}Link_RightCameraSensor</frame_name>
+      <camera>
+        <horizontal_fov>1.047</horizontal_fov>
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.1</near>
+          <far>10.0</far>
+        </clip>
+      </camera>
+      <plugin name="right_camera_infrared_camera_plugin" filename="libgazebo_ros_camera.so">
+        <camera_name>right_camera/infrared</camera_name>
+        <cameraName>right_camera/infrared</cameraName>
+        <image_topic_name>image_raw</image_topic_name>
+        <imageTopicName>image_raw</imageTopicName>
+        <camera_info_topic_name>camera_info</camera_info_topic_name>
+        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+        <frame_name>${prefix}Link_RightCameraSensor</frame_name>
+        <frameName>${prefix}Link_RightCameraSensor</frameName>
+      </plugin>
+    </sensor>
+  </gazebo>
+  <gazebo reference="${prefix}Link_RadarSensor">
+    <sensor type="ray" name="radar_sensor">
+      <always_on>true</always_on>
+      <update_rate>12</update_rate>
+      <topic>/radar/scan</topic>
+      <frame_name>${prefix}Link_RadarSensor</frame_name>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>2770</samples>
+            <resolution>1</resolution>
+            <min_angle>-3.14159</min_angle>
+            <max_angle>3.14159</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.1</min>
+          <max>30.0</max>
+          <resolution>0.01</resolution>
+        </range>
+      </ray>
+      <noise type="gaussian">
+        <mean>0.0</mean>
+        <stddev>0.01</stddev>
+      </noise>
+      <plugin name="radar_radar_sensor_plugin" filename="libgazebo_ros_ray_sensor.so">
+        <ros>
+          <remapping>~/out:=/radar/scan</remapping>
+        </ros>
+        <output_type>sensor_msgs/LaserScan</output_type>
+      </plugin>
+    </sensor>
+  </gazebo>
+  <gazebo reference="${prefix}Link_IMUSensor">
+    <sensor type="imu" name="imu_sensor">
+      <always_on>true</always_on>
+      <update_rate>116</update_rate>
+      <topic>/imu_data</topic>
+      <frame_name>${prefix}Link_IMUSensor</frame_name>
+      <noise type="gaussian">
+        <mean>0.0</mean>
+        <stddev>0.01</stddev>
+      </noise>
+      <plugin name="imu_imu_sensor_plugin" filename="libgazebo_ros_imu_sensor.so">
+        <ros>
+          <remapping>~/out:=/imu_data</remapping>
+        </ros>
+      </plugin>
+    </sensor>
+  </gazebo>
+  <gazebo reference="${prefix}Link_LFUltrasonicSensor">
+    <sensor type="ray" name="lf_ultrasonic_sensor">
+      <always_on>true</always_on>
+      <update_rate>20</update_rate>
+      <topic>/lf_ultrasonic/range</topic>
+      <frame_name>${prefix}Link_LFUltrasonicSensor</frame_name>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>1</samples>
+            <resolution>1</resolution>
+            <min_angle>-0.5236</min_angle>
+            <max_angle>0.5236</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.25</min>
+          <max>4.5</max>
+          <resolution>0.01</resolution>
+        </range>
+      </ray>
+      <plugin name="lf_ultrasonic_lf_ultrasonic_sensor_plugin" filename="libgazebo_ros_ray_sensor.so">
+        <ros>
+          <remapping>~/out:=/lf_ultrasonic/range</remapping>
+        </ros>
+        <output_type>sensor_msgs/LaserScan</output_type>
+      </plugin>
+    </sensor>
+  </gazebo>
+  <gazebo reference="${prefix}Link_RFUltrasonicSensor">
+    <sensor type="ray" name="rf_ultrasonic_sensor">
+      <always_on>true</always_on>
+      <update_rate>20</update_rate>
+      <topic>/rf_ultrasonic/range</topic>
+      <frame_name>${prefix}Link_RFUltrasonicSensor</frame_name>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>1</samples>
+            <resolution>1</resolution>
+            <min_angle>-0.5236</min_angle>
+            <max_angle>0.5236</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.25</min>
+          <max>4.5</max>
+          <resolution>0.01</resolution>
+        </range>
+      </ray>
+      <plugin name="rf_ultrasonic_rf_ultrasonic_sensor_plugin" filename="libgazebo_ros_ray_sensor.so">
+        <ros>
+          <remapping>~/out:=/rf_ultrasonic/range</remapping>
+        </ros>
+        <output_type>sensor_msgs/LaserScan</output_type>
+      </plugin>
+    </sensor>
+  </gazebo>
+  <gazebo reference="${prefix}Link_LBUltrasonicSensor">
+    <sensor type="ray" name="lb_ultrasonic_sensor">
+      <always_on>true</always_on>
+      <update_rate>20</update_rate>
+      <topic>/lb_ultrasonic/range</topic>
+      <frame_name>${prefix}Link_LBUltrasonicSensor</frame_name>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>1</samples>
+            <resolution>1</resolution>
+            <min_angle>-0.5236</min_angle>
+            <max_angle>0.5236</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.25</min>
+          <max>4.5</max>
+          <resolution>0.01</resolution>
+        </range>
+      </ray>
+      <plugin name="lb_ultrasonic_lb_ultrasonic_sensor_plugin" filename="libgazebo_ros_ray_sensor.so">
+        <ros>
+          <remapping>~/out:=/lb_ultrasonic/range</remapping>
+        </ros>
+        <output_type>sensor_msgs/LaserScan</output_type>
+      </plugin>
+    </sensor>
+  </gazebo>
+  <gazebo reference="${prefix}Link_RBUltrasonicSensor">
+    <sensor type="ray" name="rb_ultrasonic_sensor">
+      <always_on>true</always_on>
+      <update_rate>20</update_rate>
+      <topic>/rb_ultrasonic/range</topic>
+      <frame_name>${prefix}Link_RBUltrasonicSensor</frame_name>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>1</samples>
+            <resolution>1</resolution>
+            <min_angle>-0.5236</min_angle>
+            <max_angle>0.5236</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.25</min>
+          <max>4.5</max>
+          <resolution>0.01</resolution>
+        </range>
+      </ray>
+      <plugin name="rb_ultrasonic_rb_ultrasonic_sensor_plugin" filename="libgazebo_ros_ray_sensor.so">
+        <ros>
+          <remapping>~/out:=/rb_ultrasonic/range</remapping>
+        </ros>
+        <output_type>sensor_msgs/LaserScan</output_type>
+      </plugin>
+    </sensor>
+  </gazebo>
+    <gazebo>
+    <visualise_children>true</visualise_children>
+  </gazebo>
   </xacro:macro>
 
   <xacro:ylr1d prefix="" />
+  <!-- ============================================ -->
+  <!-- ros2_control: define joint command/state      -->
+  <!-- interfaces for gazebo_ros2_control plugin.    -->
+  <!-- ============================================ -->
+  <ros2_control name="GazeboSystem" type="system">
+    <hardware>
+      <plugin>gazebo_ros2_control/GazeboSystem</plugin>
+    </hardware>
 
+    <!-- Chassis: steering joints (position command) -->
+    <joint name="Joint_Base_to_RFWheelF">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_Base_to_LFWheelF">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_Base_to_RBWheelF">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_Base_to_LBWheelF">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+
+    <!-- Chassis: wheel rolling joints (velocity command) -->
+    <joint name="Joint_RFWheelF_to_RFWheel">
+      <command_interface name="velocity"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_LFWheelF_to_LFWheel">
+      <command_interface name="velocity"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_RBWheelF_to_RBWheel">
+      <command_interface name="velocity"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_LBWheelF_to_LBWheel">
+      <command_interface name="velocity"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+
+    <!-- Torso: lift + yaw + 2x pitch (position command) -->
+    <joint name="Joint_Base_to_Body1">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_Body1_to_Body2">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_Body2_to_Body3">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_Body3_to_Body4">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+
+    <!-- Left arm: 7-DOF + 2 fingers (position command) -->
+    <joint name="Joint_Body2_to_LeftArm1">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_LeftArm1_to_LeftArm2">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_LeftArm2_to_LeftArm3">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_LeftArm3_to_LeftArm4">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_LeftArm4_to_LeftArm5">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_LeftArm5_to_LeftArm6">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_LeftArm6_to_LeftArm7">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_LeftArm7_to_LeftFinger1">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_LeftArm7_to_LeftFinger2">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+
+    <!-- Right arm: 7-DOF + 2 fingers (position command) -->
+    <joint name="Joint_Body2_to_RightArm1">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_RightArm1_to_RightArm2">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_RightArm2_to_RightArm3">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_RightArm3_to_RightArm4">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_RightArm4_to_RightArm5">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_RightArm5_to_RightArm6">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_RightArm6_to_RightArm7">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_RightArm7_to_RightFinger1">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_RightArm7_to_RightFinger2">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+  </ros2_control>
+
+  <!-- ============================================ -->
+  <!-- Gazebo plugin: bridges ros2_control hardware  -->
+  <!-- interfaces with Gazebo physics engine.        -->
+  <!-- ============================================ -->
+  <gazebo>
+    <plugin name="gazebo_ros2_control" filename="libgazebo_ros2_control.so">
+      <robot_param>robot_description</robot_param>
+      <parameters>${controllers_yaml_path}</parameters>
+    </plugin>
+  </gazebo>
 </robot>

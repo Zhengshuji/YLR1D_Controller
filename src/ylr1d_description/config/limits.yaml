@@ -18,11 +18,6 @@ Joint_Base_to_LBWheelF:
   lower: -3.14
   upper: 3.14
   velocity: 100.0
-Joint_LBWheelF_to_LBWheel:
-  effort: 0.0
-  lower: 0.0
-  upper: 0.0
-  velocity: 0.0
 Joint_Base_to_Body1:
   effort: 1000.0
   lower: -0.3
@@ -50,7 +45,7 @@ Joint_Body2_to_LeftArm1:
   velocity: 2.83
 Joint_LeftArm1_to_LeftArm2:
   effort: 1000.0
-  lower: -1.57
+  lower: -1.83
   upper: 1.83
   velocity: 2.83
 Joint_LeftArm2_to_LeftArm3:
@@ -95,7 +90,7 @@ Joint_Body2_to_RightArm1:
   velocity: 2.83
 Joint_RightArm1_to_RightArm2:
   effort: 1000.0
-  lower: -1.57
+  lower: -1.83
   upper: 1.83
   velocity: 2.83
 Joint_RightArm2_to_RightArm3:

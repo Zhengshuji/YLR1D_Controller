@@ -1,0 +1,10 @@
+# Minimal controller_manager config for display purposes.
+# This package only visualizes the robot in RViz2 / Gazebo:
+# no controllers are spawned, so the model is shown statically.
+# Interactive joint control is done via joint_state_publisher_gui in RViz.
+#
+# This file path is injected into the model's gazebo_ros2_control
+# plugin by the launch files (replacing ${controllers_yaml_path}).
+controller_manager:
+  ros__parameters:
+    update_rate: 100
