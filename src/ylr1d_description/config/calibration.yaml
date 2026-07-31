@@ -70,7 +70,7 @@ Joint_LeftArm7_to_LeftFinger2:
 Joint_LeftArm7_to_LeftCameraSensor:
   rising: 0
   falling: 0
-Joint_Body2_RightArm1:
+Joint_Body2_to_RightArm1:
   rising: 0
   falling: 0
 Joint_RightArm1_to_RightArm2:

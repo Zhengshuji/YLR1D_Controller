@@ -33,7 +33,7 @@ ArmSimulateNode::ArmSimulateNode() : Node("arm_simulate") {
     {-2.62, 2.62}, {-2.09, 2.09}, {-6.28, 6.28}, {-0.05, 0.05}, {-0.05, 0.05}});
 
   right_arm_.setup(
-    {"Joint_Body2_RightArm1", "Joint_RightArm1_to_RightArm2",
+    {"Joint_Body2_to_RightArm1", "Joint_RightArm1_to_RightArm2",
      "Joint_RightArm2_to_RightArm3", "Joint_RightArm3_to_RightArm4",
      "Joint_RightArm4_to_RightArm5", "Joint_RightArm5_to_RightArm6",
      "Joint_RightArm6_to_RightArm7", "Joint_RightArm7_to_RightFinger1",

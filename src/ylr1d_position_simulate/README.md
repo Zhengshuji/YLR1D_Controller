@@ -109,7 +109,7 @@
 
 | 索引 | URDF 名称 | 限位 (rad) | 说明 |
 |------|-----------|------------|------|
-| 21 | `Joint_Body2_RightArm1` | ±2.62 | 肩 1 |
+| 21 | `Joint_Body2_to_RightArm1` | ±2.62 | 肩 1 |
 | 22 | `Joint_RightArm1_to_RightArm2` | **[-1.57, +1.83]** | 肩 2（非对称） |
 | 23 | `Joint_RightArm2_to_RightArm3` | ±2.62 | 肩 3 |
 | 24 | `Joint_RightArm3_to_RightArm4` | ±1.57 | 肘 1 |
@@ -153,7 +153,7 @@ name:
   - "Joint_LeftArm6_to_LeftArm7"
   - "Joint_LeftArm7_to_LeftFinger1"
   - "Joint_LeftArm7_to_LeftFinger2"
-  - "Joint_Body2_RightArm1"     # position: 期望位置
+  - "Joint_Body2_to_RightArm1"     # position: 期望位置
   - "Joint_RightArm1_to_RightArm2"
   - "Joint_RightArm2_to_RightArm3"
   - "Joint_RightArm3_to_RightArm4"

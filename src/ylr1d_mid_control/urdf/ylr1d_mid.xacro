@@ -739,14 +739,14 @@
       </geometry>
     </collision>
   </link>
-  <joint name="${prefix}Joint_Body2_RightArm1" type="revolute">
+  <joint name="${prefix}Joint_Body2_to_RightArm1" type="revolute">
     <origin xyz="0 0 0.133799999999997" rpy="1.5707963267949 0 0"/>
     <parent link="Link_Body2"/>
     <child link="Link_RightArm1"/>
     <axis xyz="0 0 1"/>
-    <limit lower="${limits.Joint_Body2_RightArm1.lower}" upper="${limits.Joint_Body2_RightArm1.upper}" effort="${limits.Joint_Body2_RightArm1.effort}" velocity="${limits.Joint_Body2_RightArm1.velocity}"/>
-    <calibration rising="${calibration.Joint_Body2_RightArm1.rising}" falling="${calibration.Joint_Body2_RightArm1.falling}"/>
-    <dynamics damping="${dynamics.Joint_Body2_RightArm1.damping}" friction="${dynamics.Joint_Body2_RightArm1.friction}"/>
+    <limit lower="${limits.Joint_Body2_to_RightArm1.lower}" upper="${limits.Joint_Body2_to_RightArm1.upper}" effort="${limits.Joint_Body2_to_RightArm1.effort}" velocity="${limits.Joint_Body2_to_RightArm1.velocity}"/>
+    <calibration rising="${calibration.Joint_Body2_to_RightArm1.rising}" falling="${calibration.Joint_Body2_to_RightArm1.falling}"/>
+    <dynamics damping="${dynamics.Joint_Body2_to_RightArm1.damping}" friction="${dynamics.Joint_Body2_to_RightArm1.friction}"/>
   </joint>
   <link name="${prefix}Link_RightArm2">
     <inertial>
@@ -1674,7 +1674,7 @@
     </joint>
 
     <!-- Right arm: 7-DOF + 2 fingers (position command) -->
-    <joint name="Joint_Body2_RightArm1">
+    <joint name="Joint_Body2_to_RightArm1">
       <command_interface name="position"/>
       <state_interface name="position"/>
       <state_interface name="velocity"/>

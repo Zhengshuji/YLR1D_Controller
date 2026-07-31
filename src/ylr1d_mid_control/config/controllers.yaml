@@ -81,7 +81,7 @@ left_arm_controller:
 right_arm_controller:
   ros__parameters:
     joints:
-      - Joint_Body2_RightArm1
+      - Joint_Body2_to_RightArm1
       - Joint_RightArm1_to_RightArm2
       - Joint_RightArm2_to_RightArm3
       - Joint_RightArm3_to_RightArm4

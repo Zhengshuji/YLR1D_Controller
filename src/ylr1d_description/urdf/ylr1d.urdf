@@ -730,7 +730,7 @@
       </geometry>
     </collision>
   </link>
-  <joint name="Joint_Body2_RightArm1" type="revolute">
+  <joint name="Joint_Body2_to_RightArm1" type="revolute">
     <origin xyz="0 0 0.133799999999997" rpy="1.5707963267949 0 0"/>
     <parent link="Link_Body2"/>
     <child link="Link_RightArm1"/>

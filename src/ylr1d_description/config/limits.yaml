@@ -88,7 +88,7 @@ Joint_LeftArm7_to_LeftFinger2:
   lower: -0.05
   upper: 0.05
   velocity: 100.0
-Joint_Body2_RightArm1:
+Joint_Body2_to_RightArm1:
   effort: 1000.0
   lower: -2.62
   upper: 2.62
