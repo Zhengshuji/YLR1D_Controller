@@ -5,9 +5,9 @@ namespace ylr1d_position_simulate {
 
 ArmSimulateNode::ArmSimulateNode() : Node("arm_simulate") {
   double loop_hz = declare_parameter("loop_hz", 100.0);
-  double kp = declare_parameter("pid/kp", 5.0);
+  double kp = declare_parameter("pid/kp", 1.0);
   double ki = declare_parameter("pid/ki", 0.0);
-  double kd = declare_parameter("pid/kd", 0.1);
+  double kd = declare_parameter("pid/kd", 0.5);
   double max_accel = declare_parameter("pid/max_accel", 50.0);
   double max_vel = declare_parameter("pid/max_vel", 3.0);
 

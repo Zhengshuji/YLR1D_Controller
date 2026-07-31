@@ -1,0 +1,12 @@
+Joint_LFWheelF_to_LFWheel:
+  accelerate: 10.0
+  velocity: 5.0
+Joint_LBWheelF_to_LBWheel:
+  accelerate: 10.0
+  velocity: 5.0
+Joint_RBWheelF_to_RBWheel:
+  accelerate: 10.0
+  velocity: 5.0
+Joint_RFWheelF_to_RFWheel:
+  accelerate: 10.0
+  velocity: 5.0

@@ -1,130 +1,130 @@
 Joint_Base_to_RFWheelF:
-  effort: 1000.0
+  accelerate: 5.0
   lower: -3.14
   upper: 3.14
-  velocity: 100.0
+  accelerate: 5.0
 Joint_Base_to_LFWheelF:
-  effort: 1000.0
+  accelerate: 5.0
   lower: -3.14
   upper: 3.14
-  velocity: 100.0
+  accelerate: 5.0
 Joint_Base_to_RBWheelF:
-  effort: 1000.0
+  accelerate: 5.0
   lower: -3.14
   upper: 3.14
-  velocity: 100.0
+  accelerate: 5.0
 Joint_Base_to_LBWheelF:
-  effort: 1000.0
+  accelerate: 5.0
   lower: -3.14
   upper: 3.14
-  velocity: 100.0
+  accelerate: 5.0
 Joint_Base_to_Body1:
-  effort: 1000.0
+  accelerate: 5.0
   lower: -0.3
   upper: 0.3
-  velocity: 67.82
+  velocity: 0.6782
 Joint_Body1_to_Body2:
-  effort: 1000.0
+  accelerate: 5.0
   lower: -3.14
   upper: 3.14
   velocity: 2.83
 Joint_Body2_to_Body3:
-  effort: 1000.0
+  accelerate: 5.0
   lower: -1.57
   upper: 1.57
   velocity: 5.65
 Joint_Body3_to_Body4:
-  effort: 1000.0
+  accelerate: 5.0
   lower: -1.57
   upper: 1.57
   velocity: 5.65
 Joint_Body2_to_LeftArm1:
-  effort: 1000.0
+  accelerate: 5.0
   lower: -2.62
   upper: 2.62
   velocity: 2.83
 Joint_LeftArm1_to_LeftArm2:
-  effort: 1000.0
-  lower: -1.83
+  accelerate: 5.0
+  lower: -1.57
   upper: 1.83
   velocity: 2.83
 Joint_LeftArm2_to_LeftArm3:
-  effort: 1000.0
+  accelerate: 5.0
   lower: -2.62
   upper: 2.62
   velocity: 5.65
 Joint_LeftArm3_to_LeftArm4:
-  effort: 1000.0
+  accelerate: 5.0
   lower: -1.57
   upper: 1.57
   velocity: 5.65
 Joint_LeftArm4_to_LeftArm5:
-  effort: 1000.0
+  accelerate: 5.0
   lower: -2.62
   upper: 2.62
   velocity: 5.65
 Joint_LeftArm5_to_LeftArm6:
-  effort: 1000.0
+  accelerate: 5.0
   lower: -2.09
   upper: 2.09
   velocity: 5.65
 Joint_LeftArm6_to_LeftArm7:
-  effort: 1000.0
+  accelerate: 5.0
   lower: -6.28
   upper: 6.28
   velocity: 5.65
 Joint_LeftArm7_to_LeftFinger1:
-  effort: 1000.0
-  lower: -0.05
-  upper: 0.05
-  velocity: 100.0
+  accelerate: 1.0
+  lower: -0.014
+  upper: 0.0
+  velocity: 0.05
 Joint_LeftArm7_to_LeftFinger2:
-  effort: 1000.0
-  lower: -0.05
-  upper: 0.05
-  velocity: 100.0
+  accelerate: 1.0
+  lower: -0.014
+  upper: 0.0
+  velocity: 0.05
 Joint_Body2_to_RightArm1:
-  effort: 1000.0
+  accelerate: 5.0
   lower: -2.62
   upper: 2.62
   velocity: 2.83
 Joint_RightArm1_to_RightArm2:
-  effort: 1000.0
-  lower: -1.83
+  accelerate: 5.0
+  lower: -1.57
   upper: 1.83
   velocity: 2.83
 Joint_RightArm2_to_RightArm3:
-  effort: 1000.0
+  accelerate: 5.0
   lower: -2.62
   upper: 2.62
   velocity: 5.65
 Joint_RightArm3_to_RightArm4:
-  effort: 1000.0
+  accelerate: 5.0
   lower: -1.57
   upper: 1.57
   velocity: 5.65
 Joint_RightArm4_to_RightArm5:
-  effort: 1000.0
+  accelerate: 5.0
   lower: -2.62
   upper: 2.62
   velocity: 5.65
 Joint_RightArm5_to_RightArm6:
-  effort: 1000.0
+  accelerate: 5.0
   lower: -2.09
   upper: 2.09
   velocity: 5.65
 Joint_RightArm6_to_RightArm7:
-  effort: 1000.0
+  accelerate: 5.0
   lower: -6.28
   upper: 6.28
   velocity: 5.65
 Joint_RightArm7_to_RightFinger1:
-  effort: 1000.0
-  lower: -0.05
-  upper: 0.05
-  velocity: 100.0
+  accelerate: 1.0
+  lower: 0.0
+  upper: 0.014
+  velocity: 0.05
 Joint_RightArm7_to_RightFinger2:
-  effort: 1000.0
-  lower: -0.05
-  upper: 0.05
-  velocity: 100.0
+  accelerate: 1.0
+  lower: 0.0
+  upper: 0.014
+  velocity: 0.05
