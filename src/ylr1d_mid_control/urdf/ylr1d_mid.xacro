@@ -9,7 +9,7 @@
   <!-- ============================================ -->
 
   <xacro:macro name="ylr1d" params="prefix">
-  <link name="${prefix}Link_Base">
+<link name="${prefix}Link_Base">
     <inertial>
       <origin xyz="0.037265 0.00025041 0.20252" rpy="0 0 0"/>
       <mass value="${links.Link_Base.mass}"/>
@@ -157,7 +157,7 @@
     <origin xyz="0 0 -0.00299999999999959" rpy="-1.5707963267949 0 2.49734079418677"/>
     <parent link="Link_LFWheelF"/>
     <child link="Link_LFWheel"/>
-    <axis xyz="0 0 1"/>
+    <axis xyz="0 0 -1"/>
     <calibration rising="${calibration.Joint_LFWheelF_to_LFWheel.rising}" falling="${calibration.Joint_LFWheelF_to_LFWheel.falling}"/>
     <dynamics damping="${dynamics.Joint_LFWheelF_to_LFWheel.damping}" friction="${dynamics.Joint_LFWheelF_to_LFWheel.friction}"/>
   </joint>
@@ -279,8 +279,7 @@
     <origin xyz="0 0 -0.0030000000000002" rpy="1.5707963267949 0 -2.49734079418689"/>
     <parent link="Link_LBWheelF"/>
     <child link="Link_LBWheel"/>
-    <axis xyz="0 0 1"/>
-    <limit lower="${limits.Joint_LBWheelF_to_LBWheel.lower}" upper="${limits.Joint_LBWheelF_to_LBWheel.upper}" effort="${limits.Joint_LBWheelF_to_LBWheel.effort}" velocity="${limits.Joint_LBWheelF_to_LBWheel.velocity}"/>
+    <axis xyz="0 0 -1"/>
     <calibration rising="${calibration.Joint_LBWheelF_to_LBWheel.rising}" falling="${calibration.Joint_LBWheelF_to_LBWheel.falling}"/>
     <dynamics damping="${dynamics.Joint_LBWheelF_to_LBWheel.damping}" friction="${dynamics.Joint_LBWheelF_to_LBWheel.friction}"/>
   </joint>
@@ -449,7 +448,7 @@
     <origin xyz="0 0 0.133799999999993" rpy="1.57079632679489 0 3.14159265358978"/>
     <parent link="Link_Body2"/>
     <child link="Link_LeftArm1"/>
-    <axis xyz="0 0 -1"/>
+    <axis xyz="0 0 1"/>
     <limit lower="${limits.Joint_Body2_to_LeftArm1.lower}" upper="${limits.Joint_Body2_to_LeftArm1.upper}" effort="${limits.Joint_Body2_to_LeftArm1.effort}" velocity="${limits.Joint_Body2_to_LeftArm1.velocity}"/>
     <calibration rising="${calibration.Joint_Body2_to_LeftArm1.rising}" falling="${calibration.Joint_Body2_to_LeftArm1.falling}"/>
     <dynamics damping="${dynamics.Joint_Body2_to_LeftArm1.damping}" friction="${dynamics.Joint_Body2_to_LeftArm1.friction}"/>
@@ -511,7 +510,7 @@
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <parent link="Link_LeftArm2"/>
     <child link="Link_LeftArm3"/>
-    <axis xyz="0 -1 0"/>
+    <axis xyz="0 1 0"/>
     <limit lower="${limits.Joint_LeftArm2_to_LeftArm3.lower}" upper="${limits.Joint_LeftArm2_to_LeftArm3.upper}" effort="${limits.Joint_LeftArm2_to_LeftArm3.effort}" velocity="${limits.Joint_LeftArm2_to_LeftArm3.velocity}"/>
     <calibration rising="${calibration.Joint_LeftArm2_to_LeftArm3.rising}" falling="${calibration.Joint_LeftArm2_to_LeftArm3.falling}"/>
     <dynamics damping="${dynamics.Joint_LeftArm2_to_LeftArm3.damping}" friction="${dynamics.Joint_LeftArm2_to_LeftArm3.friction}"/>
@@ -542,7 +541,7 @@
     <origin xyz="0.0149998221270141 0.245999999998857 0" rpy="0 0 0"/>
     <parent link="Link_LeftArm3"/>
     <child link="Link_LeftArm4"/>
-    <axis xyz="0 0 1"/>
+    <axis xyz="0 0 -1"/>
     <limit lower="${limits.Joint_LeftArm3_to_LeftArm4.lower}" upper="${limits.Joint_LeftArm3_to_LeftArm4.upper}" effort="${limits.Joint_LeftArm3_to_LeftArm4.effort}" velocity="${limits.Joint_LeftArm3_to_LeftArm4.velocity}"/>
     <calibration rising="${calibration.Joint_LeftArm3_to_LeftArm4.rising}" falling="${calibration.Joint_LeftArm3_to_LeftArm4.falling}"/>
     <dynamics damping="${dynamics.Joint_LeftArm3_to_LeftArm4.damping}" friction="${dynamics.Joint_LeftArm3_to_LeftArm4.friction}"/>
@@ -604,7 +603,7 @@
     <origin xyz="0 0 0.264999999999169" rpy="-1.5707963267949 0 0"/>
     <parent link="Link_LeftArm5"/>
     <child link="Link_LeftArm6"/>
-    <axis xyz="0 0 1"/>
+    <axis xyz="0 0 -1"/>
     <limit lower="${limits.Joint_LeftArm5_to_LeftArm6.lower}" upper="${limits.Joint_LeftArm5_to_LeftArm6.upper}" effort="${limits.Joint_LeftArm5_to_LeftArm6.effort}" velocity="${limits.Joint_LeftArm5_to_LeftArm6.velocity}"/>
     <calibration rising="${calibration.Joint_LeftArm5_to_LeftArm6.rising}" falling="${calibration.Joint_LeftArm5_to_LeftArm6.falling}"/>
     <dynamics damping="${dynamics.Joint_LeftArm5_to_LeftArm6.damping}" friction="${dynamics.Joint_LeftArm5_to_LeftArm6.friction}"/>
@@ -635,7 +634,7 @@
     <origin xyz="0 0 0" rpy="-1.57079632679474 0 3.14159265358957"/>
     <parent link="Link_LeftArm6"/>
     <child link="Link_LeftArm7"/>
-    <axis xyz="0 0 -1"/>
+    <axis xyz="0 0 1"/>
     <limit lower="${limits.Joint_LeftArm6_to_LeftArm7.lower}" upper="${limits.Joint_LeftArm6_to_LeftArm7.upper}" effort="${limits.Joint_LeftArm6_to_LeftArm7.effort}" velocity="${limits.Joint_LeftArm6_to_LeftArm7.velocity}"/>
     <calibration rising="${calibration.Joint_LeftArm6_to_LeftArm7.rising}" falling="${calibration.Joint_LeftArm6_to_LeftArm7.falling}"/>
     <dynamics damping="${dynamics.Joint_LeftArm6_to_LeftArm7.damping}" friction="${dynamics.Joint_LeftArm6_to_LeftArm7.friction}"/>
@@ -743,7 +742,7 @@
     <origin xyz="0 0 0.133799999999997" rpy="1.5707963267949 0 0"/>
     <parent link="Link_Body2"/>
     <child link="Link_RightArm1"/>
-    <axis xyz="0 0 1"/>
+    <axis xyz="0 0 -1"/>
     <limit lower="${limits.Joint_Body2_to_RightArm1.lower}" upper="${limits.Joint_Body2_to_RightArm1.upper}" effort="${limits.Joint_Body2_to_RightArm1.effort}" velocity="${limits.Joint_Body2_to_RightArm1.velocity}"/>
     <calibration rising="${calibration.Joint_Body2_to_RightArm1.rising}" falling="${calibration.Joint_Body2_to_RightArm1.falling}"/>
     <dynamics damping="${dynamics.Joint_Body2_to_RightArm1.damping}" friction="${dynamics.Joint_Body2_to_RightArm1.friction}"/>
@@ -836,7 +835,7 @@
     <origin xyz="0.0149998221395796 0 0.245999999980808" rpy="-1.5707963267949 0 0"/>
     <parent link="Link_RightArm3"/>
     <child link="Link_RightArm4"/>
-    <axis xyz="0 0 -1"/>
+    <axis xyz="0 0 1"/>
     <limit lower="${limits.Joint_RightArm3_to_RightArm4.lower}" upper="${limits.Joint_RightArm3_to_RightArm4.upper}" effort="${limits.Joint_RightArm3_to_RightArm4.effort}" velocity="${limits.Joint_RightArm3_to_RightArm4.velocity}"/>
     <calibration rising="${calibration.Joint_RightArm3_to_RightArm4.rising}" falling="${calibration.Joint_RightArm3_to_RightArm4.falling}"/>
     <dynamics damping="${dynamics.Joint_RightArm3_to_RightArm4.damping}" friction="${dynamics.Joint_RightArm3_to_RightArm4.friction}"/>
@@ -867,7 +866,7 @@
     <origin xyz="0 -0.0149999999955401 0" rpy="-1.5707963267949 0 -1.57079632679151"/>
     <parent link="Link_RightArm4"/>
     <child link="Link_RightArm5"/>
-    <axis xyz="0 0 1"/>
+    <axis xyz="0 0 -1"/>
     <limit lower="${limits.Joint_RightArm4_to_RightArm5.lower}" upper="${limits.Joint_RightArm4_to_RightArm5.upper}" effort="${limits.Joint_RightArm4_to_RightArm5.effort}" velocity="${limits.Joint_RightArm4_to_RightArm5.velocity}"/>
     <calibration rising="${calibration.Joint_RightArm4_to_RightArm5.rising}" falling="${calibration.Joint_RightArm4_to_RightArm5.falling}"/>
     <dynamics damping="${dynamics.Joint_RightArm4_to_RightArm5.damping}" friction="${dynamics.Joint_RightArm4_to_RightArm5.friction}"/>
@@ -898,7 +897,7 @@
     <origin xyz="0 0 0.264999999996074" rpy="1.5707963267949 0 0"/>
     <parent link="Link_RightArm5"/>
     <child link="Link_RightArm6"/>
-    <axis xyz="0 0 -1"/>
+    <axis xyz="0 0 1"/>
     <limit lower="${limits.Joint_RightArm5_to_RightArm6.lower}" upper="${limits.Joint_RightArm5_to_RightArm6.upper}" effort="${limits.Joint_RightArm5_to_RightArm6.effort}" velocity="${limits.Joint_RightArm5_to_RightArm6.velocity}"/>
     <calibration rising="${calibration.Joint_RightArm5_to_RightArm6.rising}" falling="${calibration.Joint_RightArm5_to_RightArm6.falling}"/>
     <dynamics damping="${dynamics.Joint_RightArm5_to_RightArm6.damping}" friction="${dynamics.Joint_RightArm5_to_RightArm6.friction}"/>
@@ -1523,13 +1522,12 @@
       </plugin>
     </sensor>
   </gazebo>
-  <gazebo>
+    <gazebo>
     <visualise_children>true</visualise_children>
   </gazebo>
   </xacro:macro>
 
   <xacro:ylr1d prefix="" />
-
   <!-- ============================================ -->
   <!-- ros2_control: define joint command/state      -->
   <!-- interfaces for gazebo_ros2_control plugin.    -->
@@ -1740,5 +1738,4 @@
       <parameters>${controllers_yaml_path}</parameters>
     </plugin>
   </gazebo>
-
 </robot>
