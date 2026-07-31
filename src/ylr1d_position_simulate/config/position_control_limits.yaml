@@ -1,130 +1,161 @@
+# 位置控制关节的限制参数（26 个位置接口关节）
+# 结构: <关节名>: {limit: {lower, upper, velocity, accelerate}}
+# 该文件经 launch 加载后映射为 ROS2 参数: <关节名>/limit/<参数名>
+# 单位: 旋转关节 rad, 棱柱关节 m (Joint_Base_to_Body1, 夹爪), 速度 rad/s, 加速度 rad/s^2
+
 Joint_Base_to_RFWheelF:
-  accelerate: 5.0
-  lower: -3.14
-  upper: 3.14
-  accelerate: 5.0
+  limit:
+    lower: -3.14
+    upper: 3.14
+    velocity: 3.0
+    accelerate: 5.0
 Joint_Base_to_LFWheelF:
-  accelerate: 5.0
-  lower: -3.14
-  upper: 3.14
-  accelerate: 5.0
+  limit:
+    lower: -3.14
+    upper: 3.14
+    velocity: 3.0
+    accelerate: 5.0
 Joint_Base_to_RBWheelF:
-  accelerate: 5.0
-  lower: -3.14
-  upper: 3.14
-  accelerate: 5.0
+  limit:
+    lower: -3.14
+    upper: 3.14
+    velocity: 3.0
+    accelerate: 5.0
 Joint_Base_to_LBWheelF:
-  accelerate: 5.0
-  lower: -3.14
-  upper: 3.14
-  accelerate: 5.0
+  limit:
+    lower: -3.14
+    upper: 3.14
+    velocity: 3.0
+    accelerate: 5.0
 Joint_Base_to_Body1:
-  accelerate: 5.0
-  lower: -0.3
-  upper: 0.3
-  velocity: 0.6782
+  limit:
+    lower: -0.3
+    upper: 0.3
+    velocity: 0.6782
+    accelerate: 5.0
 Joint_Body1_to_Body2:
-  accelerate: 5.0
-  lower: -3.14
-  upper: 3.14
-  velocity: 2.83
+  limit:
+    lower: -3.14
+    upper: 3.14
+    velocity: 2.83
+    accelerate: 5.0
 Joint_Body2_to_Body3:
-  accelerate: 5.0
-  lower: -1.57
-  upper: 1.57
-  velocity: 5.65
+  limit:
+    lower: -1.57
+    upper: 1.57
+    velocity: 5.65
+    accelerate: 5.0
 Joint_Body3_to_Body4:
-  accelerate: 5.0
-  lower: -1.57
-  upper: 1.57
-  velocity: 5.65
+  limit:
+    lower: -1.57
+    upper: 1.57
+    velocity: 5.65
+    accelerate: 5.0
 Joint_Body2_to_LeftArm1:
-  accelerate: 5.0
-  lower: -2.62
-  upper: 2.62
-  velocity: 2.83
+  limit:
+    lower: -2.62
+    upper: 2.62
+    velocity: 2.83
+    accelerate: 5.0
 Joint_LeftArm1_to_LeftArm2:
-  accelerate: 5.0
-  lower: -1.57
-  upper: 1.83
-  velocity: 2.83
+  limit:
+    lower: -1.57
+    upper: 1.83
+    velocity: 2.83
+    accelerate: 5.0
 Joint_LeftArm2_to_LeftArm3:
-  accelerate: 5.0
-  lower: -2.62
-  upper: 2.62
-  velocity: 5.65
+  limit:
+    lower: -2.62
+    upper: 2.62
+    velocity: 5.65
+    accelerate: 5.0
 Joint_LeftArm3_to_LeftArm4:
-  accelerate: 5.0
-  lower: -1.57
-  upper: 1.57
-  velocity: 5.65
+  limit:
+    lower: -1.57
+    upper: 1.57
+    velocity: 5.65
+    accelerate: 5.0
 Joint_LeftArm4_to_LeftArm5:
-  accelerate: 5.0
-  lower: -2.62
-  upper: 2.62
-  velocity: 5.65
+  limit:
+    lower: -2.62
+    upper: 2.62
+    velocity: 5.65
+    accelerate: 5.0
 Joint_LeftArm5_to_LeftArm6:
-  accelerate: 5.0
-  lower: -2.09
-  upper: 2.09
-  velocity: 5.65
+  limit:
+    lower: -2.09
+    upper: 2.09
+    velocity: 5.65
+    accelerate: 5.0
 Joint_LeftArm6_to_LeftArm7:
-  accelerate: 5.0
-  lower: -6.28
-  upper: 6.28
-  velocity: 5.65
+  limit:
+    lower: -6.28
+    upper: 6.28
+    velocity: 5.65
+    accelerate: 5.0
 Joint_LeftArm7_to_LeftFinger1:
-  accelerate: 1.0
-  lower: -0.014
-  upper: 0.0
-  velocity: 0.05
+  limit:
+    lower: -0.014
+    upper: 0.0
+    velocity: 0.05
+    accelerate: 1.0
 Joint_LeftArm7_to_LeftFinger2:
-  accelerate: 1.0
-  lower: -0.014
-  upper: 0.0
-  velocity: 0.05
+  limit:
+    lower: -0.014
+    upper: 0.0
+    velocity: 0.05
+    accelerate: 1.0
 Joint_Body2_to_RightArm1:
-  accelerate: 5.0
-  lower: -2.62
-  upper: 2.62
-  velocity: 2.83
+  limit:
+    lower: -2.62
+    upper: 2.62
+    velocity: 2.83
+    accelerate: 5.0
 Joint_RightArm1_to_RightArm2:
-  accelerate: 5.0
-  lower: -1.57
-  upper: 1.83
-  velocity: 2.83
+  limit:
+    lower: -1.57
+    upper: 1.83
+    velocity: 2.83
+    accelerate: 5.0
 Joint_RightArm2_to_RightArm3:
-  accelerate: 5.0
-  lower: -2.62
-  upper: 2.62
-  velocity: 5.65
+  limit:
+    lower: -2.62
+    upper: 2.62
+    velocity: 5.65
+    accelerate: 5.0
 Joint_RightArm3_to_RightArm4:
-  accelerate: 5.0
-  lower: -1.57
-  upper: 1.57
-  velocity: 5.65
+  limit:
+    lower: -1.57
+    upper: 1.57
+    velocity: 5.65
+    accelerate: 5.0
 Joint_RightArm4_to_RightArm5:
-  accelerate: 5.0
-  lower: -2.62
-  upper: 2.62
-  velocity: 5.65
+  limit:
+    lower: -2.62
+    upper: 2.62
+    velocity: 5.65
+    accelerate: 5.0
 Joint_RightArm5_to_RightArm6:
-  accelerate: 5.0
-  lower: -2.09
-  upper: 2.09
-  velocity: 5.65
+  limit:
+    lower: -2.09
+    upper: 2.09
+    velocity: 5.65
+    accelerate: 5.0
 Joint_RightArm6_to_RightArm7:
-  accelerate: 5.0
-  lower: -6.28
-  upper: 6.28
-  velocity: 5.65
+  limit:
+    lower: -6.28
+    upper: 6.28
+    velocity: 5.65
+    accelerate: 5.0
 Joint_RightArm7_to_RightFinger1:
-  accelerate: 1.0
-  lower: 0.0
-  upper: 0.014
-  velocity: 0.05
+  limit:
+    lower: 0.0
+    upper: 0.014
+    velocity: 0.05
+    accelerate: 1.0
 Joint_RightArm7_to_RightFinger2:
-  accelerate: 1.0
-  lower: 0.0
-  upper: 0.014
-  velocity: 0.05
+  limit:
+    lower: 0.0
+    upper: 0.014
+    velocity: 0.05
+    accelerate: 1.0

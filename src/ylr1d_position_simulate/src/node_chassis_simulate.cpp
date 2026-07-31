@@ -1,37 +1,36 @@
-#include "ylr1d_position_simulate/chassis_simulate.hpp"
+#include "ylr1d_position_simulate/node_chassis_simulate.hpp"
+#include "ylr1d_position_simulate/param_reader.hpp"
+
 #include <memory>
+#include <vector>
 
 namespace ylr1d_position_simulate {
 
-ChassisSimulateNode::ChassisSimulateNode() : Node("chassis_simulate") {
+Node_ChassisSimulate::Node_ChassisSimulate() : Node("chassis_simulate") {
   double loop_hz = declare_parameter("loop_hz", 100.0);
-
-  double skp = declare_parameter("steering/kp", 5.0);
-  double ski = declare_parameter("steering/ki", 0.0);
-  double skd = declare_parameter("steering/kd", 0.1);
-  double s_accel = declare_parameter("steering/max_accel", 50.0);
-  double s_vel   = declare_parameter("steering/max_vel", 3.0);
-
-  double wkp = declare_parameter("wheel/kp", 2.0);
-  double wki = declare_parameter("wheel/ki", 0.0);
-  double wkd = declare_parameter("wheel/kd", 0.05);
-  double w_accel = declare_parameter("wheel/max_accel", 20.0);
-  double w_vel   = declare_parameter("wheel/max_vel", 5.0);
-
   dt_ = 1.0 / loop_hz;
 
-  steering_.setup(
-    {"Joint_Base_to_RFWheelF", "Joint_Base_to_LFWheelF",
-     "Joint_Base_to_RBWheelF", "Joint_Base_to_LBWheelF"},
-    PID(skp, ski, skd, s_accel, s_vel),
-    "/chassis_steering_controller/commands", this);
-  steering_.set_limits({{-3.14, 3.14}, {-3.14, 3.14}, {-3.14, 3.14}, {-3.14, 3.14}});
+  // ── 转向（位置接口，4 关节，独立 PID + 限位） ──
+  const std::vector<std::string> steering_names = {
+    "Joint_Base_to_RFWheelF", "Joint_Base_to_LFWheelF",
+    "Joint_Base_to_RBWheelF", "Joint_Base_to_LBWheelF"};
+  std::vector<JointSimParams> steering_params;
+  for (const auto & n : steering_names) {
+    steering_params.push_back(read_position_params(*this, n));
+  }
+  steering_.setup(steering_names, steering_params,
+                  "/chassis_steering_controller/commands", this);
 
-  wheels_.setup(
-    {"Joint_RFWheelF_to_RFWheel", "Joint_LFWheelF_to_LFWheel",
-     "Joint_RBWheelF_to_RBWheel", "Joint_LBWheelF_to_LBWheel"},
-    PID(wkp, wki, wkd, w_accel, w_vel),
-    "/chassis_wheels_controller/commands", this);
+  // ── 轮子（速度接口，4 关节，独立 PID + 速度/加速度限幅） ──
+  const std::vector<std::string> wheel_names = {
+    "Joint_RFWheelF_to_RFWheel", "Joint_LFWheelF_to_LFWheel",
+    "Joint_RBWheelF_to_RBWheel", "Joint_LBWheelF_to_LBWheel"};
+  std::vector<VelocitySimParams> wheel_params;
+  for (const auto & n : wheel_names) {
+    wheel_params.push_back(read_velocity_params(*this, n));
+  }
+  wheels_.setup(wheel_names, wheel_params,
+                "/chassis_wheels_controller/commands", this);
 
   // 订阅
   desired_sub_ = create_subscription<sensor_msgs::msg::JointState>(
@@ -52,7 +51,7 @@ ChassisSimulateNode::ChassisSimulateNode() : Node("chassis_simulate") {
               loop_hz, 4ul, 4ul);
 }
 
-void ChassisSimulateNode::init_callback(const sensor_msgs::msg::JointState::SharedPtr msg) {
+void Node_ChassisSimulate::init_callback(const sensor_msgs::msg::JointState::SharedPtr msg) {
   if (initialized_) return;
   steering_.init_from(*msg);
   if (steering_.initialized()) {
@@ -62,12 +61,12 @@ void ChassisSimulateNode::init_callback(const sensor_msgs::msg::JointState::Shar
   }
 }
 
-void ChassisSimulateNode::desired_callback(const sensor_msgs::msg::JointState::SharedPtr msg) {
+void Node_ChassisSimulate::desired_callback(const sensor_msgs::msg::JointState::SharedPtr msg) {
   steering_.set_desired(*msg);
   wheels_.set_desired(*msg);
 }
 
-void ChassisSimulateNode::update() {
+void Node_ChassisSimulate::update() {
   if (!initialized_) return;
   steering_.update(dt_);  steering_.publish();
   wheels_.update(dt_);    wheels_.publish();
@@ -83,7 +82,7 @@ void ChassisSimulateNode::update() {
 
 int main(int argc, char *argv[]) {
   rclcpp::init(argc, argv);
-  auto node = std::make_shared<ylr1d_position_simulate::ChassisSimulateNode>();
+  auto node = std::make_shared<ylr1d_position_simulate::Node_ChassisSimulate>();
   rclcpp::spin(node);
   rclcpp::shutdown();
   return 0;

@@ -1,0 +1,164 @@
+# 全部 30 个关节的独立 PID 参数
+# 结构: <关节名>: {pid: {kp, ki, kd}}
+# 该文件经 launch 加载后映射为 ROS2 参数: <关节名>/pid/<参数名>
+# 位置关节: PID 输出加速度 -> 速度 -> 位置；速度关节(轮子): PID 输出加速度 -> 速度
+
+# ── 转向（位置接口） ──
+Joint_Base_to_RFWheelF:
+  pid:
+    kp: 4.0
+    ki: 0.0
+    kd: 0.2
+Joint_Base_to_LFWheelF:
+  pid:
+    kp: 4.0
+    ki: 0.0
+    kd: 0.2
+Joint_Base_to_RBWheelF:
+  pid:
+    kp: 4.0
+    ki: 0.0
+    kd: 0.2
+Joint_Base_to_LBWheelF:
+  pid:
+    kp: 4.0
+    ki: 0.0
+    kd: 0.2
+
+# ── 轮子（速度接口） ──
+Joint_RFWheelF_to_RFWheel:
+  pid:
+    kp: 2.0
+    ki: 0.0
+    kd: 0.05
+Joint_LFWheelF_to_LFWheel:
+  pid:
+    kp: 2.0
+    ki: 0.0
+    kd: 0.05
+Joint_RBWheelF_to_RBWheel:
+  pid:
+    kp: 2.0
+    ki: 0.0
+    kd: 0.05
+Joint_LBWheelF_to_LBWheel:
+  pid:
+    kp: 2.0
+    ki: 0.0
+    kd: 0.05
+
+# ── 躯干（位置接口） ──
+Joint_Base_to_Body1:
+  pid:
+    kp: 4.0
+    ki: 0.0
+    kd: 0.2
+Joint_Body1_to_Body2:
+  pid:
+    kp: 4.0
+    ki: 0.0
+    kd: 0.2
+Joint_Body2_to_Body3:
+  pid:
+    kp: 4.0
+    ki: 0.0
+    kd: 0.2
+Joint_Body3_to_Body4:
+  pid:
+    kp: 4.0
+    ki: 0.0
+    kd: 0.2
+
+# ── 左臂（位置接口） ──
+Joint_Body2_to_LeftArm1:
+  pid:
+    kp: 4.0
+    ki: 0.0
+    kd: 0.2
+Joint_LeftArm1_to_LeftArm2:
+  pid:
+    kp: 4.0
+    ki: 0.0
+    kd: 0.2
+Joint_LeftArm2_to_LeftArm3:
+  pid:
+    kp: 4.0
+    ki: 0.0
+    kd: 0.2
+Joint_LeftArm3_to_LeftArm4:
+  pid:
+    kp: 4.0
+    ki: 0.0
+    kd: 0.2
+Joint_LeftArm4_to_LeftArm5:
+  pid:
+    kp: 4.0
+    ki: 0.0
+    kd: 0.2
+Joint_LeftArm5_to_LeftArm6:
+  pid:
+    kp: 4.0
+    ki: 0.0
+    kd: 0.2
+Joint_LeftArm6_to_LeftArm7:
+  pid:
+    kp: 4.0
+    ki: 0.0
+    kd: 0.2
+Joint_LeftArm7_to_LeftFinger1:
+  pid:
+    kp: 2.0
+    ki: 0.0
+    kd: 0.05
+Joint_LeftArm7_to_LeftFinger2:
+  pid:
+    kp: 2.0
+    ki: 0.0
+    kd: 0.05
+
+# ── 右臂（位置接口） ──
+Joint_Body2_to_RightArm1:
+  pid:
+    kp: 4.0
+    ki: 0.0
+    kd: 0.2
+Joint_RightArm1_to_RightArm2:
+  pid:
+    kp: 4.0
+    ki: 0.0
+    kd: 0.2
+Joint_RightArm2_to_RightArm3:
+  pid:
+    kp: 4.0
+    ki: 0.0
+    kd: 0.2
+Joint_RightArm3_to_RightArm4:
+  pid:
+    kp: 4.0
+    ki: 0.0
+    kd: 0.2
+Joint_RightArm4_to_RightArm5:
+  pid:
+    kp: 4.0
+    ki: 0.0
+    kd: 0.2
+Joint_RightArm5_to_RightArm6:
+  pid:
+    kp: 4.0
+    ki: 0.0
+    kd: 0.2
+Joint_RightArm6_to_RightArm7:
+  pid:
+    kp: 4.0
+    ki: 0.0
+    kd: 0.2
+Joint_RightArm7_to_RightFinger1:
+  pid:
+    kp: 2.0
+    ki: 0.0
+    kd: 0.05
+Joint_RightArm7_to_RightFinger2:
+  pid:
+    kp: 2.0
+    ki: 0.0
+    kd: 0.05

@@ -1,12 +1,21 @@
+# 速度控制关节的限制参数（4 个轮子关节，速度接口，连续旋转无位置限位）
+# 结构: <关节名>: {limit: {velocity, accelerate}}
+# 该文件经 launch 加载后映射为 ROS2 参数: <关节名>/limit/<参数名>
+# 单位: 速度 rad/s, 加速度 rad/s^2
+
 Joint_LFWheelF_to_LFWheel:
-  accelerate: 10.0
-  velocity: 5.0
+  limit:
+    velocity: 5.0
+    accelerate: 10.0
 Joint_LBWheelF_to_LBWheel:
-  accelerate: 10.0
-  velocity: 5.0
+  limit:
+    velocity: 5.0
+    accelerate: 10.0
 Joint_RBWheelF_to_RBWheel:
-  accelerate: 10.0
-  velocity: 5.0
+  limit:
+    velocity: 5.0
+    accelerate: 10.0
 Joint_RFWheelF_to_RFWheel:
-  accelerate: 10.0
-  velocity: 5.0
+  limit:
+    velocity: 5.0
+    accelerate: 10.0

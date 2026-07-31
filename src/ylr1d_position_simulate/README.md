@@ -10,20 +10,19 @@
        ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                  ylr1d_position_simulate                     │
+│         config/*.yaml → <关节名>/limit/*、<关节名>/pid/*      │
 │                                                             │
-│  chassis_simulate (节点)                                     │
-│    ├─ PositionJointGroup (转向×4)   PID → 位置              │
+│  Node_ChassisSimulate (chassis_simulate 节点)               │
+│    ├─ PositionJointGroup (转向×4)  JointSimulator→位置      │
 │    │   订阅: /joint_states (反馈)                            │
 │    │   发布: /chassis_steering_controller/commands           │
-│    │                                                         │
-│    └─ VelocityJointGroup (轮子×4)   PID → 速度              │
-│        订阅: /joint_states (反馈)                            │
+│    └─ VelocityJointGroup (轮子×4)  PID→加速度→速度          │
 │        发布: /chassis_wheels_controller/commands             │
 │                                                             │
-│  arm_simulate (节点)                                         │
-│    ├─ PositionJointGroup (躯干×4)   PID → 位置              │
-│    ├─ PositionJointGroup (左臂×9)   PID → 位置              │
-│    └─ PositionJointGroup (右臂×9)   PID → 位置              │
+│  Node_ArmSimulate (arm_simulate 节点)                       │
+│    └─ std::array<PositionJointGroup, ARM_GROUP_COUNT>        │
+│       groups_  [TORSO=0 | LEFT_ARM=1 | RIGHT_ARM=2]         │
+│         躯干×4 / 左臂×9 / 右臂×9，每关节 JointSimulator→位置 │
 │        订阅: /joint_states (反馈)                            │
 │        发布: /torso_controller/commands                      │
 │        发布: /left_arm_controller/commands                   │
@@ -45,8 +44,44 @@
 
 | 节点 | 订阅 | 发布 | 控制频率 |
 |------|------|------|----------|
-| `chassis_simulate` | `/joint_states`<br>`/desired_joint_states` | `/chassis_steering_controller/commands`<br>`/chassis_wheels_controller/commands` | 100Hz |
-| `arm_simulate` | `/joint_states`<br>`/desired_joint_states` | `/torso_controller/commands`<br>`/left_arm_controller/commands`<br>`/right_arm_controller/commands` | 100Hz |
+| `chassis_simulate`（类 `Node_ChassisSimulate`） | `/joint_states`<br>`/desired_joint_states` | `/chassis_steering_controller/commands`<br>`/chassis_wheels_controller/commands` | 100Hz |
+| `arm_simulate`（类 `Node_ArmSimulate`） | `/joint_states`<br>`/desired_joint_states` | `/torso_controller/commands`<br>`/left_arm_controller/commands`<br>`/right_arm_controller/commands` | 100Hz |
+
+> 可执行名（`chassis_simulate` / `arm_simulate`）与 ROS 节点名保持不变，外部引用稳定；
+> 内部类名统一为 `Node_ChassisSimulate` / `Node_ArmSimulate`，与节点定义分离。
+
+## 配置文件（config/）
+
+`config/` 下共三个 yaml，经 launch 加载后合并为两个节点的 ROS2 参数，统一命名
+**`<关节名>/limit/<参数名>`** 与 **`<关节名>/pid/<参数名>`**。
+
+| 文件 | 内容 | 说明 |
+|------|------|------|
+| `position_control_limits.yaml` | 26 个位置关节 `limit: {lower, upper, velocity, accelerate}` | 位置限位 + 速度/加速度限幅 |
+| `velocity_control_limits.yaml` | 4 个轮子 `limit: {velocity, accelerate}` | 速度/加速度限幅（连续关节无位置限位） |
+| `pid.yaml` | 全部 30 关节 `pid: {kp, ki, kd}` | 每关节独立 PID 增益 |
+
+节点按关节 `declare_parameter` 读取（默认值与旧版硬编码一致，yaml 缺失时仍可运行）。
+可通过 `ros2 param get <节点> <关节名>/pid/kp` 在线查询、`ros2 param set` 在线整定。
+
+### limit 参数
+
+| 参数 | 位置关节默认 | 轮子默认 | 说明 |
+|------|-------------|---------|------|
+| `limit/lower` | 来自 yaml（转向 ±3.14，Body1 ±0.3 等） | — | 位置下限 (rad 或 m) |
+| `limit/upper` | 来自 yaml | — | 位置上限 |
+| `limit/velocity` | 3.0 | 5.0 | 最大速度 (rad/s) |
+| `limit/accelerate` | 50.0 | 20.0 | 最大加速度 (rad/s²) |
+
+### pid 参数
+
+| 参数 | 位置关节默认 | 轮子/夹爪默认 | 说明 |
+|------|-------------|--------------|------|
+| `pid/kp` | 4.0 | 2.0 | 比例增益 |
+| `pid/ki` | 0.0 | 0.0 | 积分增益 |
+| `pid/kd` | 0.2 | 0.05 | 微分增益 |
+
+> 转向 / 躯干 / 臂关节 `4/0/0.2`，轮子与夹爪 `2/0/0.05`（见 `pid.yaml`）。
 
 ## 关节完整列表（30 关节）
 
@@ -74,7 +109,7 @@
 
 发布到 `/chassis_wheels_controller/commands`，顺序与此表一致。
 
-> 轮子关节无位置限位（连续旋转关节），速度限位见 PID 参数 `max_vel`。
+> 轮子关节无位置限位（连续旋转关节），速度/加速度限幅见 `limit/velocity`、`limit/accelerate`（`velocity_control_limits.yaml`）。
 
 ### 躯干（4 关节，位置接口）
 
@@ -174,10 +209,12 @@ Gazebo 原始控制器的命令话题，每路均为 `std_msgs/Float64MultiArray
 
 ## 位置限幅
 
-HMI 或上层节点应当遵守以下约束（来自 `config/limits.yaml` 和 `Controller.md`）：
+位置限位来自 `config/position_control_limits.yaml`，节点会在 `JointSimulator::update()` 内
+**硬钳制**到 `[lower, upper]`（越限目标只会让关节停在限位处，不会越过）。HMI 或上层节点
+仍应遵守以下约束：
 
 **转向关节**: ±3.14 rad（全向范围，初始角度各异）
-**轮子关节**: 无位置限位（连续旋转），速度上限由 PID `max_vel` 控制
+**轮子关节**: 无位置限位（连续旋转），速度上限由 `limit/velocity`（默认 5.0）控制
 **躯干**: 
 - `Joint_Base_to_Body1`：**±0.30**（棱柱，米）
 - 其余 ±1.57~±3.14
@@ -216,60 +253,70 @@ velocity: [0.0, 0.0, 0.0, 0.0]
 
 ## 参数
 
-### chassis_simulate
+所有关节参数统一按 **`<关节名>/limit/<参数名>`** 与 **`<关节名>/pid/<参数名>`** 命名，
+由 launch 从 `config/` 下三个 yaml 加载（详见上文 [配置文件（config/）](#配置文件config)）。
 
-| 参数 | 默认值 | 说明 |
-|------|--------|------|
-| loop_hz | 100.0 | 控制频率 |
-| steering/kp | 5.0 | 转向位置 PID 比例增益 |
-| steering/kd | 0.1 | 转向位置 PID 微分增益 |
-| steering/max_accel | 50.0 | 转向最大加速度 (rad/s²) |
-| steering/max_vel | 3.0 | 转向最大速度 (rad/s) |
-| wheel/kp | 2.0 | 轮子速度 PID 比例增益 |
-| wheel/kd | 0.05 | 轮子速度 PID 微分增益 |
-| wheel/max_accel | 20.0 | 轮子最大加速度 (rad/s²) |
-| wheel/max_vel | 5.0 | 轮子最大速度 (rad/s) |
-
-### arm_simulate
-
-| 参数 | 默认值 | 说明 |
-|------|--------|------|
-| loop_hz | 100.0 | 控制频率 |
-| pid/kp | 5.0 | 位置 PID 比例增益 |
-| pid/kd | 0.1 | 位置 PID 微分增益 |
-| pid/max_accel | 50.0 | 最大加速度 (rad/s²) |
-| pid/max_vel | 3.0 | 最大速度 (rad/s) |
+- `loop_hz`（默认 100.0）：控制频率，launch 中设置
+- 其余均为逐关节参数；`declare_parameter` 默认值与旧版硬编码一致，yaml 缺失时节点仍可运行
 
 ## 类结构
 
+分层设计：**仿真核心（纯 C++，不依赖 rclcpp）** → **组类（桥接层，持有 publisher）** → **节点类**。
+
 ```
-PID
+JointSimulator    (底层仿真控制器, 纯 C++)       [joint_simulator.{hpp,cpp}]
+  - configure(params)  : 配置 PID 增益 + 限幅
+  - initialize(pos)    : 从当前实际位置初始化
+  - set_target(target) : 设定期望位置
+  - update(dt) → 真实位置
+      期望位置 → PID(加速度) → 速度(±max_vel 限幅) → 位置([lower,upper] 限幅)
+  - position() / velocity() / initialized()
+  - 对 PID 类封装，输出结果为真实位置（要求 3）
+
+PID               (纯 C++)
   - compute(error, dt) → 加速度 (带 max_accel / max_vel 限幅)
 
-PositionJointGroup   (一组位置 PID 关节)
-  - setup(names)         : 分配 PID 参数、初始化状态
-  - init_from(msg)       : 从 JointState 读取当前值
-  - set_desired(names, positions) : 设定期望位置
-  - update(dt)           : PID → 限幅 → 积分 → 位置更新
-  - publish(pub)         : 发布 Float64MultiArray
+PositionJointGroup   (一组位置关节, 每关节一个 JointSimulator)
+  - setup(names, per_joint_params, topic, node) : 配置逐关节参数、建 publisher
+  - init_from(msg)   : 从 JointState 读取当前值
+  - set_desired(msg) : 按关节名设定期望位置
+  - update(dt)       : 逐关节 JointSimulator::update
+  - publish()        : 发布 Float64MultiArray（真实位置）
+  - fill_state_msg() : 填充 /simulated_* 状态
 
-VelocityJointGroup   (一组速度 PID 关节)
-  - setup(names)         : 分配 PID 参数
-  - init_from(msg)       : 初始化
-  - set_desired(names, velocities) : 设定期望速度
-  - update(dt)           : PID → 限幅 → 积分 → 速度更新
-  - publish(pub)         : 发布 Float64MultiArray
+VelocityJointGroup   (一组速度关节, 每关节独立 PID + 限幅)
+  - setup(names, per_joint_velocity_params, topic, node)
+  - set_desired(msg) : 按关节名设定期望速度
+  - update(dt)       : PID → 加速度 → 速度(±max_vel 限幅)
+  - publish()        : 发布 Float64MultiArray（当前速度）
 
-ChassisSimulateNode  (节点)
-  - 持有一个 PositionJointGroup (steering) + 一个 VelocityJointGroup (wheels)
+Node_ChassisSimulate   (节点, chassis_simulate)   [node_chassis_simulate.{hpp,cpp}]
+  - PositionJointGroup steering_ + VelocityJointGroup wheels_
 
-ArmSimulateNode      (节点)
-  - 持有三个 PositionJointGroup (torso / left_arm / right_arm)
+Node_ArmSimulate       (节点, arm_simulate)       [node_arm_simulate.{hpp,cpp}]
+  - enum ArmGroup : size_t { TORSO=0, LEFT_ARM=1, RIGHT_ARM=2, ARM_GROUP_COUNT=3 }
+  - std::array<PositionJointGroup, ARM_GROUP_COUNT> groups_
+  - kArmGroupSpecs[3] 静态表（话题 + 关节名），构造/初始化/更新/发布统一遍历
 ```
+
+类定义与节点分离（要求 5）：仿真核心与组类只描述行为，节点类 `Node_*` 负责订阅/发布/定时器。
+
+## 多线程决策
+
+**结论：不需要多线程。** 每个节点使用默认的 `SingleThreadedExecutor`：
+
+- 100Hz 定时器执行控制计算，订阅回调只写入 `joints_` 状态；单线程串行化后不存在数据竞争。
+- 控制计算极轻量（30 关节 × 每关节几行浮点运算），单线程 100Hz 远未饱和。
+- 引入多线程反而需要加锁保护共享关节状态，徒增复杂度。
+- 两个节点（`chassis_simulate` / `arm_simulate`）由各自独立的单线程 executor 运行，天然并行。
+
+如果未来出现耗时操作（如日志/网络 IO），才考虑把 executor 换成 `MultiThreadedExecutor` 或抽离
+到独立回调组；届时再评估加锁方案。
 
 ## 已知限制
 
 - 节点启动后需等待 `/joint_states` 首个消息完成内部状态初始化后才开始输出
 - 初始化期间（Gazebo 控制器未 active 时）timer 空转不发布
 - 轮子无初始化逻辑（连续关节无初始位置），从 0 速度开始
-- 未对 `Joint_Base_to_Body1` 的 ±0.3 限位做硬限幅（依赖上层 HMI 遵守限位）
+- 位置限位（含 `Joint_Base_to_Body1` 的 ±0.3）在 `JointSimulator::update()` 内硬钳制，
+  越限目标只会停在限位处；HMI 仍应遵守限位以得到合理轨迹

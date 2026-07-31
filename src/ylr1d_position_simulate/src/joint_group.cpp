@@ -1,5 +1,7 @@
 #include "ylr1d_position_simulate/joint_group.hpp"
+
 #include <algorithm>
+#include <cmath>
 
 namespace ylr1d_position_simulate {
 
@@ -8,15 +10,15 @@ namespace ylr1d_position_simulate {
 // ===================================================================
 
 void PositionJointGroup::setup(const std::vector<std::string> & names,
-                                const PID & pid,
-                                const std::string & topic,
-                                rclcpp::Node * node) {
+                               const std::vector<JointSimParams> & params,
+                               const std::string & topic,
+                               rclcpp::Node * node) {
   joints_.reserve(names.size());
   for (size_t i = 0; i < names.size(); ++i) {
     Joint j;
     j.name = names[i];
-    j.pid = pid;
-    joints_.push_back(j);
+    j.sim.configure(i < params.size() ? params[i] : JointSimParams{});
+    joints_.push_back(std::move(j));
     name_to_idx_[names[i]] = i;
   }
   pub_ = node->create_publisher<std_msgs::msg::Float64MultiArray>(topic, 10);
@@ -29,15 +31,14 @@ void PositionJointGroup::init_from(const sensor_msgs::msg::JointState & msg) {
     auto it = name_to_idx_.find(msg.name[i]);
     if (it != name_to_idx_.end()) {
       auto & j = joints_[it->second];
-      if (!j.initialized && i < msg.position.size()) {
-        j.position = std::isnan(msg.position[i]) ? 0.0 : msg.position[i];
-        j.desired = j.position;
-        j.initialized = true;
+      if (!j.sim.initialized() && i < msg.position.size()) {
+        double pos = std::isnan(msg.position[i]) ? 0.0 : msg.position[i];
+        j.sim.initialize(pos, 0.0);
       }
     }
   }
 
-  for (auto & j : joints_) if (!j.initialized) return;
+  for (auto & j : joints_) if (!j.sim.initialized()) return;
   initialized_ = true;
 }
 
@@ -45,38 +46,15 @@ void PositionJointGroup::set_desired(const sensor_msgs::msg::JointState & msg) {
   for (size_t i = 0; i < msg.name.size(); ++i) {
     auto it = name_to_idx_.find(msg.name[i]);
     if (it != name_to_idx_.end() && i < msg.position.size()) {
-      double val = msg.position[i];
-      // 输入限幅
-      if (it->second < lower_limits_.size()) {
-        val = std::clamp(val, lower_limits_[it->second], upper_limits_[it->second]);
-      }
-      joints_[it->second].desired = val;
+      joints_[it->second].sim.set_target(msg.position[i]);
     }
-  }
-}
-
-void PositionJointGroup::set_limits(const std::vector<std::pair<double, double>> & limits) {
-  lower_limits_.resize(joints_.size(), 0.0);
-  upper_limits_.resize(joints_.size(), 0.0);
-  for (size_t i = 0; i < limits.size() && i < joints_.size(); ++i) {
-    lower_limits_[i] = limits[i].first;
-    upper_limits_[i] = limits[i].second;
   }
 }
 
 void PositionJointGroup::update(double dt) {
   if (!initialized_) return;
-  for (size_t i = 0; i < joints_.size(); ++i) {
-    auto & j = joints_[i];
-    double error = j.desired - j.position;
-    double accel = j.pid.compute(error, dt);
-    j.velocity += accel * dt;
-    j.velocity = std::clamp(j.velocity, -j.pid.max_vel_, j.pid.max_vel_);
-    j.position += j.velocity * dt;
-    // 输出限幅
-    if (i < lower_limits_.size()) {
-      j.position = std::clamp(j.position, lower_limits_[i], upper_limits_[i]);
-    }
+  for (auto & j : joints_) {
+    j.sim.update(dt);
   }
 }
 
@@ -84,15 +62,15 @@ void PositionJointGroup::publish() {
   if (!initialized_) return;
   auto msg = std_msgs::msg::Float64MultiArray();
   msg.data.reserve(joints_.size());
-  for (auto & j : joints_) msg.data.push_back(j.position);
+  for (auto & j : joints_) msg.data.push_back(j.sim.position());
   pub_->publish(msg);
 }
 
 void PositionJointGroup::fill_state_msg(sensor_msgs::msg::JointState & msg) const {
   for (auto & j : joints_) {
     msg.name.push_back(j.name);
-    msg.position.push_back(j.position);
-    msg.velocity.push_back(j.velocity);
+    msg.position.push_back(j.sim.position());
+    msg.velocity.push_back(j.sim.velocity());
     msg.effort.push_back(0.0);
   }
 }
@@ -102,15 +80,18 @@ void PositionJointGroup::fill_state_msg(sensor_msgs::msg::JointState & msg) cons
 // ===================================================================
 
 void VelocityJointGroup::setup(const std::vector<std::string> & names,
-                                const PID & pid,
-                                const std::string & topic,
-                                rclcpp::Node * node) {
+                               const std::vector<VelocitySimParams> & params,
+                               const std::string & topic,
+                               rclcpp::Node * node) {
   joints_.reserve(names.size());
   for (size_t i = 0; i < names.size(); ++i) {
     Joint j;
     j.name = names[i];
-    j.pid = pid;
-    joints_.push_back(j);
+    const VelocitySimParams & p = i < params.size() ? params[i] : VelocitySimParams{};
+    j.pid = PID(p.kp, p.ki, p.kd, p.max_accel, p.max_vel);
+    j.max_accel = p.max_accel;
+    j.max_vel = p.max_vel;
+    joints_.push_back(std::move(j));
     name_to_idx_[names[i]] = i;
   }
   pub_ = node->create_publisher<std_msgs::msg::Float64MultiArray>(topic, 10);
@@ -130,7 +111,7 @@ void VelocityJointGroup::update(double dt) {
     double error = j.desired - j.velocity;
     double accel = j.pid.compute(error, dt);
     j.velocity += accel * dt;
-    j.velocity = std::clamp(j.velocity, -j.pid.max_vel_, j.pid.max_vel_);
+    j.velocity = std::clamp(j.velocity, -j.max_vel, j.max_vel);
   }
 }
 
