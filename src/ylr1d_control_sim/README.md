@@ -227,8 +227,10 @@ Gazebo 原始控制器的命令话题，每路均为 `std_msgs/Float64MultiArray
 
 ## 使用
 
+完整闭环（plant + 本包 + HMI）可用 `ylr1d_bringup` 一键启动；分步启动如下：
+
 ```bash
-# 终端 1: 启动 Gazebo + 控制器
+# 终端 1: 启动 Gazebo + 控制器（position 接口方案）
 ros2 launch ylr1d_plant gazebo.launch.py
 
 # 终端 2: 启动模拟层

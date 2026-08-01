@@ -23,12 +23,20 @@
 
 ## 二、使用方法
 
+单独启动物理层：
+
 ```bash
 # position 接口方案
 ros2 launch ylr1d_plant gazebo.launch.py
 
 # effort 力控方案（推荐调试）
 ros2 launch ylr1d_plant gazebo_effort.launch.py
+```
+
+与 `ylr1d_control_sim` + `ylr1d_hmi` 组成完整闭环时，可用 `ylr1d_bringup` 一键启动：
+
+```bash
+ros2 launch ylr1d_bringup bringup.launch.py   # 聚合 gazebo.launch.py + position_simulate + hmi
 ```
 
 WSL 下 Gazebo 启动很慢（30-60s 控制器才加载完），务必等待全部控制器 active：

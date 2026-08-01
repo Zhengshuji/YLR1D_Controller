@@ -29,28 +29,35 @@ export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:$(pwd)/src
 
 ## 包结构速览
 
-四个包，职责分层（模型资产 → 物理层 → 控制层 → 人机界面）：
+五个包，职责分层（模型资产 → 物理层 → 控制层 → 人机界面），外加一键启动编排：
 
 ```
-ylr1d_description  ylr1d_plant  ylr1d_control_sim  ylr1d_hmi
-      │                │               │                │
-  模型资产(单一来源)  物理层(中控)    控制层(软仿真)    人机界面
-  xacro/mesh/config  Gazebo+ros2_control  PID过渡→5组命令   Qt5观测+控制
+ylr1d_description  ylr1d_plant  ylr1d_control_sim  ylr1d_hmi   ylr1d_bringup
+      │                │               │                │              │
+  模型资产(单一来源)  物理层(中控)    控制层(软仿真)    人机界面      一键启动
+  xacro/mesh/config  Gazebo+ros2_control  PID过渡→5组命令   Qt5观测+控制  聚合三者launch
 ```
 
 - **`ylr1d_description`**: 模型资产单一来源（xacro、meshes、模型 config yaml、sensors、rviz、world）。`ylr1d_plant` 与展示 launch 均从这里取资产
 - **`ylr1d_plant`**: 物理层/中控，管理 Gazebo + ros2_control 的配置与启动。提供 `gazebo.launch.py`（position 接口）与 `gazebo_effort.launch.py`（effort 力控）两套方案；内含 `joint_state_filter`（NaN → 0.0）
 - **`ylr1d_control_sim`**: 控制层/软仿真，模拟硬件位置/速度闭环。订阅 `/desired_joint_states` + `/joint_states`，PID 过渡后发布 5 组 ForwardCommandController 命令话题。参数从 `config/` 三个 yaml 加载（`<关节名>/limit/*`、`<关节名>/pid/*`）。**必须通过 `position_simulate.launch.py` 启动**。无头验证：`test/position_simulate_smoke_test.py`
 - **`ylr1d_hmi`**: Qt5 人机交互界面，关节状态观测 + 关节控制器。Lite 版（`hmi.launch.py`）正常，RViz2 版存在构建/运行问题
+- **`ylr1d_bringup`**: 一键启动编排（无节点）。`bringup.launch.py` 聚合 `gazebo.launch.py` + `position_simulate.launch.py` + `hmi.launch.py`，默认走 position 方案
 
 > 注：`joint_state_filter`（NaN → 0.0）集成在 `ylr1d_plant` 的 `gazebo_effort.launch.py` 中（见陷阱 7）。
 > 旧包名 `ylr1d_mid_control` → `ylr1d_plant`，`ylr1d_position_simulate` → `ylr1d_control_sim`。
 
 ---
 
-## 仿真验证 — 力控测试
+## 仿真验证
 
-### 启动
+### 一键启动（完整闭环，推荐）
+```bash
+ros2 launch ylr1d_bringup bringup.launch.py
+```
+等价于依次启动 `gazebo.launch.py`（position 方案）+ `position_simulate.launch.py` + `hmi.launch.py`。
+
+### 力控测试（effort 方案，单独启动）
 ```bash
 ros2 launch ylr1d_plant gazebo_effort.launch.py
 ```

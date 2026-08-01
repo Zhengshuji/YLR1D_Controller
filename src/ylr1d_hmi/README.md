@@ -94,7 +94,9 @@
 | 右臂 | 9 | 同左臂 | 同左臂 | 右手 Finger1/2: 0~0.015 m |
 
 > 平移关节（Lift、四个 Finger）单位 m；旋转关节单位 rad；速度单位 rad/s（平移关节 m/s）。
-> 夹爪（Finger）限位：左指 `[-0.015, 0]`，右指 `[0, 0.015]`。
+> 夹爪（Finger）限位：左指 `[-0.015, 0]`，右指 `[0, 0.015]`（HMI 展示/操作口径，比
+> `ylr1d_control_sim/config/position_control_limits.yaml` 的 ±0.014 略宽松；越界目标会被
+> 仿真层硬钳制到实际限位处）。
 
 ---
 
@@ -116,16 +118,26 @@
 
 ## 使用
 
-```bash
-# 终端 1: 启动 Gazebo + 控制器
-ros2 launch ylr1d_plant gazebo_effort.launch.py
+HMI 只发布 `/desired_joint_states`，需要 `ylr1d_control_sim` 消费并转成 5 组
+position 命令后驱动 Gazebo（position 方案）。完整闭环链路：
 
-# 终端 2: 启动 HMI（Lite 版）
+```bash
+# 推荐：一键启动（plant + control_sim + hmi）
+ros2 launch ylr1d_bringup bringup.launch.py
+
+# 或分步：
+# 终端 1: 物理层（position 接口方案）
+ros2 launch ylr1d_plant gazebo.launch.py
+# 终端 2: 控制层软仿真
+ros2 launch ylr1d_control_sim position_simulate.launch.py
+# 终端 3: 人机界面（Lite 版）
 ros2 launch ylr1d_hmi hmi.launch.py
 ```
 
 > WSL 下需 X server（WSLg 或 VcXsrv）支持 GUI 显示。
 > 环境变量 `LIBGL_ALWAYS_SOFTWARE=1` 已在 launch 文件中自动设置。
+> **注意**：若只启动 HMI + `gazebo_effort.launch.py`（力控方案），`/desired_joint_states`
+> 无人订阅，HMI 的滑动不会产生任何运动——必须经过 `ylr1d_control_sim` 过渡。
 
 **注意：** RViz2 版使用 `hmi_rviz.launch.py`，但当前未正常工作，详见上方说明。
 
