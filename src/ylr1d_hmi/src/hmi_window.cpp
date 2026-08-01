@@ -138,6 +138,7 @@ void HmiWindow::buildUiLite() {
     tabs->addTab(buildCard(i, card_title, tab_specs[i].color, *tab_specs[i].defs),
                  tab_specs[i].title);
   }
+
   main_layout->addWidget(tabs, 1);
 
   buildToolBar();

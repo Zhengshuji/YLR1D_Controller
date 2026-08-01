@@ -62,8 +62,29 @@ ament_target_dependencies(ylr1d_hmi_rviz
   "std_msgs"
 )
 
-# ── Install both ─────────────────────────────────────────
-install(TARGETS ylr1d_hmi ylr1d_hmi_rviz DESTINATION lib/${PROJECT_NAME})
+# ── Standalone sensor panel (independent from the controller HMI) ──
+add_executable(ylr1d_sensor_panel
+  src/sensor_panel_main.cpp
+  src/sensor_panel.cpp
+  include/ylr1d_hmi/sensor_panel.hpp
+)
+target_include_directories(ylr1d_sensor_panel PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+target_compile_features(ylr1d_sensor_panel PUBLIC c_std_99 cxx_std_17)
+target_link_libraries(ylr1d_sensor_panel
+  Qt5::Widgets
+  Qt5::Core
+)
+ament_target_dependencies(ylr1d_sensor_panel
+  "rclcpp"
+  "sensor_msgs"
+  "std_msgs"
+)
+
+# ── Install all ──────────────────────────────────────────
+install(TARGETS ylr1d_hmi ylr1d_hmi_rviz ylr1d_sensor_panel
+        DESTINATION lib/${PROJECT_NAME})
 install(DIRECTORY launch config DESTINATION share/${PROJECT_NAME}/)
 
 if(BUILD_TESTING)
