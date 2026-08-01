@@ -4,7 +4,8 @@ import tempfile
 import yaml
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import ExecuteProcess, TimerAction
+from launch.actions import DeclareLaunchArgument, ExecuteProcess, TimerAction
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 import xacro
 
@@ -91,7 +92,11 @@ def generate_launch_description():
 
     pkg_share = get_package_share_directory(package_name)
     pkg_desc = get_package_share_directory("ylr1d_description")
-    world_path = os.path.join(pkg_desc, "worlds", "empty.world")
+    declare_world = DeclareLaunchArgument(
+        "world", default_value="empty.world",
+        description="World file name under ylr1d_description/worlds/")
+    world_arg = LaunchConfiguration("world")
+    world_path = PathJoinSubstitution([pkg_desc, "worlds", world_arg])
 
     # model:// URIs are not used by this robot — package:// URIs are
     # resolved to absolute paths via _resolve_package_uris below,
@@ -225,6 +230,7 @@ def generate_launch_description():
 
     # ── Assemble ──────────────────────────────────────────────
     ld = LaunchDescription()
+    ld.add_action(declare_world)
     ld.add_action(robot_state_publisher)
     ld.add_action(joint_state_filter)
     ld.add_action(start_gazebo)

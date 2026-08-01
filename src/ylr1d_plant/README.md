@@ -10,14 +10,18 @@
 
 | 内容 | 说明 |
 |------|------|
-| `launch/gazebo.launch.py` | position 接口方案：6 个控制器，命令话题为 `*_controller/commands`（std_msgs/Float64MultiArray 位置值） |
-| `launch/gazebo_effort.launch.py` | effort 力控方案：同一套 6 个控制器，命令话题为 `*_effort_controller/commands`（力矩值），内置 `joint_state_filter` 节点 |
+| `launch/gazebo.launch.py` | position 接口方案：6 个控制器，命令话题为 `*_controller/commands`（std_msgs/Float64MultiArray 位置值）。用 `gzserver` 无头启动（无 GUI 窗口） |
+| `launch/gazebo_effort.launch.py` | effort 力控方案：同一套 6 个控制器，命令话题为 `*_effort_controller/commands`（力矩值），内置 `joint_state_filter` 节点。用 `gazebo` 启动（带 GUI 窗口） |
 | `config/controllers.yaml` | position 方案控制器定义 |
 | `config/effort_controllers.yaml` | effort 方案控制器定义 |
 | `src/joint_state_filter.cpp` | 棱柱关节 NaN → 0.0 过滤器，发布 `/joint_states_filtered` |
 
-> 两套方案共用同一 URDF（来自 `ylr1d_description`），区别在于控制器命令接口：position 直接给
-> 目标角度，effort 给力矩。
+> 两套方案基于同一份 xacro 资产（来自 `ylr1d_description`），但最终 URDF 与行为有差异：
+> - 命令接口：position 用 position/velocity 接口，直接给目标角度；effort 方案由 launch 正则向
+>   xacro 注入 `<command_interface name="effort"/>`，给的是力矩；
+> - 启动器：position 用 `gzserver`（无头），effort 用 `gazebo`（带 GUI）；
+> - 数据流：effort 方案启动 `joint_state_filter` 并让 robot_state_publisher 订阅过滤后的
+>   `/joint_states_filtered`；position 方案无过滤器、直接订阅原始 `/joint_states`。
 
 ---
 
@@ -26,11 +30,14 @@
 单独启动物理层：
 
 ```bash
-# position 接口方案
+# position 接口方案（无头 gzserver，无 GUI，适合无显示/远程环境）
 ros2 launch ylr1d_plant gazebo.launch.py
 
-# effort 力控方案（推荐调试）
+# effort 力控方案（带 GUI 的 gazebo 窗口）
 ros2 launch ylr1d_plant gazebo_effort.launch.py
+
+# 可选：指定 world（默认 empty.world，可换 ylr1d_description/worlds/ 下的其他 world）
+ros2 launch ylr1d_plant gazebo.launch.py world:=sensors_test.world
 ```
 
 与 `ylr1d_control_sim` + `ylr1d_hmi` 组成完整闭环时，可用 `ylr1d_bringup` 一键启动：
@@ -43,13 +50,14 @@ WSL 下 Gazebo 启动很慢（30-60s 控制器才加载完），务必等待全�
 
 ```bash
 ros2 control list_controllers
-# 期望全部 active：
-#   chassis_steering_effort_controller   (effort 方案)
-#   chassis_wheels_effort_controller
-#   torso_effort_controller
-#   left_arm_effort_controller
-#   right_arm_effort_controller
-#   joint_state_broadcaster
+# 期望全部 active —— effort 方案：
+#   chassis_steering_effort_controller   chassis_wheels_effort_controller
+#   torso_effort_controller              left_arm_effort_controller
+#   right_arm_effort_controller          joint_state_broadcaster
+# —— position 方案（同名去掉 `_effort`）：
+#   chassis_steering_controller          chassis_wheels_controller
+#   torso_controller                     left_arm_controller
+#   right_arm_controller                 joint_state_broadcaster
 ```
 
 ---
@@ -60,6 +68,7 @@ ros2 control list_controllers
 
 ```bash
 ros2 topic echo /joint_states --once        # 30 关节 position/velocity/effort
+# 注意：/joint_states_filtered 仅 effort 方案存在（position 方案未启动 filter 节点）
 ros2 topic echo /joint_states_filtered --once  # NaN → 0.0 过滤后
 ```
 
@@ -89,6 +98,20 @@ ros2 topic pub --rate 20 /right_arm_effort_controller/commands \
   std_msgs/Float64MultiArray "{data: [5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 0.0, 0.0]}"
 ```
 
+### 3. 位置命令（position 方案，单位 rad）
+
+话题名去掉 `_effort` 后缀，值语义为目标位置：
+
+```bash
+# 转向（4 关节，位置 rad）
+ros2 topic pub --rate 20 /chassis_steering_controller/commands \
+  std_msgs/Float64MultiArray "{data: [0.2, -0.2, 0.2, -0.2]}"
+
+# 躯干（Joint_Base_to_Body1 上限 0.3 rad，注意别越限）
+ros2 topic pub --rate 20 /torso_controller/commands \
+  std_msgs/Float64MultiArray "{data: [-0.1, 0.0, 0.0, 0.0]}"
+```
+
 ---
 
 ## 四、补充说明
@@ -113,7 +136,8 @@ controller_manager 服务。
 ### 资产来源
 
 - xacro / 模型 config / meshes / rviz / world：`ylr1d_description`
-- `${controllers_yaml_path}` 占位符由本包 launch 注入为本包自己的 `config/controllers.yaml`
+- `${controllers_yaml_path}` 占位符由本包 launch 注入：position 方案 → `config/controllers.yaml`，
+  effort 方案 → `config/effort_controllers.yaml`
 
 ---
 
@@ -121,8 +145,11 @@ controller_manager 服务。
 
 ### TF_NAN（棱柱关节 NaN）
 Gazebo 将 prismatic joint 位置初始化为 NaN，robot_state_publisher 持续报 `TF_NAN`。
-`joint_state_filter` 节点（本包内）将 NaN → 0.0，过滤后数据在 `/joint_states_filtered`，
-已集成到 `gazebo_effort.launch.py`。
+`joint_state_filter` 节点（本包内）将 NaN → 0.0，过滤后数据在 `/joint_states_filtered`。
+已集成到 `gazebo_effort.launch.py`：该 launch 启动 filter 节点，并把 robot_state_publisher
+的 `joint_states` 话题 remap 到 `/joint_states_filtered`，从而消除 TF_NAN。
+注意：position 方案（`gazebo.launch.py`）**没有** filter，robot_state_publisher 直接订阅
+原始 `/joint_states`，因此只有 effort 方案规避了该问题。
 
 ### Gazebo 残留进程
 `ros2 launch` 退出后 `gzserver` 仍在后台，再次启动报 `Entity already exists`：

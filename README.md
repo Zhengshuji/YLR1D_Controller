@@ -22,8 +22,8 @@ ylr1d_bringup       一键启动：聚合上面三个 launch
 
 ```
 HMI / 上层算法 ──/desired_joint_states──▶ control_sim ──5组命令话题──▶ plant (Gazebo)
-      ▲                                                                     │
-      └──────────────────────── /joint_states 反馈 ◀────────────────────────┘
+      ▲                                       ▲                              │
+      └───────────────────────────────────────└── /joint_states 反馈 ◀──────┘
 ```
 
 - `/desired_joint_states`（`sensor_msgs/JointState`）：期望关节位置/速度，由 HMI 或算法节点发布

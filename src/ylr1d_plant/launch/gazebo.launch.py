@@ -4,7 +4,8 @@ import tempfile
 import yaml
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import ExecuteProcess, TimerAction
+from launch.actions import DeclareLaunchArgument, ExecuteProcess, TimerAction
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 import xacro
 
@@ -74,7 +75,11 @@ def generate_launch_description():
     share_path = os.path.dirname(pkg_desc)
     env["GAZEBO_MODEL_PATH"] = (model_path + ":" + share_path + ":"
                                 + env.get("GAZEBO_MODEL_PATH", ""))
-    world_path = os.path.join(pkg_desc, "worlds", "empty.world")
+    declare_world = DeclareLaunchArgument(
+        "world", default_value="empty.world",
+        description="World file name under ylr1d_description/worlds/")
+    world_arg = LaunchConfiguration("world")
+    world_path = PathJoinSubstitution([pkg_desc, "worlds", world_arg])
 
     # ── Process xacro (model assets come from ylr1d_description) ──
     xacro_path = os.path.join(pkg_desc, "urdf", "ylr1d.xacro")
@@ -193,6 +198,7 @@ def generate_launch_description():
 
     # ── Assemble ──────────────────────────────────────────────
     ld = LaunchDescription()
+    ld.add_action(declare_world)
     ld.add_action(robot_state_publisher)
     ld.add_action(start_gazebo)
     ld.add_action(TimerAction(period=5.0, actions=[spawn_entity]))

@@ -1,0 +1,1794 @@
+<?xml version="1.0" encoding="utf-8"?>
+<robot xmlns:xacro="http://wiki.ros.org/xacro" name="ylr1d">
+  <!-- ============================================ -->
+  <!-- MODEL ASSET SOURCE                            -->
+  <!-- ylr1d_description is the single source of     -->
+  <!-- model assets (xacro + config yaml + meshes).  -->
+  <!-- ylr1d_plant consumes this xacro and injects   -->
+  <!-- its own config/controllers.yaml to run        -->
+  <!-- Gazebo + ros2_control.                        -->
+  <!--                                               -->
+  <!-- Contents:                                    -->
+  <!--  - Link/joint kinematics & inertia,          -->
+  <!--    parameterized from config YAML files      -->
+  <!--    (links/colors/limits/scale/calibration/   -->
+  <!--    dynamics) via launch mappings             -->
+  <!--  - Gazebo sensor plugins (cameras, radar,    -->
+  <!--    IMU, ultrasonic)                          -->
+  <!--  - ros2_control <ros2_control> and <gazebo>  -->
+  <!--    blocks defining control interfaces        -->
+  <!--                                               -->
+  <!-- The placeholder ${controllers_yaml_path} is  -->
+  <!-- substituted by the launch file at runtime     -->
+  <!-- with the path to config/controllers.yaml.    -->
+  <!-- ============================================ -->
+  <!-- ============================================ -->
+  <!-- YAML config values (links.yaml, colors.yaml,  -->
+  <!-- limits.yaml, scale.yaml) are passed via xacro -->
+  <!-- mappings from the launch file at runtime.     -->
+  <!-- ============================================ -->
+  <!-- SENSOR VISUALIZATION (diagnostic)             -->
+  <!-- ============================================ -->
+  <!-- This variant of ylr1d.xacro is used ONLY to eyeball sensor
+       position/orientation in Gazebo (see sensor_vis.launch.py). It is
+       identical to ylr1d.xacro except every sensor sets
+       <visualize>true</visualize>: ray sensors (radar + 4 ultrasonic) draw
+       their actual scan rays, cameras draw their view frustum. No physics /
+       sensor config is changed. -->
+
+  <xacro:macro name="ylr1d" params="prefix">
+  
+<!-- 添加空的虚拟连接 -->
+<!--
+<link name="${prefix}base_footprint" />
+<joint name="${prefix}base_footprint_joint" type="fixed">
+    <origin xyz="0 0 0.3" rpy="0 0 0" />
+    <parent link="${prefix}base_footprint" />
+    <child link="${prefix}Link_Base" />
+</joint>
+-->
+
+<link name="${prefix}Link_Base">
+    <inertial>
+      <origin xyz="0.037265 0.00025041 0.20252" rpy="0 0 0"/>
+      <mass value="${links.Link_Base.mass}"/>
+      <inertia ixx="${links.Link_Base.inertia.ixx}" ixy="${links.Link_Base.inertia.ixy}" ixz="${links.Link_Base.inertia.ixz}" iyy="${links.Link_Base.inertia.iyy}" iyz="${links.Link_Base.inertia.iyz}" izz="${links.Link_Base.inertia.izz}"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_Base.STL"/>
+      </geometry>
+      <material name="Base">
+        <color rgba="${colors.Link_Base}"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_Base.STL"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="${prefix}Joint_Base_to_IMUSensor" type="fixed">
+    <origin xyz="0.1103 0.00033738 0.285" rpy="0 0 -3.1395"/>
+    <parent link="Link_Base"/>
+    <child link="Link_IMUSensor"/>
+    <axis xyz="0 0 0"/>
+    <calibration rising="${calibration.Joint_Base_to_IMUSensor.rising}" falling="${calibration.Joint_Base_to_IMUSensor.falling}"/>
+    <dynamics damping="${dynamics.Joint_Base_to_IMUSensor.damping}" friction="${dynamics.Joint_Base_to_IMUSensor.friction}"/>
+  </joint>
+  <link name="${prefix}Link_RFWheelF">
+    <inertial>
+      <origin xyz="-0.016503 0.022032 0.045675" rpy="0 0 0"/>
+      <mass value="${links.Link_RFWheelF.mass}"/>
+      <inertia ixx="${links.Link_RFWheelF.inertia.ixx}" ixy="${links.Link_RFWheelF.inertia.ixy}" ixz="${links.Link_RFWheelF.inertia.ixz}" iyy="${links.Link_RFWheelF.inertia.iyy}" iyz="${links.Link_RFWheelF.inertia.iyz}" izz="${links.Link_RFWheelF.inertia.izz}"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_RFWheelF.STL"/>
+      </geometry>
+      <material name="WheelF">
+        <color rgba="${colors.Link_RFWheelF}"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_RFWheelF.STL"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="${prefix}Joint_Base_to_RFWheelF" type="revolute">
+    <origin xyz="-0.212999999999994 0.15999999999999 0" rpy="0 0 2.49734079418682"/>
+    <parent link="Link_Base"/>
+    <child link="Link_RFWheelF"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="${limits.Joint_Base_to_RFWheelF.lower}" upper="${limits.Joint_Base_to_RFWheelF.upper}" effort="${limits.Joint_Base_to_RFWheelF.effort}" velocity="${limits.Joint_Base_to_RFWheelF.velocity}"/>
+    <calibration rising="${calibration.Joint_Base_to_RFWheelF.rising}" falling="${calibration.Joint_Base_to_RFWheelF.falling}"/>
+    <dynamics damping="${dynamics.Joint_Base_to_RFWheelF.damping}" friction="${dynamics.Joint_Base_to_RFWheelF.friction}"/>
+  </joint>
+  <link name="${prefix}Link_RFWheel">
+    <inertial>
+      <origin xyz="-6.9823E-08 7.7958E-06 -0.00039516" rpy="0 0 0"/>
+      <mass value="${links.Link_RFWheel.mass}"/>
+      <inertia ixx="${links.Link_RFWheel.inertia.ixx}" ixy="${links.Link_RFWheel.inertia.ixy}" ixz="${links.Link_RFWheel.inertia.ixz}" iyy="${links.Link_RFWheel.inertia.iyy}" iyz="${links.Link_RFWheel.inertia.iyz}" izz="${links.Link_RFWheel.inertia.izz}"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_RFWheel.STL"/>
+      </geometry>
+      <material name="Wheel">
+        <color rgba="${colors.Link_RFWheel}"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_RFWheel.STL"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="${prefix}Joint_RFWheelF_to_RFWheel" type="continuous">
+    <origin xyz="0 0 -0.00299999999999925" rpy="1.5707963267949 0 0.64425185940297"/>
+    <parent link="Link_RFWheelF"/>
+    <child link="Link_RFWheel"/>
+    <axis xyz="0 0 -1"/>
+    <calibration rising="${calibration.Joint_RFWheelF_to_RFWheel.rising}" falling="${calibration.Joint_RFWheelF_to_RFWheel.falling}"/>
+    <dynamics damping="${dynamics.Joint_RFWheelF_to_RFWheel.damping}" friction="${dynamics.Joint_RFWheelF_to_RFWheel.friction}"/>
+  </joint>
+  <link name="${prefix}Link_LFWheelF">
+    <inertial>
+      <origin xyz="-0.016503 -0.022032 0.045675" rpy="0 0 0"/>
+      <mass value="${links.Link_LFWheelF.mass}"/>
+      <inertia ixx="${links.Link_LFWheelF.inertia.ixx}" ixy="${links.Link_LFWheelF.inertia.ixy}" ixz="${links.Link_LFWheelF.inertia.ixz}" iyy="${links.Link_LFWheelF.inertia.iyy}" iyz="${links.Link_LFWheelF.inertia.iyz}" izz="${links.Link_LFWheelF.inertia.izz}"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_LFWheelF.STL"/>
+      </geometry>
+      <material name="WheelF">
+        <color rgba="${colors.Link_LFWheelF}"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_LFWheelF.STL"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="${prefix}Joint_Base_to_LFWheelF" type="revolute">
+    <origin xyz="-0.212999999999985 -0.16 0" rpy="0 0 -2.49734079418677"/>
+    <parent link="Link_Base"/>
+    <child link="Link_LFWheelF"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="${limits.Joint_Base_to_LFWheelF.lower}" upper="${limits.Joint_Base_to_LFWheelF.upper}" effort="${limits.Joint_Base_to_LFWheelF.effort}" velocity="${limits.Joint_Base_to_LFWheelF.velocity}"/>
+    <calibration rising="${calibration.Joint_Base_to_LFWheelF.rising}" falling="${calibration.Joint_Base_to_LFWheelF.falling}"/>
+    <dynamics damping="${dynamics.Joint_Base_to_LFWheelF.damping}" friction="${dynamics.Joint_Base_to_LFWheelF.friction}"/>
+  </joint>
+  <link name="${prefix}Link_LFWheel">
+    <inertial>
+      <origin xyz="4.872E-08 -7.7945E-06 0.00039516" rpy="0 0 0"/>
+      <mass value="${links.Link_LFWheel.mass}"/>
+      <inertia ixx="${links.Link_LFWheel.inertia.ixx}" ixy="${links.Link_LFWheel.inertia.ixy}" ixz="${links.Link_LFWheel.inertia.ixz}" iyy="${links.Link_LFWheel.inertia.iyy}" iyz="${links.Link_LFWheel.inertia.iyz}" izz="${links.Link_LFWheel.inertia.izz}"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_LFWheel.STL"/>
+      </geometry>
+      <material name="Wheel">
+        <color rgba="${colors.Link_LFWheel}"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_LFWheel.STL"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="${prefix}Joint_LFWheelF_to_LFWheel" type="continuous">
+    <origin xyz="0 0 -0.00299999999999959" rpy="-1.5707963267949 0 2.49734079418677"/>
+    <parent link="Link_LFWheelF"/>
+    <child link="Link_LFWheel"/>
+    <axis xyz="0 0 -1"/>
+    <calibration rising="${calibration.Joint_LFWheelF_to_LFWheel.rising}" falling="${calibration.Joint_LFWheelF_to_LFWheel.falling}"/>
+    <dynamics damping="${dynamics.Joint_LFWheelF_to_LFWheel.damping}" friction="${dynamics.Joint_LFWheelF_to_LFWheel.friction}"/>
+  </joint>
+  <link name="${prefix}Link_RBWheelF">
+    <inertial>
+      <origin xyz="-0.016503 -0.022032 0.045675" rpy="0 0 0"/>
+      <mass value="${links.Link_RBWheelF.mass}"/>
+      <inertia ixx="${links.Link_RBWheelF.inertia.ixx}" ixy="${links.Link_RBWheelF.inertia.ixy}" ixz="${links.Link_RBWheelF.inertia.ixz}" iyy="${links.Link_RBWheelF.inertia.iyy}" iyz="${links.Link_RBWheelF.inertia.iyz}" izz="${links.Link_RBWheelF.inertia.izz}"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_RBWheelF.STL"/>
+      </geometry>
+      <material name="WheelF">
+        <color rgba="${colors.Link_RBWheelF}"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_RBWheelF.STL"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="${prefix}Joint_Base_to_RBWheelF" type="revolute">
+    <origin xyz="0.212999999999995 0.16 0" rpy="0 0 0.644251859402997"/>
+    <parent link="Link_Base"/>
+    <child link="Link_RBWheelF"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="${limits.Joint_Base_to_RBWheelF.lower}" upper="${limits.Joint_Base_to_RBWheelF.upper}" effort="${limits.Joint_Base_to_RBWheelF.effort}" velocity="${limits.Joint_Base_to_RBWheelF.velocity}"/>
+    <calibration rising="${calibration.Joint_Base_to_RBWheelF.rising}" falling="${calibration.Joint_Base_to_RBWheelF.falling}"/>
+    <dynamics damping="${dynamics.Joint_Base_to_RBWheelF.damping}" friction="${dynamics.Joint_Base_to_RBWheelF.friction}"/>
+  </joint>
+  <link name="${prefix}Link_RBWheel">
+    <inertial>
+      <origin xyz="-5.3373E-06 5.62E-06 -0.00039509" rpy="0 0 0"/>
+      <mass value="${links.Link_RBWheel.mass}"/>
+      <inertia ixx="${links.Link_RBWheel.inertia.ixx}" ixy="${links.Link_RBWheel.inertia.ixy}" ixz="${links.Link_RBWheel.inertia.ixz}" iyy="${links.Link_RBWheel.inertia.iyy}" iyz="${links.Link_RBWheel.inertia.iyz}" izz="${links.Link_RBWheel.inertia.izz}"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_RBWheel.STL"/>
+      </geometry>
+      <material name="Wheel">
+        <color rgba="${colors.Link_RBWheel}"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_RBWheel.STL"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="${prefix}Joint_RBWheelF_to_RBWheel" type="continuous">
+    <origin xyz="0 0 -0.003" rpy="1.5707963267949 0 2.4973407941868"/>
+    <parent link="Link_RBWheelF"/>
+    <child link="Link_RBWheel"/>
+    <axis xyz="0 0 -1"/>
+    <calibration rising="${calibration.Joint_RBWheelF_to_RBWheel.rising}" falling="${calibration.Joint_RBWheelF_to_RBWheel.falling}"/>
+    <dynamics damping="${dynamics.Joint_RBWheelF_to_RBWheel.damping}" friction="${dynamics.Joint_RBWheelF_to_RBWheel.friction}"/>
+  </joint>
+  <link name="${prefix}Link_LBWheelF">
+    <inertial>
+      <origin xyz="-0.016503 0.022032 0.045675" rpy="0 0 0"/>
+      <mass value="${links.Link_LBWheelF.mass}"/>
+      <inertia ixx="${links.Link_LBWheelF.inertia.ixx}" ixy="${links.Link_LBWheelF.inertia.ixy}" ixz="${links.Link_LBWheelF.inertia.ixz}" iyy="${links.Link_LBWheelF.inertia.iyy}" iyz="${links.Link_LBWheelF.inertia.iyz}" izz="${links.Link_LBWheelF.inertia.izz}"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_LBWheelF.STL"/>
+      </geometry>
+      <material name="WheelF">
+        <color rgba="${colors.Link_LBWheelF}"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_LBWheelF.STL"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="${prefix}Joint_Base_to_LBWheelF" type="revolute">
+    <origin xyz="0.213000000000005 -0.159999999999976 0" rpy="0 0 -0.644251859402906"/>
+    <parent link="Link_Base"/>
+    <child link="Link_LBWheelF"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="${limits.Joint_Base_to_LBWheelF.lower}" upper="${limits.Joint_Base_to_LBWheelF.upper}" effort="${limits.Joint_Base_to_LBWheelF.effort}" velocity="${limits.Joint_Base_to_LBWheelF.velocity}"/>
+    <calibration rising="${calibration.Joint_Base_to_LBWheelF.rising}" falling="${calibration.Joint_Base_to_LBWheelF.falling}"/>
+    <dynamics damping="${dynamics.Joint_Base_to_LBWheelF.damping}" friction="${dynamics.Joint_Base_to_LBWheelF.friction}"/>
+  </joint>
+  <link name="${prefix}Link_LBWheel">
+    <inertial>
+      <origin xyz="-1.8876E-08 7.7971E-06 0.00039516" rpy="0 0 0"/>
+      <mass value="${links.Link_LBWheel.mass}"/>
+      <inertia ixx="${links.Link_LBWheel.inertia.ixx}" ixy="${links.Link_LBWheel.inertia.ixy}" ixz="${links.Link_LBWheel.inertia.ixz}" iyy="${links.Link_LBWheel.inertia.iyy}" iyz="${links.Link_LBWheel.inertia.iyz}" izz="${links.Link_LBWheel.inertia.izz}"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_LBWheel.STL"/>
+      </geometry>
+      <material name="Wheel">
+        <color rgba="${colors.Link_LBWheel}"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_LBWheel.STL"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="${prefix}Joint_LBWheelF_to_LBWheel" type="continuous">
+    <origin xyz="0 0 -0.0030000000000002" rpy="1.5707963267949 0 -2.49734079418689"/>
+    <parent link="Link_LBWheelF"/>
+    <child link="Link_LBWheel"/>
+    <axis xyz="0 0 -1"/>
+    <calibration rising="${calibration.Joint_LBWheelF_to_LBWheel.rising}" falling="${calibration.Joint_LBWheelF_to_LBWheel.falling}"/>
+    <dynamics damping="${dynamics.Joint_LBWheelF_to_LBWheel.damping}" friction="${dynamics.Joint_LBWheelF_to_LBWheel.friction}"/>
+  </joint>
+  <link name="${prefix}Link_Body1">
+    <inertial>
+      <origin xyz="2.0431E-05 2.2756E-05 0.19728" rpy="0 0 0"/>
+      <mass value="${links.Link_Body1.mass}"/>
+      <inertia ixx="${links.Link_Body1.inertia.ixx}" ixy="${links.Link_Body1.inertia.ixy}" ixz="${links.Link_Body1.inertia.ixz}" iyy="${links.Link_Body1.inertia.iyy}" iyz="${links.Link_Body1.inertia.iyz}" izz="${links.Link_Body1.inertia.izz}"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_Body1.STL"/>
+      </geometry>
+      <material name="Body">
+        <color rgba="${colors.Link_Body1}"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_Body1.STL"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="${prefix}Joint_Base_to_Body1" type="prismatic">
+    <origin xyz="-0.113000000000019 0 0.2" rpy="0 0 -3.14159265358978"/>
+    <parent link="Link_Base"/>
+    <child link="Link_Body1"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="${limits.Joint_Base_to_Body1.lower}" upper="${limits.Joint_Base_to_Body1.upper}" effort="${limits.Joint_Base_to_Body1.effort}" velocity="${limits.Joint_Base_to_Body1.velocity}"/>
+    <calibration rising="${calibration.Joint_Base_to_Body1.rising}" falling="${calibration.Joint_Base_to_Body1.falling}"/>
+    <dynamics damping="${dynamics.Joint_Base_to_Body1.damping}" friction="${dynamics.Joint_Base_to_Body1.friction}"/>
+  </joint>
+  <link name="${prefix}Link_Body2">
+    <inertial>
+      <origin xyz="-0.00013811 0.00013676 0.12647" rpy="0 0 0"/>
+      <mass value="${links.Link_Body2.mass}"/>
+      <inertia ixx="${links.Link_Body2.inertia.ixx}" ixy="${links.Link_Body2.inertia.ixy}" ixz="${links.Link_Body2.inertia.ixz}" iyy="${links.Link_Body2.inertia.iyy}" iyz="${links.Link_Body2.inertia.iyz}" izz="${links.Link_Body2.inertia.izz}"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_Body2.STL"/>
+      </geometry>
+      <material name="Body">
+        <color rgba="${colors.Link_Body2}"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_Body2.STL"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="${prefix}Joint_Body1_to_Body2" type="revolute">
+    <origin xyz="0 0 0.326000000000013" rpy="0 0 0"/>
+    <parent link="Link_Body1"/>
+    <child link="Link_Body2"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="${limits.Joint_Body1_to_Body2.lower}" upper="${limits.Joint_Body1_to_Body2.upper}" effort="${limits.Joint_Body1_to_Body2.effort}" velocity="${limits.Joint_Body1_to_Body2.velocity}"/>
+    <calibration rising="${calibration.Joint_Body1_to_Body2.rising}" falling="${calibration.Joint_Body1_to_Body2.falling}"/>
+    <dynamics damping="${dynamics.Joint_Body1_to_Body2.damping}" friction="${dynamics.Joint_Body1_to_Body2.friction}"/>
+  </joint>
+  <link name="${prefix}Link_Body3">
+    <inertial>
+      <origin xyz="-1.8453E-05 -0.00089236 0.0058854" rpy="0 0 0"/>
+      <mass value="${links.Link_Body3.mass}"/>
+      <inertia ixx="${links.Link_Body3.inertia.ixx}" ixy="${links.Link_Body3.inertia.ixy}" ixz="${links.Link_Body3.inertia.ixz}" iyy="${links.Link_Body3.inertia.iyy}" iyz="${links.Link_Body3.inertia.iyz}" izz="${links.Link_Body3.inertia.izz}"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_Body3.STL"/>
+      </geometry>
+      <material name="Body">
+        <color rgba="${colors.Link_Body3}"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_Body3.STL"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="${prefix}Joint_Body2_to_Body3" type="revolute">
+    <origin xyz="0.0100000000000025 0 0.237299999999995" rpy="0 0 3.14159265358978"/>
+    <parent link="Link_Body2"/>
+    <child link="Link_Body3"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="${limits.Joint_Body2_to_Body3.lower}" upper="${limits.Joint_Body2_to_Body3.upper}" effort="${limits.Joint_Body2_to_Body3.effort}" velocity="${limits.Joint_Body2_to_Body3.velocity}"/>
+    <calibration rising="${calibration.Joint_Body2_to_Body3.rising}" falling="${calibration.Joint_Body2_to_Body3.falling}"/>
+    <dynamics damping="${dynamics.Joint_Body2_to_Body3.damping}" friction="${dynamics.Joint_Body2_to_Body3.friction}"/>
+  </joint>
+  <link name="${prefix}Link_Body4">
+    <inertial>
+      <origin xyz="0.0079006 -0.043025 0.0021283" rpy="0 0 0"/>
+      <mass value="${links.Link_Body4.mass}"/>
+      <inertia ixx="${links.Link_Body4.inertia.ixx}" ixy="${links.Link_Body4.inertia.ixy}" ixz="${links.Link_Body4.inertia.ixz}" iyy="${links.Link_Body4.inertia.iyy}" iyz="${links.Link_Body4.inertia.iyz}" izz="${links.Link_Body4.inertia.izz}"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_Body4.STL"/>
+      </geometry>
+      <material name="Body">
+        <color rgba="${colors.Link_Body4}"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_Body4.STL"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="${prefix}Joint_Body3_to_Body4" type="revolute">
+    <origin xyz="0 0 0.04999999999993" rpy="-1.5707963267949 0 -3.14159265358863"/>
+    <parent link="Link_Body3"/>
+    <child link="Link_Body4"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="${limits.Joint_Body3_to_Body4.lower}" upper="${limits.Joint_Body3_to_Body4.upper}" effort="${limits.Joint_Body3_to_Body4.effort}" velocity="${limits.Joint_Body3_to_Body4.velocity}"/>
+    <calibration rising="${calibration.Joint_Body3_to_Body4.rising}" falling="${calibration.Joint_Body3_to_Body4.falling}"/>
+    <dynamics damping="${dynamics.Joint_Body3_to_Body4.damping}" friction="${dynamics.Joint_Body3_to_Body4.friction}"/>
+  </joint>
+  <link name="${prefix}Link_GlobalCameraSensor">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="${links.Link_GlobalCameraSensor.mass}"/>
+      <inertia ixx="${links.Link_GlobalCameraSensor.inertia.ixx}" ixy="${links.Link_GlobalCameraSensor.inertia.ixy}" ixz="${links.Link_GlobalCameraSensor.inertia.ixz}" iyy="${links.Link_GlobalCameraSensor.inertia.iyy}" iyz="${links.Link_GlobalCameraSensor.inertia.iyz}" izz="${links.Link_GlobalCameraSensor.inertia.izz}"/>
+    </inertial>
+  </link>
+  <joint name="${prefix}Joint_Body4_to_GlobalCameraSensor" type="fixed">
+    <origin xyz="0.0566950000000047 -0.0674999999999963 0" rpy="1.56906022137597 0 0.000125465645199403"/>
+    <parent link="Link_Body4"/>
+    <child link="Link_GlobalCameraSensor"/>
+    <axis xyz="0 0 0"/>
+    <calibration rising="${calibration.Joint_Body4_to_GlobalCameraSensor.rising}" falling="${calibration.Joint_Body4_to_GlobalCameraSensor.falling}"/>
+    <dynamics damping="${dynamics.Joint_Body4_to_GlobalCameraSensor.damping}" friction="${dynamics.Joint_Body4_to_GlobalCameraSensor.friction}"/>
+  </joint>
+  <link name="${prefix}Link_LeftArm1">
+    <inertial>
+      <origin xyz="-2.4744E-06 0.00013884 0.14429" rpy="0 0 0"/>
+      <mass value="${links.Link_LeftArm1.mass}"/>
+      <inertia ixx="${links.Link_LeftArm1.inertia.ixx}" ixy="${links.Link_LeftArm1.inertia.ixy}" ixz="${links.Link_LeftArm1.inertia.ixz}" iyy="${links.Link_LeftArm1.inertia.iyy}" iyz="${links.Link_LeftArm1.inertia.iyz}" izz="${links.Link_LeftArm1.inertia.izz}"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_LeftArm1.STL"/>
+      </geometry>
+      <material name="Arm">
+        <color rgba="${colors.Link_LeftArm1}"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_LeftArm1.STL"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="${prefix}Joint_Body2_to_LeftArm1" type="revolute">
+    <origin xyz="0 0 0.133799999999993" rpy="1.57079632679489 0 3.14159265358978"/>
+    <parent link="Link_Body2"/>
+    <child link="Link_LeftArm1"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="${limits.Joint_Body2_to_LeftArm1.lower}" upper="${limits.Joint_Body2_to_LeftArm1.upper}" effort="${limits.Joint_Body2_to_LeftArm1.effort}" velocity="${limits.Joint_Body2_to_LeftArm1.velocity}"/>
+    <calibration rising="${calibration.Joint_Body2_to_LeftArm1.rising}" falling="${calibration.Joint_Body2_to_LeftArm1.falling}"/>
+    <dynamics damping="${dynamics.Joint_Body2_to_LeftArm1.damping}" friction="${dynamics.Joint_Body2_to_LeftArm1.friction}"/>
+  </joint>
+  <link name="${prefix}Link_LeftArm2">
+    <inertial>
+      <origin xyz="-0.00028298 0.062776 0.0051005" rpy="0 0 0"/>
+      <mass value="${links.Link_LeftArm2.mass}"/>
+      <inertia ixx="${links.Link_LeftArm2.inertia.ixx}" ixy="${links.Link_LeftArm2.inertia.ixy}" ixz="${links.Link_LeftArm2.inertia.ixz}" iyy="${links.Link_LeftArm2.inertia.iyy}" iyz="${links.Link_LeftArm2.inertia.iyz}" izz="${links.Link_LeftArm2.inertia.izz}"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_LeftArm2.STL"/>
+      </geometry>
+      <material name="Arm">
+        <color rgba="${colors.Link_LeftArm2}"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_LeftArm2.STL"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="${prefix}Joint_LeftArm1_to_LeftArm2" type="revolute">
+    <origin xyz="0 0 0.174999999999813" rpy="1.57079632679487 0 3.14159265358978"/>
+    <parent link="Link_LeftArm1"/>
+    <child link="Link_LeftArm2"/>
+    <axis xyz="0 0 -1"/>
+    <limit lower="${limits.Joint_LeftArm1_to_LeftArm2.lower}" upper="${limits.Joint_LeftArm1_to_LeftArm2.upper}" effort="${limits.Joint_LeftArm1_to_LeftArm2.effort}" velocity="${limits.Joint_LeftArm1_to_LeftArm2.velocity}"/>
+    <calibration rising="${calibration.Joint_LeftArm1_to_LeftArm2.rising}" falling="${calibration.Joint_LeftArm1_to_LeftArm2.falling}"/>
+    <dynamics damping="${dynamics.Joint_LeftArm1_to_LeftArm2.damping}" friction="${dynamics.Joint_LeftArm1_to_LeftArm2.friction}"/>
+  </joint>
+  <link name="${prefix}Link_LeftArm3">
+    <inertial>
+      <origin xyz="0.0013571 0.21276 -0.00028111" rpy="0 0 0"/>
+      <mass value="${links.Link_LeftArm3.mass}"/>
+      <inertia ixx="${links.Link_LeftArm3.inertia.ixx}" ixy="${links.Link_LeftArm3.inertia.ixy}" ixz="${links.Link_LeftArm3.inertia.ixz}" iyy="${links.Link_LeftArm3.inertia.iyy}" iyz="${links.Link_LeftArm3.inertia.iyz}" izz="${links.Link_LeftArm3.inertia.izz}"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_LeftArm3.STL"/>
+      </geometry>
+      <material name="Arm">
+        <color rgba="${colors.Link_LeftArm3}"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_LeftArm3.STL"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="${prefix}Joint_LeftArm2_to_LeftArm3" type="revolute">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <parent link="Link_LeftArm2"/>
+    <child link="Link_LeftArm3"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="${limits.Joint_LeftArm2_to_LeftArm3.lower}" upper="${limits.Joint_LeftArm2_to_LeftArm3.upper}" effort="${limits.Joint_LeftArm2_to_LeftArm3.effort}" velocity="${limits.Joint_LeftArm2_to_LeftArm3.velocity}"/>
+    <calibration rising="${calibration.Joint_LeftArm2_to_LeftArm3.rising}" falling="${calibration.Joint_LeftArm2_to_LeftArm3.falling}"/>
+    <dynamics damping="${dynamics.Joint_LeftArm2_to_LeftArm3.damping}" friction="${dynamics.Joint_LeftArm2_to_LeftArm3.friction}"/>
+  </joint>
+  <link name="${prefix}Link_LeftArm4">
+    <inertial>
+      <origin xyz="0.052467 0.0093797 0.0042876" rpy="0 0 0"/>
+      <mass value="${links.Link_LeftArm4.mass}"/>
+      <inertia ixx="${links.Link_LeftArm4.inertia.ixx}" ixy="${links.Link_LeftArm4.inertia.ixy}" ixz="${links.Link_LeftArm4.inertia.ixz}" iyy="${links.Link_LeftArm4.inertia.iyy}" iyz="${links.Link_LeftArm4.inertia.iyz}" izz="${links.Link_LeftArm4.inertia.izz}"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_LeftArm4.STL"/>
+      </geometry>
+      <material name="Arm">
+        <color rgba="${colors.Link_LeftArm4}"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_LeftArm4.STL"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="${prefix}Joint_LeftArm3_to_LeftArm4" type="revolute">
+    <origin xyz="0.0149998221270141 0.245999999998857 0" rpy="0 0 0"/>
+    <parent link="Link_LeftArm3"/>
+    <child link="Link_LeftArm4"/>
+    <axis xyz="0 0 -1"/>
+    <limit lower="${limits.Joint_LeftArm3_to_LeftArm4.lower}" upper="${limits.Joint_LeftArm3_to_LeftArm4.upper}" effort="${limits.Joint_LeftArm3_to_LeftArm4.effort}" velocity="${limits.Joint_LeftArm3_to_LeftArm4.velocity}"/>
+    <calibration rising="${calibration.Joint_LeftArm3_to_LeftArm4.rising}" falling="${calibration.Joint_LeftArm3_to_LeftArm4.falling}"/>
+    <dynamics damping="${dynamics.Joint_LeftArm3_to_LeftArm4.damping}" friction="${dynamics.Joint_LeftArm3_to_LeftArm4.friction}"/>
+  </joint>
+  <link name="${prefix}Link_LeftArm5">
+    <inertial>
+      <origin xyz="9.9116E-05 -0.010028 0.2099" rpy="0 0 0"/>
+      <mass value="${links.Link_LeftArm5.mass}"/>
+      <inertia ixx="${links.Link_LeftArm5.inertia.ixx}" ixy="${links.Link_LeftArm5.inertia.ixy}" ixz="${links.Link_LeftArm5.inertia.ixz}" iyy="${links.Link_LeftArm5.inertia.iyy}" iyz="${links.Link_LeftArm5.inertia.iyz}" izz="${links.Link_LeftArm5.inertia.izz}"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_LeftArm5.STL"/>
+      </geometry>
+      <material name="Arm">
+        <color rgba="${colors.Link_LeftArm5}"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_LeftArm5.STL"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="${prefix}Joint_LeftArm4_to_LeftArm5" type="revolute">
+    <origin xyz="0 0.0149999999963288 0" rpy="1.5707963267949 0 1.57079632679149"/>
+    <parent link="Link_LeftArm4"/>
+    <child link="Link_LeftArm5"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="${limits.Joint_LeftArm4_to_LeftArm5.lower}" upper="${limits.Joint_LeftArm4_to_LeftArm5.upper}" effort="${limits.Joint_LeftArm4_to_LeftArm5.effort}" velocity="${limits.Joint_LeftArm4_to_LeftArm5.velocity}"/>
+    <calibration rising="${calibration.Joint_LeftArm4_to_LeftArm5.rising}" falling="${calibration.Joint_LeftArm4_to_LeftArm5.falling}"/>
+    <dynamics damping="${dynamics.Joint_LeftArm4_to_LeftArm5.damping}" friction="${dynamics.Joint_LeftArm4_to_LeftArm5.friction}"/>
+  </joint>
+  <link name="${prefix}Link_LeftArm6">
+    <inertial>
+      <origin xyz="-3.688E-05 -0.012949 -4.9329E-05" rpy="0 0 0"/>
+      <mass value="${links.Link_LeftArm6.mass}"/>
+      <inertia ixx="${links.Link_LeftArm6.inertia.ixx}" ixy="${links.Link_LeftArm6.inertia.ixy}" ixz="${links.Link_LeftArm6.inertia.ixz}" iyy="${links.Link_LeftArm6.inertia.iyy}" iyz="${links.Link_LeftArm6.inertia.iyz}" izz="${links.Link_LeftArm6.inertia.izz}"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_LeftArm6.STL"/>
+      </geometry>
+      <material name="Arm">
+        <color rgba="${colors.Link_LeftArm6}"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_LeftArm6.STL"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="${prefix}Joint_LeftArm5_to_LeftArm6" type="revolute">
+    <origin xyz="0 0 0.264999999999169" rpy="-1.5707963267949 0 0"/>
+    <parent link="Link_LeftArm5"/>
+    <child link="Link_LeftArm6"/>
+    <axis xyz="0 0 -1"/>
+    <limit lower="${limits.Joint_LeftArm5_to_LeftArm6.lower}" upper="${limits.Joint_LeftArm5_to_LeftArm6.upper}" effort="${limits.Joint_LeftArm5_to_LeftArm6.effort}" velocity="${limits.Joint_LeftArm5_to_LeftArm6.velocity}"/>
+    <calibration rising="${calibration.Joint_LeftArm5_to_LeftArm6.rising}" falling="${calibration.Joint_LeftArm5_to_LeftArm6.falling}"/>
+    <dynamics damping="${dynamics.Joint_LeftArm5_to_LeftArm6.damping}" friction="${dynamics.Joint_LeftArm5_to_LeftArm6.friction}"/>
+  </joint>
+  <link name="${prefix}Link_LeftArm7">
+    <inertial>
+      <origin xyz="-0.016492 0.00054322 0.063454" rpy="0 0 0"/>
+      <mass value="${links.Link_LeftArm7.mass}"/>
+      <inertia ixx="${links.Link_LeftArm7.inertia.ixx}" ixy="${links.Link_LeftArm7.inertia.ixy}" ixz="${links.Link_LeftArm7.inertia.ixz}" iyy="${links.Link_LeftArm7.inertia.iyy}" iyz="${links.Link_LeftArm7.inertia.iyz}" izz="${links.Link_LeftArm7.inertia.izz}"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_LeftArm7.STL"/>
+      </geometry>
+      <material name="Arm">
+        <color rgba="${colors.Link_LeftArm7}"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_LeftArm7.STL"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="${prefix}Joint_LeftArm6_to_LeftArm7" type="revolute">
+    <origin xyz="0 0 0" rpy="-1.57079632679474 0 3.14159265358957"/>
+    <parent link="Link_LeftArm6"/>
+    <child link="Link_LeftArm7"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="${limits.Joint_LeftArm6_to_LeftArm7.lower}" upper="${limits.Joint_LeftArm6_to_LeftArm7.upper}" effort="${limits.Joint_LeftArm6_to_LeftArm7.effort}" velocity="${limits.Joint_LeftArm6_to_LeftArm7.velocity}"/>
+    <calibration rising="${calibration.Joint_LeftArm6_to_LeftArm7.rising}" falling="${calibration.Joint_LeftArm6_to_LeftArm7.falling}"/>
+    <dynamics damping="${dynamics.Joint_LeftArm6_to_LeftArm7.damping}" friction="${dynamics.Joint_LeftArm6_to_LeftArm7.friction}"/>
+  </joint>
+  <link name="${prefix}Link_LeftFinger1">
+    <inertial>
+      <origin xyz="-0.0035654 0.0037531 0.00036245" rpy="0 0 0"/>
+      <mass value="${links.Link_LeftFinger1.mass}"/>
+      <inertia ixx="${links.Link_LeftFinger1.inertia.ixx}" ixy="${links.Link_LeftFinger1.inertia.ixy}" ixz="${links.Link_LeftFinger1.inertia.ixz}" iyy="${links.Link_LeftFinger1.inertia.iyy}" iyz="${links.Link_LeftFinger1.inertia.iyz}" izz="${links.Link_LeftFinger1.inertia.izz}"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_LeftFinger1.STL"/>
+      </geometry>
+      <material name="Finger">
+        <color rgba="${colors.Link_LeftFinger1}"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_LeftFinger1.STL"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="${prefix}Joint_LeftArm7_to_LeftFinger1" type="prismatic">
+    <origin xyz="0 0 0.0985" rpy="1.5708 0 -0.0060694"/>
+    <parent link="Link_LeftArm7"/>
+    <child link="Link_LeftFinger1"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="${limits.Joint_LeftArm7_to_LeftFinger1.lower}" upper="${limits.Joint_LeftArm7_to_LeftFinger1.upper}" effort="${limits.Joint_LeftArm7_to_LeftFinger1.effort}" velocity="${limits.Joint_LeftArm7_to_LeftFinger1.velocity}"/>
+    <calibration rising="${calibration.Joint_LeftArm7_to_LeftFinger1.rising}" falling="${calibration.Joint_LeftArm7_to_LeftFinger1.falling}"/>
+    <dynamics damping="${dynamics.Joint_LeftArm7_to_LeftFinger1.damping}" friction="${dynamics.Joint_LeftArm7_to_LeftFinger1.friction}"/>
+  </joint>
+  <link name="${prefix}Link_LeftFinger2">
+    <inertial>
+      <origin xyz="-0.0035654 0.0037531 0.00036245" rpy="0 0 0"/>
+      <mass value="${links.Link_LeftFinger2.mass}"/>
+      <inertia ixx="${links.Link_LeftFinger2.inertia.ixx}" ixy="${links.Link_LeftFinger2.inertia.ixy}" ixz="${links.Link_LeftFinger2.inertia.ixz}" iyy="${links.Link_LeftFinger2.inertia.iyy}" iyz="${links.Link_LeftFinger2.inertia.iyz}" izz="${links.Link_LeftFinger2.inertia.izz}"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_LeftFinger2.STL"/>
+      </geometry>
+      <material name="Finger">
+        <color rgba="${colors.Link_LeftFinger2}"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_LeftFinger2.STL"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="${prefix}Joint_LeftArm7_to_LeftFinger2" type="prismatic">
+    <origin xyz="0 0 0.0985" rpy="1.5708 0 3.1355"/>
+    <parent link="Link_LeftArm7"/>
+    <child link="Link_LeftFinger2"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="${limits.Joint_LeftArm7_to_LeftFinger2.lower}" upper="${limits.Joint_LeftArm7_to_LeftFinger2.upper}" effort="${limits.Joint_LeftArm7_to_LeftFinger2.effort}" velocity="${limits.Joint_LeftArm7_to_LeftFinger2.velocity}"/>
+    <calibration rising="${calibration.Joint_LeftArm7_to_LeftFinger2.rising}" falling="${calibration.Joint_LeftArm7_to_LeftFinger2.falling}"/>
+    <dynamics damping="${dynamics.Joint_LeftArm7_to_LeftFinger2.damping}" friction="${dynamics.Joint_LeftArm7_to_LeftFinger2.friction}"/>
+  </joint>
+  <link name="${prefix}Link_LeftCameraSensor">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="${links.Link_LeftCameraSensor.mass}"/>
+      <inertia ixx="${links.Link_LeftCameraSensor.inertia.ixx}" ixy="${links.Link_LeftCameraSensor.inertia.ixy}" ixz="${links.Link_LeftCameraSensor.inertia.ixz}" iyy="${links.Link_LeftCameraSensor.inertia.iyy}" iyz="${links.Link_LeftCameraSensor.inertia.iyz}" izz="${links.Link_LeftCameraSensor.inertia.izz}"/>
+    </inertial>
+  </link>
+  <joint name="${prefix}Joint_LeftArm7_to_LeftCameraSensor" type="fixed">
+    <origin xyz="-0.041999 0.00025491 0.08155" rpy="3.14 -1.57686575197005 -1.5769"/>
+    <parent link="Link_LeftArm7"/>
+    <child link="Link_LeftCameraSensor"/>
+    <axis xyz="0 0 0"/>
+    <calibration rising="${calibration.Joint_LeftArm7_to_LeftCameraSensor.rising}" falling="${calibration.Joint_LeftArm7_to_LeftCameraSensor.falling}"/>
+    <dynamics damping="${dynamics.Joint_LeftArm7_to_LeftCameraSensor.damping}" friction="${dynamics.Joint_LeftArm7_to_LeftCameraSensor.friction}"/>
+  </joint>
+  <link name="${prefix}Link_RightArm1">
+    <inertial>
+      <origin xyz="2.4698E-06 -0.00013886 0.14429" rpy="0 0 0"/>
+      <mass value="${links.Link_RightArm1.mass}"/>
+      <inertia ixx="${links.Link_RightArm1.inertia.ixx}" ixy="${links.Link_RightArm1.inertia.ixy}" ixz="${links.Link_RightArm1.inertia.ixz}" iyy="${links.Link_RightArm1.inertia.iyy}" iyz="${links.Link_RightArm1.inertia.iyz}" izz="${links.Link_RightArm1.inertia.izz}"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_RightArm1.STL"/>
+      </geometry>
+      <material name="Arm">
+        <color rgba="${colors.Link_RightArm1}"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_RightArm1.STL"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="${prefix}Joint_Body2_to_RightArm1" type="revolute">
+    <origin xyz="0 0 0.133799999999997" rpy="1.5707963267949 0 0"/>
+    <parent link="Link_Body2"/>
+    <child link="Link_RightArm1"/>
+    <axis xyz="0 0 -1"/>
+    <limit lower="${limits.Joint_Body2_to_RightArm1.lower}" upper="${limits.Joint_Body2_to_RightArm1.upper}" effort="${limits.Joint_Body2_to_RightArm1.effort}" velocity="${limits.Joint_Body2_to_RightArm1.velocity}"/>
+    <calibration rising="${calibration.Joint_Body2_to_RightArm1.rising}" falling="${calibration.Joint_Body2_to_RightArm1.falling}"/>
+    <dynamics damping="${dynamics.Joint_Body2_to_RightArm1.damping}" friction="${dynamics.Joint_Body2_to_RightArm1.friction}"/>
+  </joint>
+  <link name="${prefix}Link_RightArm2">
+    <inertial>
+      <origin xyz="-0.00028297 -0.062776 -0.0051005" rpy="0 0 0"/>
+      <mass value="${links.Link_RightArm2.mass}"/>
+      <inertia ixx="${links.Link_RightArm2.inertia.ixx}" ixy="${links.Link_RightArm2.inertia.ixy}" ixz="${links.Link_RightArm2.inertia.ixz}" iyy="${links.Link_RightArm2.inertia.iyy}" iyz="${links.Link_RightArm2.inertia.iyz}" izz="${links.Link_RightArm2.inertia.izz}"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_RightArm2.STL"/>
+      </geometry>
+      <material name="Arm">
+        <color rgba="${colors.Link_RightArm2}"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_RightArm2.STL"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="${prefix}Joint_RightArm1_to_RightArm2" type="revolute">
+    <origin xyz="0 0 0.175000000002386" rpy="-1.5707963267949 0 0"/>
+    <parent link="Link_RightArm1"/>
+    <child link="Link_RightArm2"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="${limits.Joint_RightArm1_to_RightArm2.lower}" upper="${limits.Joint_RightArm1_to_RightArm2.upper}" effort="${limits.Joint_RightArm1_to_RightArm2.effort}" velocity="${limits.Joint_RightArm1_to_RightArm2.velocity}"/>
+    <calibration rising="${calibration.Joint_RightArm1_to_RightArm2.rising}" falling="${calibration.Joint_RightArm1_to_RightArm2.falling}"/>
+    <dynamics damping="${dynamics.Joint_RightArm1_to_RightArm2.damping}" friction="${dynamics.Joint_RightArm1_to_RightArm2.friction}"/>
+  </joint>
+  <link name="${prefix}Link_RightArm3">
+    <inertial>
+      <origin xyz="0.0013571 0.00028111 0.21276" rpy="0 0 0"/>
+      <mass value="${links.Link_RightArm3.mass}"/>
+      <inertia ixx="${links.Link_RightArm3.inertia.ixx}" ixy="${links.Link_RightArm3.inertia.ixy}" ixz="${links.Link_RightArm3.inertia.ixz}" iyy="${links.Link_RightArm3.inertia.iyy}" iyz="${links.Link_RightArm3.inertia.iyz}" izz="${links.Link_RightArm3.inertia.izz}"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_RightArm3.STL"/>
+      </geometry>
+      <material name="Arm">
+        <color rgba="${colors.Link_RightArm3}"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_RightArm3.STL"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="${prefix}Joint_RightArm2_to_RightArm3" type="revolute">
+    <origin xyz="0 0 0" rpy="1.5707963267949 0 0"/>
+    <parent link="Link_RightArm2"/>
+    <child link="Link_RightArm3"/>
+    <axis xyz="0 0 -1"/>
+    <limit lower="${limits.Joint_RightArm2_to_RightArm3.lower}" upper="${limits.Joint_RightArm2_to_RightArm3.upper}" effort="${limits.Joint_RightArm2_to_RightArm3.effort}" velocity="${limits.Joint_RightArm2_to_RightArm3.velocity}"/>
+    <calibration rising="${calibration.Joint_RightArm2_to_RightArm3.rising}" falling="${calibration.Joint_RightArm2_to_RightArm3.falling}"/>
+    <dynamics damping="${dynamics.Joint_RightArm2_to_RightArm3.damping}" friction="${dynamics.Joint_RightArm2_to_RightArm3.friction}"/>
+  </joint>
+  <link name="${prefix}Link_RightArm4">
+    <inertial>
+      <origin xyz="0.052467 -0.0093797 -0.0042876" rpy="0 0 0"/>
+      <mass value="${links.Link_RightArm4.mass}"/>
+      <inertia ixx="${links.Link_RightArm4.inertia.ixx}" ixy="${links.Link_RightArm4.inertia.ixy}" ixz="${links.Link_RightArm4.inertia.ixz}" iyy="${links.Link_RightArm4.inertia.iyy}" iyz="${links.Link_RightArm4.inertia.iyz}" izz="${links.Link_RightArm4.inertia.izz}"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_RightArm4.STL"/>
+      </geometry>
+      <material name="Arm">
+        <color rgba="${colors.Link_RightArm4}"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_RightArm4.STL"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="${prefix}Joint_RightArm3_to_RightArm4" type="revolute">
+    <origin xyz="0.0149998221395796 0 0.245999999980808" rpy="-1.5707963267949 0 0"/>
+    <parent link="Link_RightArm3"/>
+    <child link="Link_RightArm4"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="${limits.Joint_RightArm3_to_RightArm4.lower}" upper="${limits.Joint_RightArm3_to_RightArm4.upper}" effort="${limits.Joint_RightArm3_to_RightArm4.effort}" velocity="${limits.Joint_RightArm3_to_RightArm4.velocity}"/>
+    <calibration rising="${calibration.Joint_RightArm3_to_RightArm4.rising}" falling="${calibration.Joint_RightArm3_to_RightArm4.falling}"/>
+    <dynamics damping="${dynamics.Joint_RightArm3_to_RightArm4.damping}" friction="${dynamics.Joint_RightArm3_to_RightArm4.friction}"/>
+  </joint>
+  <link name="${prefix}Link_RightArm5">
+    <inertial>
+      <origin xyz="9.9116E-05 -0.010028 0.2099" rpy="0 0 0"/>
+      <mass value="${links.Link_RightArm5.mass}"/>
+      <inertia ixx="${links.Link_RightArm5.inertia.ixx}" ixy="${links.Link_RightArm5.inertia.ixy}" ixz="${links.Link_RightArm5.inertia.ixz}" iyy="${links.Link_RightArm5.inertia.iyy}" iyz="${links.Link_RightArm5.inertia.iyz}" izz="${links.Link_RightArm5.inertia.izz}"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_RightArm5.STL"/>
+      </geometry>
+      <material name="Arm">
+        <color rgba="${colors.Link_RightArm5}"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_RightArm5.STL"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="${prefix}Joint_RightArm4_to_RightArm5" type="revolute">
+    <origin xyz="0 -0.0149999999955401 0" rpy="-1.5707963267949 0 -1.57079632679151"/>
+    <parent link="Link_RightArm4"/>
+    <child link="Link_RightArm5"/>
+    <axis xyz="0 0 -1"/>
+    <limit lower="${limits.Joint_RightArm4_to_RightArm5.lower}" upper="${limits.Joint_RightArm4_to_RightArm5.upper}" effort="${limits.Joint_RightArm4_to_RightArm5.effort}" velocity="${limits.Joint_RightArm4_to_RightArm5.velocity}"/>
+    <calibration rising="${calibration.Joint_RightArm4_to_RightArm5.rising}" falling="${calibration.Joint_RightArm4_to_RightArm5.falling}"/>
+    <dynamics damping="${dynamics.Joint_RightArm4_to_RightArm5.damping}" friction="${dynamics.Joint_RightArm4_to_RightArm5.friction}"/>
+  </joint>
+  <link name="${prefix}Link_RightArm6">
+    <inertial>
+      <origin xyz="-3.6881E-05 0.012949 4.933E-05" rpy="0 0 0"/>
+      <mass value="${links.Link_RightArm6.mass}"/>
+      <inertia ixx="${links.Link_RightArm6.inertia.ixx}" ixy="${links.Link_RightArm6.inertia.ixy}" ixz="${links.Link_RightArm6.inertia.ixz}" iyy="${links.Link_RightArm6.inertia.iyy}" iyz="${links.Link_RightArm6.inertia.iyz}" izz="${links.Link_RightArm6.inertia.izz}"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_RightArm6.STL"/>
+      </geometry>
+      <material name="Arm">
+        <color rgba="${colors.Link_RightArm6}"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_RightArm6.STL"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="${prefix}Joint_RightArm5_to_RightArm6" type="revolute">
+    <origin xyz="0 0 0.264999999996074" rpy="1.5707963267949 0 0"/>
+    <parent link="Link_RightArm5"/>
+    <child link="Link_RightArm6"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="${limits.Joint_RightArm5_to_RightArm6.lower}" upper="${limits.Joint_RightArm5_to_RightArm6.upper}" effort="${limits.Joint_RightArm5_to_RightArm6.effort}" velocity="${limits.Joint_RightArm5_to_RightArm6.velocity}"/>
+    <calibration rising="${calibration.Joint_RightArm5_to_RightArm6.rising}" falling="${calibration.Joint_RightArm5_to_RightArm6.falling}"/>
+    <dynamics damping="${dynamics.Joint_RightArm5_to_RightArm6.damping}" friction="${dynamics.Joint_RightArm5_to_RightArm6.friction}"/>
+  </joint>
+  <link name="${prefix}Link_RightArm7">
+    <inertial>
+      <origin xyz="-0.016492 0.00054323 0.063454" rpy="0 0 0"/>
+      <mass value="${links.Link_RightArm7.mass}"/>
+      <inertia ixx="${links.Link_RightArm7.inertia.ixx}" ixy="${links.Link_RightArm7.inertia.ixy}" ixz="${links.Link_RightArm7.inertia.ixz}" iyy="${links.Link_RightArm7.inertia.iyy}" iyz="${links.Link_RightArm7.inertia.iyz}" izz="${links.Link_RightArm7.inertia.izz}"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_RightArm7.STL"/>
+      </geometry>
+      <material name="Arm">
+        <color rgba="${colors.Link_RightArm7}"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_RightArm7.STL"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="${prefix}Joint_RightArm6_to_RightArm7" type="revolute">
+    <origin xyz="0 0 0" rpy="1.57079632679553 0 -3.14159265358956"/>
+    <parent link="Link_RightArm6"/>
+    <child link="Link_RightArm7"/>
+    <axis xyz="0 0 -1"/>
+    <limit lower="${limits.Joint_RightArm6_to_RightArm7.lower}" upper="${limits.Joint_RightArm6_to_RightArm7.upper}" effort="${limits.Joint_RightArm6_to_RightArm7.effort}" velocity="${limits.Joint_RightArm6_to_RightArm7.velocity}"/>
+    <calibration rising="${calibration.Joint_RightArm6_to_RightArm7.rising}" falling="${calibration.Joint_RightArm6_to_RightArm7.falling}"/>
+    <dynamics damping="${dynamics.Joint_RightArm6_to_RightArm7.damping}" friction="${dynamics.Joint_RightArm6_to_RightArm7.friction}"/>
+  </joint>
+  <link name="${prefix}Link_RightFinger1">
+    <inertial>
+      <origin xyz="-0.0035654 0.0037531 -0.012482" rpy="0 0 0"/>
+      <mass value="${links.Link_RightFinger1.mass}"/>
+      <inertia ixx="${links.Link_RightFinger1.inertia.ixx}" ixy="${links.Link_RightFinger1.inertia.ixy}" ixz="${links.Link_RightFinger1.inertia.ixz}" iyy="${links.Link_RightFinger1.inertia.iyy}" iyz="${links.Link_RightFinger1.inertia.iyz}" izz="${links.Link_RightFinger1.inertia.izz}"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_RightFinger1.STL"/>
+      </geometry>
+      <material name="Finger">
+        <color rgba="${colors.Link_RightFinger1}"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_RightFinger1.STL"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="${prefix}Joint_RightArm7_to_RightFinger1" type="prismatic">
+    <origin xyz="0 0 0.0984999999664274" rpy="1.57079632679655 0 -0.00606942517515972"/>
+    <parent link="Link_RightArm7"/>
+    <child link="Link_RightFinger1"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="${limits.Joint_RightArm7_to_RightFinger1.lower}" upper="${limits.Joint_RightArm7_to_RightFinger1.upper}" effort="${limits.Joint_RightArm7_to_RightFinger1.effort}" velocity="${limits.Joint_RightArm7_to_RightFinger1.velocity}"/>
+    <calibration rising="${calibration.Joint_RightArm7_to_RightFinger1.rising}" falling="${calibration.Joint_RightArm7_to_RightFinger1.falling}"/>
+    <dynamics damping="${dynamics.Joint_RightArm7_to_RightFinger1.damping}" friction="${dynamics.Joint_RightArm7_to_RightFinger1.friction}"/>
+  </joint>
+  <link name="${prefix}Link_RightFinger2">
+    <inertial>
+      <origin xyz="-0.0035654 0.0037531 -0.012482" rpy="0 0 0"/>
+      <mass value="${links.Link_RightFinger2.mass}"/>
+      <inertia ixx="${links.Link_RightFinger2.inertia.ixx}" ixy="${links.Link_RightFinger2.inertia.ixy}" ixz="${links.Link_RightFinger2.inertia.ixz}" iyy="${links.Link_RightFinger2.inertia.iyy}" iyz="${links.Link_RightFinger2.inertia.iyz}" izz="${links.Link_RightFinger2.inertia.izz}"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_RightFinger2.STL"/>
+      </geometry>
+      <material name="Finger">
+        <color rgba="${colors.Link_RightFinger2}"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ylr1d_description/meshes/Link_RightFinger2.STL"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="${prefix}Joint_RightArm7_to_RightFinger2" type="prismatic">
+    <origin xyz="0 0 0.0985" rpy="1.5708 0 3.1355"/>
+    <parent link="Link_RightArm7"/>
+    <child link="Link_RightFinger2"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="${limits.Joint_RightArm7_to_RightFinger2.lower}" upper="${limits.Joint_RightArm7_to_RightFinger2.upper}" effort="${limits.Joint_RightArm7_to_RightFinger2.effort}" velocity="${limits.Joint_RightArm7_to_RightFinger2.velocity}"/>
+    <calibration rising="${calibration.Joint_RightArm7_to_RightFinger2.rising}" falling="${calibration.Joint_RightArm7_to_RightFinger2.falling}"/>
+    <dynamics damping="${dynamics.Joint_RightArm7_to_RightFinger2.damping}" friction="${dynamics.Joint_RightArm7_to_RightFinger2.friction}"/>
+  </joint>
+  <link name="${prefix}Link_RightCameraSensor">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="${links.Link_RightCameraSensor.mass}"/>
+      <inertia ixx="${links.Link_RightCameraSensor.inertia.ixx}" ixy="${links.Link_RightCameraSensor.inertia.ixy}" ixz="${links.Link_RightCameraSensor.inertia.ixz}" iyy="${links.Link_RightCameraSensor.inertia.iyy}" iyz="${links.Link_RightCameraSensor.inertia.iyz}" izz="${links.Link_RightCameraSensor.inertia.izz}"/>
+    </inertial>
+  </link>
+  <joint name="${prefix}Joint_RightArm7_to_RightCameraSensor" type="fixed">
+    <origin xyz="-0.0419992264026258 0.000254914269492257 0.0815499999909122" rpy="0 -1.57686575197005 -1.57686575197005"/>
+    <parent link="Link_RightArm7"/>
+    <child link="Link_RightCameraSensor"/>
+    <axis xyz="0 0 0"/>
+    <calibration rising="${calibration.Joint_RightArm7_to_RightCameraSensor.rising}" falling="${calibration.Joint_RightArm7_to_RightCameraSensor.falling}"/>
+    <dynamics damping="${dynamics.Joint_RightArm7_to_RightCameraSensor.damping}" friction="${dynamics.Joint_RightArm7_to_RightCameraSensor.friction}"/>
+  </joint>
+  <link name="${prefix}Link_RadarSensor">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="${links.Link_RadarSensor.mass}"/>
+      <inertia ixx="${links.Link_RadarSensor.inertia.ixx}" ixy="${links.Link_RadarSensor.inertia.ixy}" ixz="${links.Link_RadarSensor.inertia.ixz}" iyy="${links.Link_RadarSensor.inertia.iyy}" iyz="${links.Link_RadarSensor.inertia.iyz}" izz="${links.Link_RadarSensor.inertia.izz}"/>
+    </inertial>
+  </link>
+  <joint name="${prefix}Joint_Base_to_RadarSensor" type="fixed">
+    <origin xyz="-0.237 0 0.2364" rpy="0 0 -2.9674"/>
+    <parent link="Link_Base"/>
+    <child link="Link_RadarSensor"/>
+    <axis xyz="0 0 0"/>
+    <calibration rising="${calibration.Joint_Base_to_RadarSensor.rising}" falling="${calibration.Joint_Base_to_RadarSensor.falling}"/>
+    <dynamics damping="${dynamics.Joint_Base_to_RadarSensor.damping}" friction="${dynamics.Joint_Base_to_RadarSensor.friction}"/>
+  </joint>
+  <link name="${prefix}Link_IMUSensor">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="${links.Link_IMUSensor.mass}"/>
+      <inertia ixx="${links.Link_IMUSensor.inertia.ixx}" ixy="${links.Link_IMUSensor.inertia.ixy}" ixz="${links.Link_IMUSensor.inertia.ixz}" iyy="${links.Link_IMUSensor.inertia.iyy}" iyz="${links.Link_IMUSensor.inertia.iyz}" izz="${links.Link_IMUSensor.inertia.izz}"/>
+    </inertial>
+  </link>
+  <link name="${prefix}Link_LFUltrasonicSensor">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="${links.Link_LFUltrasonicSensor.mass}"/>
+      <inertia ixx="${links.Link_LFUltrasonicSensor.inertia.ixx}" ixy="${links.Link_LFUltrasonicSensor.inertia.ixy}" ixz="${links.Link_LFUltrasonicSensor.inertia.ixz}" iyy="${links.Link_LFUltrasonicSensor.inertia.iyy}" iyz="${links.Link_LFUltrasonicSensor.inertia.iyz}" izz="${links.Link_LFUltrasonicSensor.inertia.izz}"/>
+    </inertial>
+  </link>
+  <joint name="${prefix}Joint_Base_to_LFUltrasonicSensor" type="fixed">
+    <origin xyz="-0.26708 -0.18708 0.183" rpy="1.5708 0 -2.3562"/>
+    <parent link="Link_Base"/>
+    <child link="Link_LFUltrasonicSensor"/>
+    <axis xyz="0 0 0"/>
+    <calibration rising="${calibration.Joint_Base_to_LFUltrasonicSensor.rising}" falling="${calibration.Joint_Base_to_LFUltrasonicSensor.falling}"/>
+    <dynamics damping="${dynamics.Joint_Base_to_LFUltrasonicSensor.damping}" friction="${dynamics.Joint_Base_to_LFUltrasonicSensor.friction}"/>
+  </joint>
+  <link name="${prefix}Link_RFUltrasonicSensor">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="${links.Link_RFUltrasonicSensor.mass}"/>
+      <inertia ixx="${links.Link_RFUltrasonicSensor.inertia.ixx}" ixy="${links.Link_RFUltrasonicSensor.inertia.ixy}" ixz="${links.Link_RFUltrasonicSensor.inertia.ixz}" iyy="${links.Link_RFUltrasonicSensor.inertia.iyy}" iyz="${links.Link_RFUltrasonicSensor.inertia.iyz}" izz="${links.Link_RFUltrasonicSensor.inertia.izz}"/>
+    </inertial>
+  </link>
+  <joint name="${prefix}Joint_Base_to_RFUltrasonicSensor" type="fixed">
+    <origin xyz="-0.26708 0.18708 0.183" rpy="1.5708 0 2.3562"/>
+    <parent link="Link_Base"/>
+    <child link="Link_RFUltrasonicSensor"/>
+    <axis xyz="0 0 0"/>
+    <calibration rising="${calibration.Joint_Base_to_RFUltrasonicSensor.rising}" falling="${calibration.Joint_Base_to_RFUltrasonicSensor.falling}"/>
+    <dynamics damping="${dynamics.Joint_Base_to_RFUltrasonicSensor.damping}" friction="${dynamics.Joint_Base_to_RFUltrasonicSensor.friction}"/>
+  </joint>
+  <link name="${prefix}Link_LBUltrasonicSensor">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="${links.Link_LBUltrasonicSensor.mass}"/>
+      <inertia ixx="${links.Link_LBUltrasonicSensor.inertia.ixx}" ixy="${links.Link_LBUltrasonicSensor.inertia.ixy}" ixz="${links.Link_LBUltrasonicSensor.inertia.ixz}" iyy="${links.Link_LBUltrasonicSensor.inertia.iyy}" iyz="${links.Link_LBUltrasonicSensor.inertia.iyz}" izz="${links.Link_LBUltrasonicSensor.inertia.izz}"/>
+    </inertial>
+  </link>
+  <joint name="${prefix}Joint_Base_to_LBUltrasonicSensor" type="fixed">
+    <origin xyz="0.26708 -0.18708 0.183" rpy="1.5708 0 -0.7854"/>
+    <parent link="Link_Base"/>
+    <child link="Link_LBUltrasonicSensor"/>
+    <axis xyz="0 0 0"/>
+    <calibration rising="${calibration.Joint_Base_to_LBUltrasonicSensor.rising}" falling="${calibration.Joint_Base_to_LBUltrasonicSensor.falling}"/>
+    <dynamics damping="${dynamics.Joint_Base_to_LBUltrasonicSensor.damping}" friction="${dynamics.Joint_Base_to_LBUltrasonicSensor.friction}"/>
+  </joint>
+  <link name="${prefix}Link_RBUltrasonicSensor">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="${links.Link_RBUltrasonicSensor.mass}"/>
+      <inertia ixx="${links.Link_RBUltrasonicSensor.inertia.ixx}" ixy="${links.Link_RBUltrasonicSensor.inertia.ixy}" ixz="${links.Link_RBUltrasonicSensor.inertia.ixz}" iyy="${links.Link_RBUltrasonicSensor.inertia.iyy}" iyz="${links.Link_RBUltrasonicSensor.inertia.iyz}" izz="${links.Link_RBUltrasonicSensor.inertia.izz}"/>
+    </inertial>
+  </link>
+  <joint name="${prefix}Joint_Base_to_RBUltrasonicSensor" type="fixed">
+    <origin xyz="0.26708 0.18708 0.183" rpy="1.5708 0 0.7854"/>
+    <parent link="Link_Base"/>
+    <child link="Link_RBUltrasonicSensor"/>
+    <axis xyz="0 0 0"/>
+    <calibration rising="${calibration.Joint_Base_to_RBUltrasonicSensor.rising}" falling="${calibration.Joint_Base_to_RBUltrasonicSensor.falling}"/>
+    <dynamics damping="${dynamics.Joint_Base_to_RBUltrasonicSensor.damping}" friction="${dynamics.Joint_Base_to_RBUltrasonicSensor.friction}"/>
+  </joint>
+    <gazebo reference="${prefix}Link_GlobalCameraSensor">
+    <sensor type="camera" name="rgb_camera">
+      <visualize>true</visualize>
+      <always_on>true</always_on>
+      <update_rate>30</update_rate>
+      <topic>/global_camera/rgb/image_raw</topic>
+      <frame_name>${prefix}Link_GlobalCameraSensor</frame_name>
+      <camera>
+        <horizontal_fov>1.047</horizontal_fov>
+        <image>
+          <width>1920</width>
+          <height>1080</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.1</near>
+          <far>100.0</far>
+        </clip>
+      </camera>
+      <plugin name="global_camera_rgb_camera_plugin" filename="libgazebo_ros_camera.so">
+        <camera_name>global_camera/rgb</camera_name>
+        <cameraName>global_camera/rgb</cameraName>
+        <image_topic_name>image_raw</image_topic_name>
+        <imageTopicName>image_raw</imageTopicName>
+        <camera_info_topic_name>camera_info</camera_info_topic_name>
+        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+        <frame_name>${prefix}Link_GlobalCameraSensor</frame_name>
+        <frameName>${prefix}Link_GlobalCameraSensor</frameName>
+      </plugin>
+    </sensor>
+    <sensor type="depth" name="depth_camera">
+      <visualize>true</visualize>
+      <always_on>true</always_on>
+      <update_rate>30</update_rate>
+      <topic>/global_camera/depth/image_raw</topic>
+      <frame_name>${prefix}Link_GlobalCameraSensor</frame_name>
+      <camera>
+        <horizontal_fov>1.047</horizontal_fov>
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.2</near>
+          <far>4.0</far>
+        </clip>
+      </camera>
+      <plugin name="global_camera_depth_camera_plugin" filename="libgazebo_ros_camera.so">
+        <camera_name>global_camera/depth</camera_name>
+        <cameraName>global_camera/depth</cameraName>
+        <image_topic_name>image_raw</image_topic_name>
+        <imageTopicName>image_raw</imageTopicName>
+        <camera_info_topic_name>camera_info</camera_info_topic_name>
+        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+        <point_cloud_topic_name>points</point_cloud_topic_name>
+        <pointCloudTopicName>points</pointCloudTopicName>
+        <frame_name>${prefix}Link_GlobalCameraSensor</frame_name>
+        <frameName>${prefix}Link_GlobalCameraSensor</frameName>
+      </plugin>
+    </sensor>
+    <sensor type="camera" name="infrared_camera">
+      <visualize>true</visualize>
+      <always_on>true</always_on>
+      <update_rate>15</update_rate>
+      <topic>/global_camera/infrared/image_raw</topic>
+      <frame_name>${prefix}Link_GlobalCameraSensor</frame_name>
+      <camera>
+        <horizontal_fov>1.047</horizontal_fov>
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.1</near>
+          <far>10.0</far>
+        </clip>
+      </camera>
+      <plugin name="global_camera_infrared_camera_plugin" filename="libgazebo_ros_camera.so">
+        <camera_name>global_camera/infrared</camera_name>
+        <cameraName>global_camera/infrared</cameraName>
+        <image_topic_name>image_raw</image_topic_name>
+        <imageTopicName>image_raw</imageTopicName>
+        <camera_info_topic_name>camera_info</camera_info_topic_name>
+        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+        <frame_name>${prefix}Link_GlobalCameraSensor</frame_name>
+        <frameName>${prefix}Link_GlobalCameraSensor</frameName>
+      </plugin>
+    </sensor>
+  </gazebo>
+  <gazebo reference="${prefix}Link_LeftCameraSensor">
+    <sensor type="camera" name="rgb_camera">
+      <visualize>true</visualize>
+      <always_on>true</always_on>
+      <update_rate>30</update_rate>
+      <topic>/left_camera/rgb/image_raw</topic>
+      <frame_name>${prefix}Link_LeftCameraSensor</frame_name>
+      <camera>
+        <horizontal_fov>1.047</horizontal_fov>
+        <image>
+          <width>1920</width>
+          <height>1080</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.1</near>
+          <far>100.0</far>
+        </clip>
+      </camera>
+      <plugin name="left_camera_rgb_camera_plugin" filename="libgazebo_ros_camera.so">
+        <camera_name>left_camera/rgb</camera_name>
+        <cameraName>left_camera/rgb</cameraName>
+        <image_topic_name>image_raw</image_topic_name>
+        <imageTopicName>image_raw</imageTopicName>
+        <camera_info_topic_name>camera_info</camera_info_topic_name>
+        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+        <frame_name>${prefix}Link_LeftCameraSensor</frame_name>
+        <frameName>${prefix}Link_LeftCameraSensor</frameName>
+      </plugin>
+    </sensor>
+    <sensor type="depth" name="depth_camera">
+      <visualize>true</visualize>
+      <always_on>true</always_on>
+      <update_rate>30</update_rate>
+      <topic>/left_camera/depth/image_raw</topic>
+      <frame_name>${prefix}Link_LeftCameraSensor</frame_name>
+      <camera>
+        <horizontal_fov>1.047</horizontal_fov>
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.2</near>
+          <far>4.0</far>
+        </clip>
+      </camera>
+      <plugin name="left_camera_depth_camera_plugin" filename="libgazebo_ros_camera.so">
+        <camera_name>left_camera/depth</camera_name>
+        <cameraName>left_camera/depth</cameraName>
+        <image_topic_name>image_raw</image_topic_name>
+        <imageTopicName>image_raw</imageTopicName>
+        <camera_info_topic_name>camera_info</camera_info_topic_name>
+        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+        <point_cloud_topic_name>points</point_cloud_topic_name>
+        <pointCloudTopicName>points</pointCloudTopicName>
+        <frame_name>${prefix}Link_LeftCameraSensor</frame_name>
+        <frameName>${prefix}Link_LeftCameraSensor</frameName>
+      </plugin>
+    </sensor>
+    <sensor type="camera" name="infrared_camera">
+      <visualize>true</visualize>
+      <always_on>true</always_on>
+      <update_rate>15</update_rate>
+      <topic>/left_camera/infrared/image_raw</topic>
+      <frame_name>${prefix}Link_LeftCameraSensor</frame_name>
+      <camera>
+        <horizontal_fov>1.047</horizontal_fov>
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.1</near>
+          <far>10.0</far>
+        </clip>
+      </camera>
+      <plugin name="left_camera_infrared_camera_plugin" filename="libgazebo_ros_camera.so">
+        <camera_name>left_camera/infrared</camera_name>
+        <cameraName>left_camera/infrared</cameraName>
+        <image_topic_name>image_raw</image_topic_name>
+        <imageTopicName>image_raw</imageTopicName>
+        <camera_info_topic_name>camera_info</camera_info_topic_name>
+        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+        <frame_name>${prefix}Link_LeftCameraSensor</frame_name>
+        <frameName>${prefix}Link_LeftCameraSensor</frameName>
+      </plugin>
+    </sensor>
+  </gazebo>
+  <gazebo reference="${prefix}Link_RightCameraSensor">
+    <sensor type="camera" name="rgb_camera">
+      <visualize>true</visualize>
+      <always_on>true</always_on>
+      <update_rate>30</update_rate>
+      <topic>/right_camera/rgb/image_raw</topic>
+      <frame_name>${prefix}Link_RightCameraSensor</frame_name>
+      <camera>
+        <horizontal_fov>1.047</horizontal_fov>
+        <image>
+          <width>1920</width>
+          <height>1080</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.1</near>
+          <far>100.0</far>
+        </clip>
+      </camera>
+      <plugin name="right_camera_rgb_camera_plugin" filename="libgazebo_ros_camera.so">
+        <camera_name>right_camera/rgb</camera_name>
+        <cameraName>right_camera/rgb</cameraName>
+        <image_topic_name>image_raw</image_topic_name>
+        <imageTopicName>image_raw</imageTopicName>
+        <camera_info_topic_name>camera_info</camera_info_topic_name>
+        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+        <frame_name>${prefix}Link_RightCameraSensor</frame_name>
+        <frameName>${prefix}Link_RightCameraSensor</frameName>
+      </plugin>
+    </sensor>
+    <sensor type="depth" name="depth_camera">
+      <visualize>true</visualize>
+      <always_on>true</always_on>
+      <update_rate>30</update_rate>
+      <topic>/right_camera/depth/image_raw</topic>
+      <frame_name>${prefix}Link_RightCameraSensor</frame_name>
+      <camera>
+        <horizontal_fov>1.047</horizontal_fov>
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.2</near>
+          <far>4.0</far>
+        </clip>
+      </camera>
+      <plugin name="right_camera_depth_camera_plugin" filename="libgazebo_ros_camera.so">
+        <camera_name>right_camera/depth</camera_name>
+        <cameraName>right_camera/depth</cameraName>
+        <image_topic_name>image_raw</image_topic_name>
+        <imageTopicName>image_raw</imageTopicName>
+        <camera_info_topic_name>camera_info</camera_info_topic_name>
+        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+        <point_cloud_topic_name>points</point_cloud_topic_name>
+        <pointCloudTopicName>points</pointCloudTopicName>
+        <frame_name>${prefix}Link_RightCameraSensor</frame_name>
+        <frameName>${prefix}Link_RightCameraSensor</frameName>
+      </plugin>
+    </sensor>
+    <sensor type="camera" name="infrared_camera">
+      <visualize>true</visualize>
+      <always_on>true</always_on>
+      <update_rate>15</update_rate>
+      <topic>/right_camera/infrared/image_raw</topic>
+      <frame_name>${prefix}Link_RightCameraSensor</frame_name>
+      <camera>
+        <horizontal_fov>1.047</horizontal_fov>
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.1</near>
+          <far>10.0</far>
+        </clip>
+      </camera>
+      <plugin name="right_camera_infrared_camera_plugin" filename="libgazebo_ros_camera.so">
+        <camera_name>right_camera/infrared</camera_name>
+        <cameraName>right_camera/infrared</cameraName>
+        <image_topic_name>image_raw</image_topic_name>
+        <imageTopicName>image_raw</imageTopicName>
+        <camera_info_topic_name>camera_info</camera_info_topic_name>
+        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+        <frame_name>${prefix}Link_RightCameraSensor</frame_name>
+        <frameName>${prefix}Link_RightCameraSensor</frameName>
+      </plugin>
+    </sensor>
+  </gazebo>
+  <gazebo reference="${prefix}Link_RadarSensor">
+    <sensor type="ray" name="radar_sensor">
+      <!--<visualize>true</visualize>-->
+      <always_on>true</always_on>
+      <update_rate>12</update_rate>
+      <topic>/radar/scan</topic>
+      <frame_name>${prefix}Link_RadarSensor</frame_name>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>2770</samples>
+            <resolution>1</resolution>
+            <min_angle>-3.14159</min_angle>
+            <max_angle>3.14159</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.1</min>
+          <max>30.0</max>
+          <resolution>0.01</resolution>
+        </range>
+      </ray>
+      <noise type="gaussian">
+        <mean>0.0</mean>
+        <stddev>0.01</stddev>
+      </noise>
+      <plugin name="radar_radar_sensor_plugin" filename="libgazebo_ros_ray_sensor.so">
+        <ros>
+          <remapping>~/out:=/radar/scan</remapping>
+        </ros>
+        <output_type>sensor_msgs/LaserScan</output_type>
+      </plugin>
+    </sensor>
+  </gazebo>
+  <gazebo reference="${prefix}Link_IMUSensor">
+    <sensor type="imu" name="imu_sensor">
+      <always_on>true</always_on>
+      <update_rate>116</update_rate>
+      <topic>/imu_data</topic>
+      <frame_name>${prefix}Link_IMUSensor</frame_name>
+      <noise type="gaussian">
+        <mean>0.0</mean>
+        <stddev>0.01</stddev>
+      </noise>
+      <plugin name="imu_imu_sensor_plugin" filename="libgazebo_ros_imu_sensor.so">
+        <ros>
+          <remapping>~/out:=/imu_data</remapping>
+        </ros>
+      </plugin>
+    </sensor>
+  </gazebo>
+  <gazebo reference="${prefix}Link_LFUltrasonicSensor">
+    <sensor type="ray" name="lf_ultrasonic_sensor">
+      <visualize>true</visualize>
+      <always_on>true</always_on>
+      <update_rate>20</update_rate>
+      <topic>/lf_ultrasonic/range</topic>
+      <frame_name>${prefix}Link_LFUltrasonicSensor</frame_name>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>1</samples>
+            <resolution>1</resolution>
+            <min_angle>-0.5236</min_angle>
+            <max_angle>0.5236</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.25</min>
+          <max>4.5</max>
+          <resolution>0.01</resolution>
+        </range>
+      </ray>
+      <plugin name="lf_ultrasonic_lf_ultrasonic_sensor_plugin" filename="libgazebo_ros_ray_sensor.so">
+        <ros>
+          <remapping>~/out:=/lf_ultrasonic/range</remapping>
+        </ros>
+        <output_type>sensor_msgs/LaserScan</output_type>
+      </plugin>
+    </sensor>
+  </gazebo>
+  <gazebo reference="${prefix}Link_RFUltrasonicSensor">
+    <sensor type="ray" name="rf_ultrasonic_sensor">
+      <visualize>true</visualize>
+      <always_on>true</always_on>
+      <update_rate>20</update_rate>
+      <topic>/rf_ultrasonic/range</topic>
+      <frame_name>${prefix}Link_RFUltrasonicSensor</frame_name>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>1</samples>
+            <resolution>1</resolution>
+            <min_angle>-0.5236</min_angle>
+            <max_angle>0.5236</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.25</min>
+          <max>4.5</max>
+          <resolution>0.01</resolution>
+        </range>
+      </ray>
+      <plugin name="rf_ultrasonic_rf_ultrasonic_sensor_plugin" filename="libgazebo_ros_ray_sensor.so">
+        <ros>
+          <remapping>~/out:=/rf_ultrasonic/range</remapping>
+        </ros>
+        <output_type>sensor_msgs/LaserScan</output_type>
+      </plugin>
+    </sensor>
+  </gazebo>
+  <gazebo reference="${prefix}Link_LBUltrasonicSensor">
+    <sensor type="ray" name="lb_ultrasonic_sensor">
+      <visualize>true</visualize>
+      <always_on>true</always_on>
+      <update_rate>20</update_rate>
+      <topic>/lb_ultrasonic/range</topic>
+      <frame_name>${prefix}Link_LBUltrasonicSensor</frame_name>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>1</samples>
+            <resolution>1</resolution>
+            <min_angle>-0.5236</min_angle>
+            <max_angle>0.5236</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.25</min>
+          <max>4.5</max>
+          <resolution>0.01</resolution>
+        </range>
+      </ray>
+      <plugin name="lb_ultrasonic_lb_ultrasonic_sensor_plugin" filename="libgazebo_ros_ray_sensor.so">
+        <ros>
+          <remapping>~/out:=/lb_ultrasonic/range</remapping>
+        </ros>
+        <output_type>sensor_msgs/LaserScan</output_type>
+      </plugin>
+    </sensor>
+  </gazebo>
+  <gazebo reference="${prefix}Link_RBUltrasonicSensor">
+    <sensor type="ray" name="rb_ultrasonic_sensor">
+      <visualize>true</visualize>
+      <always_on>true</always_on>
+      <update_rate>20</update_rate>
+      <topic>/rb_ultrasonic/range</topic>
+      <frame_name>${prefix}Link_RBUltrasonicSensor</frame_name>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>1</samples>
+            <resolution>1</resolution>
+            <min_angle>-0.5236</min_angle>
+            <max_angle>0.5236</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.25</min>
+          <max>4.5</max>
+          <resolution>0.01</resolution>
+        </range>
+      </ray>
+      <plugin name="rb_ultrasonic_rb_ultrasonic_sensor_plugin" filename="libgazebo_ros_ray_sensor.so">
+        <ros>
+          <remapping>~/out:=/rb_ultrasonic/range</remapping>
+        </ros>
+        <output_type>sensor_msgs/LaserScan</output_type>
+      </plugin>
+    </sensor>
+  </gazebo>
+    <gazebo>
+    <visualise_children>true</visualise_children>
+  </gazebo>
+  </xacro:macro>
+
+  <xacro:ylr1d prefix="" />
+  <!-- ============================================ -->
+  <!-- ros2_control: define joint command/state      -->
+  <!-- interfaces for gazebo_ros2_control plugin.    -->
+  <!-- ============================================ -->
+  <ros2_control name="GazeboSystem" type="system">
+    <hardware>
+      <plugin>gazebo_ros2_control/GazeboSystem</plugin>
+    </hardware>
+
+    <!-- Chassis: steering joints (position command) -->
+    <joint name="Joint_Base_to_RFWheelF">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_Base_to_LFWheelF">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_Base_to_RBWheelF">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_Base_to_LBWheelF">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+
+    <!-- Chassis: wheel rolling joints (velocity command) -->
+    <joint name="Joint_RFWheelF_to_RFWheel">
+      <command_interface name="velocity"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_LFWheelF_to_LFWheel">
+      <command_interface name="velocity"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_RBWheelF_to_RBWheel">
+      <command_interface name="velocity"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_LBWheelF_to_LBWheel">
+      <command_interface name="velocity"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+
+    <!-- Torso: lift + yaw + 2x pitch (position command) -->
+    <joint name="Joint_Base_to_Body1">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_Body1_to_Body2">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_Body2_to_Body3">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_Body3_to_Body4">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+
+    <!-- Left arm: 7-DOF + 2 fingers (position command) -->
+    <joint name="Joint_Body2_to_LeftArm1">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_LeftArm1_to_LeftArm2">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_LeftArm2_to_LeftArm3">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_LeftArm3_to_LeftArm4">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_LeftArm4_to_LeftArm5">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_LeftArm5_to_LeftArm6">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_LeftArm6_to_LeftArm7">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_LeftArm7_to_LeftFinger1">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_LeftArm7_to_LeftFinger2">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+
+    <!-- Right arm: 7-DOF + 2 fingers (position command) -->
+    <joint name="Joint_Body2_to_RightArm1">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_RightArm1_to_RightArm2">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_RightArm2_to_RightArm3">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_RightArm3_to_RightArm4">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_RightArm4_to_RightArm5">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_RightArm5_to_RightArm6">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_RightArm6_to_RightArm7">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_RightArm7_to_RightFinger1">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="Joint_RightArm7_to_RightFinger2">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+  </ros2_control>
+
+  <!-- ============================================ -->
+  <!-- Gazebo plugin: bridges ros2_control hardware  -->
+  <!-- interfaces with Gazebo physics engine.        -->
+  <!-- ============================================ -->
+  <gazebo>
+    <plugin name="gazebo_ros2_control" filename="libgazebo_ros2_control.so">
+      <robot_param>robot_description</robot_param>
+      <parameters>${controllers_yaml_path}</parameters>
+    </plugin>
+  </gazebo>
+</robot>
