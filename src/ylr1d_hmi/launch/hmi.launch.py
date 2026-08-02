@@ -5,7 +5,7 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
-    # WSL 下需要软件渲染（但此 lite 版本无 RViz，仅保留以备后续扩展）
+    """控制层 HMI：观测 /joint_states，向控制层发 /desired_joint_states。"""
     set_env = SetEnvironmentVariable(
         "LIBGL_ALWAYS_SOFTWARE", "1"
     )
@@ -14,8 +14,8 @@ def generate_launch_description():
         set_env,
         Node(
             package="ylr1d_hmi",
-            executable="ylr1d_hmi",
-            name="ylr1d_hmi",
+            executable="ylr1d_hmi_control",
+            name="ylr1d_hmi_control",
             output="screen",
         ),
     ])

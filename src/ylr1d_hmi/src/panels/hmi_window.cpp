@@ -1,5 +1,6 @@
-#include "ylr1d_hmi/hmi_window.hpp"
+#include "ylr1d_hmi/panels/hmi_window.hpp"
 
+#include <QApplication>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QSplitter>
@@ -234,83 +235,6 @@ QWidget * HmiWindow::buildCard(int group_idx, const QString & title,
 }
 
 // ============================================================
-// Legacy builders — only used by the (unmaintained) RViz2 variant.
-// Lite version uses buildUiLite() / buildCard() instead.
-// ============================================================
-QWidget * HmiWindow::buildObserver(QWidget * parent) {
-  auto w = parent ? new QWidget(parent) : new QWidget();
-  auto lay = new QVBoxLayout(w);
-  lay->setContentsMargins(2, 2, 2, 2);
-
-  auto title = new QLabel("<b>Joint Observer</b>");
-  lay->addWidget(title);
-
-  observer_tree_ = new QTreeWidget();
-  observer_tree_->setColumnCount(3);
-  observer_tree_->setHeaderLabels({"Joint", "Position", "Velocity"});
-  observer_tree_->header()->setStretchLastSection(true);
-  observer_tree_->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
-  observer_tree_->setRootIsDecorated(true);
-  observer_tree_->setAlternatingRowColors(true);
-  observer_tree_->setAnimated(true);
-
-  auto add_group = [&](const std::string & group_name,
-                        const std::vector<JointDef> & defs) {
-    auto root = new QTreeWidgetItem(observer_tree_, {QString::fromStdString(group_name)});
-    root->setExpanded(true);
-    QFont bold = root->font(0);
-    bold.setBold(true);
-    root->setFont(0, bold);
-    for (auto & d : defs) {
-      auto item = new QTreeWidgetItem(root, {d.label, "—", "—"});
-      item->setData(0, Qt::UserRole, QString::fromStdString(d.name));
-    }
-  };
-
-  add_group("Chassis (8)", chassis_joints);
-  add_group("Torso (4)", torso_joints);
-  add_group("Left Arm (9)", left_arm_joints);
-  add_group("Right Arm (9)", right_arm_joints);
-
-  lay->addWidget(observer_tree_);
-  return w;
-}
-
-QWidget * HmiWindow::buildController(QWidget * parent) {
-  auto w = parent ? new QWidget(parent) : new QWidget();
-  auto outer_lay = new QVBoxLayout(w);
-  outer_lay->setContentsMargins(2, 2, 2, 2);
-
-  auto title = new QLabel("<b>Joint Controller</b>");
-  outer_lay->addWidget(title);
-
-  auto hlay = new QHBoxLayout();
-  outer_lay->addLayout(hlay);
-
-  auto add_group = [&](const QString & group_name,
-                        const std::vector<JointDef> & defs) {
-    auto gb = new QGroupBox(group_name);
-    auto glay = new QVBoxLayout(gb);
-    glay->setSpacing(2);
-
-    for (size_t i = 0; i < defs.size(); ++i) {
-      size_t idx = joints_.size();
-      joints_.push_back(JointInfo{});
-      name_to_idx_[defs[i].name] = idx;
-      addControlRow(glay, defs[i], idx);
-    }
-    hlay->addWidget(gb);
-  };
-
-  add_group("Chassis", chassis_joints);
-  add_group("Torso", torso_joints);
-  add_group("Left Arm", left_arm_joints);
-  add_group("Right Arm", right_arm_joints);
-
-  return w;
-}
-
-// ============================================================
 // One control row: [label] [slider] [spinbox(unit)]
 // ============================================================
 void HmiWindow::addControlRow(QVBoxLayout * parent, const JointDef & d, size_t idx) {
@@ -535,25 +459,11 @@ void HmiWindow::onSendNow() {
 // Slots
 // ============================================================
 void HmiWindow::onRosSpin() {
-  rclcpp::spin_some(node_);
-
-  // Update legacy tree observer (RViz2 variant only)
-  if (observer_tree_) {
-    for (int gi = 0; gi < observer_tree_->topLevelItemCount(); ++gi) {
-      auto * root = observer_tree_->topLevelItem(gi);
-      for (int ci = 0; ci < root->childCount(); ++ci) {
-        auto * item = root->child(ci);
-        QString name = item->data(0, Qt::UserRole).toString();
-        auto it = name_to_idx_.find(name.toStdString());
-        if (it == name_to_idx_.end()) continue;
-        const auto & j = joints_[it->second];
-        item->setText(1, QString::number(toDisplay(j.position, j.is_prismatic), 'f', 4)
-                       + QStringLiteral(" ") + unitStr(j.is_prismatic));
-        item->setText(2, QString::number(toDisplay(j.velocity, j.is_prismatic), 'f', 4)
-                       + QStringLiteral(" ") + unitStr(j.is_prismatic) + QStringLiteral("/s"));
-      }
-    }
+  if (!rclcpp::ok()) {
+    QApplication::quit();  // SIGINT/SIGTERM 后 rcl 已 shutdown，干净退出 Qt
+    return;
   }
+  rclcpp::spin_some(node_);
 
   // Update observer tables
   for (size_t g = 0; g < obs_tables_.size(); ++g) {
@@ -616,6 +526,7 @@ void HmiWindow::onSpinChanged(double value) {
 }
 
 void HmiWindow::onSendTimer() {
+  if (!rclcpp::ok()) return;  // rcl 已 shutdown，停止发布
   if (!desired_dirty_) return;
   desired_dirty_ = false;
   publishDesired();

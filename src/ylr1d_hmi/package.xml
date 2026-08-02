@@ -3,18 +3,17 @@
 <package format="3">
   <name>ylr1d_hmi</name>
   <version>0.0.0</version>
-  <description>Qt5 HMI for YLR1D — joint observer + joint controller (lite &amp; RViz2 variants)</description>
+  <description>Qt5 HMI for YLR1D — control-layer / sensor / translate-layer panels</description>
   <maintainer email="2607430020@qq.com">zsj</maintainer>
   <license>BSD</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>rclcpp</depend>
+  <depend>rclcpp_action</depend>
   <depend>sensor_msgs</depend>
   <depend>std_msgs</depend>
-  <depend>rviz_common</depend>
-  <depend>rviz_rendering</depend>
-  <depend>rviz_default_plugins</depend>
+  <depend>ylr1d_translate</depend>
 
   <exec_depend>qtbase5-dev</exec_depend>
 

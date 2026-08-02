@@ -23,16 +23,18 @@ def _include(package_name: str, launch_file: str, launch_arguments=None):
 
 
 def generate_launch_description():
-    """一键启动 YLR1D 仿真栈。
+    """控制层完整栈（控制层 → 物理层）。
 
     聚合：
-        ylr1d_plant         gazebo.launch.py        物理层（Gazebo + 控制器 + rviz2）
-        ylr1d_control_sim   position_simulate.launch.py   控制层软仿真
-        ylr1d_hmi           hmi.launch.py           控制器人机界面
-        ylr1d_hmi           sensor_panel.launch.py  独立传感器可视化面板
+        ylr1d_plant         gazebo.launch.py             物理层（Gazebo + ros2_control）
+        ylr1d_control_sim   position_simulate.launch.py  控制层软仿真
+        ylr1d_hmi           hmi.launch.py                控制层 HMI（发 /desired_joint_states）
+        ylr1d_hmi           sensor_panel.launch.py       传感器观测面板
+
+    链路：control HMI → /desired_joint_states → control_sim → 5 组命令 → plant(Gazebo)
 
     用法:
-        ros2 launch ylr1d_bringup bringup.launch.py [world:=<world 文件名>]
+        ros2 launch ylr1d_bringup bringup_control.launch.py [world:=<world 文件名>]
 
     参数:
         world: Gazebo 世界文件名（ylr1d_description/worlds/ 下），透传给

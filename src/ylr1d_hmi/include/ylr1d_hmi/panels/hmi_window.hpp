@@ -65,15 +65,10 @@ public:
   explicit HmiWindow(rclcpp::Node::SharedPtr node);
   ~HmiWindow() override;
 
-  /// Build the lite layout (Observer top + Controller bottom, no RViz).
-  /// Call after construction (or not at all if a subclass provides its own layout).
+  /// Build the lite layout (Observe tables top + Control rows bottom).
   void buildUiLite();
 
 protected:
-  // Shared UI builders — usable by any subclass
-  QWidget * buildObserver(QWidget * parent);
-  QWidget * buildController(QWidget * parent);
-
   // Publish desired joint states
   void publishDesired();
 
@@ -93,8 +88,6 @@ private:
 
   // One observer table per joint group (Chassis/Torso/Left/Right)
   std::array<QTableWidget *, 4> obs_tables_{nullptr, nullptr, nullptr, nullptr};
-  // Legacy single-tree observer — only used by the (unmaintained) RViz2 variant
-  QTreeWidget * observer_tree_{nullptr};
   // Low-frequency send timer (GUI 触发 + 固定频率发送)
   QTimer * send_timer_{nullptr};
   bool desired_dirty_{false};

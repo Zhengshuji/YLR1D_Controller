@@ -9,83 +9,54 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_action REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(ylr1d_translate REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Widgets Core)
 
-# ── Lite version (no RViz2) ──────────────────────────────
-add_executable(ylr1d_hmi
-  src/main.cpp
-  src/hmi_window.cpp
-  include/ylr1d_hmi/hmi_window.hpp
-)
-target_include_directories(ylr1d_hmi PUBLIC
+set(HMI_INCLUDES
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
-target_compile_features(ylr1d_hmi PUBLIC c_std_99 cxx_std_17)
-target_link_libraries(ylr1d_hmi
-  Qt5::Widgets
-  Qt5::Core
-)
-ament_target_dependencies(ylr1d_hmi
-  "rclcpp"
-  "sensor_msgs"
-  "std_msgs"
-)
 
-# ── RViz2 version ────────────────────────────────────────
-find_package(rviz_common REQUIRED)
-find_package(rviz_rendering REQUIRED)
-find_package(rviz_default_plugins REQUIRED)
+# ── 控制层 HMI（面向 ylr1d_control_sim，发 /desired_joint_states）──
+add_executable(ylr1d_hmi_control
+  src/main_control.cpp
+  src/panels/hmi_window.cpp
+  include/ylr1d_hmi/panels/hmi_window.hpp
+)
+target_include_directories(ylr1d_hmi_control PUBLIC ${HMI_INCLUDES})
+target_compile_features(ylr1d_hmi_control PUBLIC c_std_99 cxx_std_17)
+target_link_libraries(ylr1d_hmi_control Qt5::Widgets Qt5::Core)
+ament_target_dependencies(ylr1d_hmi_control "rclcpp" "sensor_msgs" "std_msgs")
 
-add_executable(ylr1d_hmi_rviz
-  src/main_rviz.cpp
-  src/hmi_window_rviz.cpp
-  src/hmi_window.cpp
-  include/ylr1d_hmi/hmi_window.hpp
-  include/ylr1d_hmi/hmi_window_rviz.hpp
+# ── 传感器 HMI（观测 /joint_states + 各传感器话题）────────────
+add_executable(ylr1d_hmi_sensor
+  src/main_sensor.cpp
+  src/panels/sensor_panel.cpp
+  include/ylr1d_hmi/panels/sensor_panel.hpp
 )
-target_include_directories(ylr1d_hmi_rviz PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
-target_compile_features(ylr1d_hmi_rviz PUBLIC c_std_99 cxx_std_17)
-target_link_libraries(ylr1d_hmi_rviz
-  Qt5::Widgets
-  Qt5::Core
-  rviz_common::rviz_common
-  rviz_rendering::rviz_rendering
-  rviz_default_plugins::rviz_default_plugins
-)
-ament_target_dependencies(ylr1d_hmi_rviz
-  "rclcpp"
-  "sensor_msgs"
-  "std_msgs"
-)
+target_include_directories(ylr1d_hmi_sensor PUBLIC ${HMI_INCLUDES})
+target_compile_features(ylr1d_hmi_sensor PUBLIC c_std_99 cxx_std_17)
+target_link_libraries(ylr1d_hmi_sensor Qt5::Widgets Qt5::Core)
+ament_target_dependencies(ylr1d_hmi_sensor "rclcpp" "sensor_msgs" "std_msgs")
 
-# ── Standalone sensor panel (independent from the controller HMI) ──
-add_executable(ylr1d_sensor_panel
-  src/sensor_panel_main.cpp
-  src/sensor_panel.cpp
-  include/ylr1d_hmi/sensor_panel.hpp
+# ── 传输层 HMI（面向 ylr1d_translate，发 action goal）────────────
+add_executable(ylr1d_hmi_translate
+  src/main_translate.cpp
+  src/panels/translate_panel.cpp
+  include/ylr1d_hmi/panels/translate_panel.hpp
 )
-target_include_directories(ylr1d_sensor_panel PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
-target_compile_features(ylr1d_sensor_panel PUBLIC c_std_99 cxx_std_17)
-target_link_libraries(ylr1d_sensor_panel
-  Qt5::Widgets
-  Qt5::Core
-)
-ament_target_dependencies(ylr1d_sensor_panel
-  "rclcpp"
-  "sensor_msgs"
-  "std_msgs"
-)
+target_include_directories(ylr1d_hmi_translate PUBLIC ${HMI_INCLUDES})
+target_compile_features(ylr1d_hmi_translate PUBLIC c_std_99 cxx_std_17)
+target_link_libraries(ylr1d_hmi_translate Qt5::Widgets Qt5::Core)
+ament_target_dependencies(ylr1d_hmi_translate
+  "rclcpp" "rclcpp_action" "sensor_msgs" "std_msgs" "ylr1d_translate")
 
 # ── Install all ──────────────────────────────────────────
-install(TARGETS ylr1d_hmi ylr1d_hmi_rviz ylr1d_sensor_panel
+install(TARGETS ylr1d_hmi_control ylr1d_hmi_sensor ylr1d_hmi_translate
         DESTINATION lib/${PROJECT_NAME})
-install(DIRECTORY launch config DESTINATION share/${PROJECT_NAME}/)
+install(DIRECTORY launch DESTINATION share/${PROJECT_NAME}/)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

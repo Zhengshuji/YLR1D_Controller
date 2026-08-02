@@ -1,4 +1,4 @@
-#include "ylr1d_hmi/sensor_panel.hpp"
+#include "ylr1d_hmi/panels/sensor_panel.hpp"
 
 #include <QHBoxLayout>
 #include <QVBoxLayout>
