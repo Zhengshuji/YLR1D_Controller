@@ -1,47 +1,14 @@
 import os
-import re
-import tempfile
-import yaml
+import sys
+
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import ExecuteProcess, TimerAction
 from launch_ros.actions import Node
-import xacro
 
-
-def _resolve_yaml_refs(content: str, config_dir: str) -> str:
-    """Resolve ${links.X.Y}, ${colors.X}, ${limits.X.Y} from config YAML files.
-
-    The model xacro references values via dotted expressions like
-    ${links.Link_Base.mass}. xacro does not load these from yaml by itself,
-    so we pre-resolve them to literals here, then let xacro handle the rest.
-    """
-    configs = {}
-    for name in ["links", "colors", "limits", "scale", "calibration", "dynamics"]:
-        path = os.path.join(config_dir, f"{name}.yaml")
-        if os.path.exists(path):
-            with open(path) as f:
-                data = yaml.safe_load(f)
-            if data is not None:
-                configs[name] = data
-
-    def _resolve(match):
-        expr = match.group(1).strip()
-        # Leave simple variable names (prefix, ...) for xacro to handle
-        if re.match(r'^[a-zA-Z_]\w*$', expr):
-            return match.group(0)
-        parts = expr.split(".")
-        if parts[0] in configs:
-            try:
-                val = configs[parts[0]]
-                for p in parts[1:]:
-                    val = val[p]
-                return str(val)
-            except (KeyError, TypeError):
-                pass
-        return match.group(0)  # keep as-is if unresolvable
-
-    return re.sub(r'\$\{([^}]+)\}', _resolve, content)
+# 公共 xacro → URDF 导入逻辑（随 launch 安装，见 launch/python_utils/xacro_utils.py）
+sys.path.insert(0, os.path.join(get_package_share_directory("ylr1d_description"), "launch", "python_utils"))
+from xacro_utils import process_xacro_to_urdf
 
 
 def generate_launch_description():
@@ -73,27 +40,13 @@ def generate_launch_description():
     env["GAZEBO_MODEL_PATH"] = (model_path + ":" + share_path + ":"
                                 + env.get("GAZEBO_MODEL_PATH", ""))
 
-    # ── Process xacro (same pipeline as ylr1d_plant) ─────
+    # ── Process xacro (公共逻辑在 launch/python_utils/xacro_utils.py) ──
     config_dir = os.path.join(pkg_share, "config")
-    xacro_path = os.path.join(pkg_share, "urdf", "ylr1d_sensor_vis.xacro")
-    with open(xacro_path) as f:
-        raw = f.read()
-    resolved = _resolve_yaml_refs(raw, config_dir)
-    # Inject controllers.yaml path into the gazebo_ros2_control plugin
-    resolved = resolved.replace("${controllers_yaml_path}",
-                                os.path.join(config_dir, "controllers.yaml"))
-
-    tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".xacro", delete=False)
-    tmp.write(resolved)
-    tmp.close()
-    doc = xacro.process_file(tmp.name, mappings={"config_path": config_dir})
-    robot_desc = doc.toxml()
-    os.unlink(tmp.name)
-
-    # Save final URDF to a temp file for Gazebo spawn
-    urdf_tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".urdf", delete=False)
-    urdf_tmp.write(robot_desc)
-    urdf_tmp.close()
+    robot_desc, urdf_tmp_path = process_xacro_to_urdf(
+        os.path.join(pkg_share, "urdf", "ylr1d_sensor_vis.xacro"),
+        config_dir,
+        os.path.join(config_dir, "controllers.yaml"),
+    )
 
     world_path = os.path.join(pkg_share, "worlds", "sensors_test.world")
 
@@ -124,7 +77,7 @@ def generate_launch_description():
     spawn_entity = Node(
         package="gazebo_ros",
         executable="spawn_entity.py",
-        arguments=["-entity", "ylr1d", "-file", urdf_tmp.name,
+        arguments=["-entity", "ylr1d", "-file", urdf_tmp_path,
                    "-x", "0", "-y", "0", "-z", "0.3"],
         output="screen",
     )

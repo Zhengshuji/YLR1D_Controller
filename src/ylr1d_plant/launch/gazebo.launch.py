@@ -1,54 +1,15 @@
 import os
-import re
-import tempfile
-import yaml
+import sys
+
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, ExecuteProcess, TimerAction
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
-import xacro
 
-
-def _resolve_yaml_refs(content: str, config_dir: str) -> str:
-    """Resolve ${links.X.Y}, ${colors.X}, ${limits.X.Y} from YAML config files."""
-    configs = {}
-    for name in ["links", "colors", "limits", "scale", "calibration", "dynamics"]:
-        path = os.path.join(config_dir, f"{name}.yaml")
-        if os.path.exists(path):
-            with open(path) as f:
-                data = yaml.safe_load(f)
-            if data is not None:
-                configs[name] = data
-
-    # Load sensor configs from config/sensors/*.yaml
-    sensors_dir = os.path.join(config_dir, "sensors")
-    if os.path.isdir(sensors_dir):
-        for fname in sorted(os.listdir(sensors_dir)):
-            if fname.endswith(".yaml"):
-                name = fname[:-5]  # strip .yaml → e.g. "rgb_camera"
-                path = os.path.join(sensors_dir, fname)
-                with open(path) as f:
-                    data = yaml.safe_load(f)
-                if data is not None:
-                    configs[name] = data
-
-    def _resolve(match):
-        expr = match.group(1).strip()
-        if re.match(r'^[a-zA-Z_]\w*$', expr):
-            return match.group(0)
-        parts = expr.split(".")
-        if parts[0] in configs:
-            try:
-                val = configs[parts[0]]
-                for p in parts[1:]:
-                    val = val[p]
-                return str(val)
-            except (KeyError, TypeError):
-                pass
-        return match.group(0)
-
-    return re.sub(r'\$\{([^}]+)\}', _resolve, content)
+# 公共 xacro → URDF 导入逻辑（随 ylr1d_description 安装）
+sys.path.insert(0, os.path.join(get_package_share_directory("ylr1d_description"), "launch", "python_utils"))
+from xacro_utils import process_xacro_to_urdf
 
 
 def generate_launch_description():
@@ -81,32 +42,13 @@ def generate_launch_description():
     world_arg = LaunchConfiguration("world")
     world_path = PathJoinSubstitution([pkg_desc, "worlds", world_arg])
 
-    # ── Process xacro (model assets come from ylr1d_description) ──
-    xacro_path = os.path.join(pkg_desc, "urdf", "ylr1d.xacro")
-    config_dir = os.path.join(pkg_desc, "config")
-    controllers_yaml_path = os.path.join(pkg_share, "config", "controllers.yaml")
-
-    with open(xacro_path) as f:
-        raw = f.read()
-    resolved = _resolve_yaml_refs(raw, config_dir)
-    # Replace controller yaml path directly (xacro's ${} evaluation
-    # doesn't receive arbitrary mappings, so we do it here)
-    resolved = resolved.replace("${controllers_yaml_path}", controllers_yaml_path)
-
-    tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".xacro", delete=False)
-    tmp.write(resolved)
-    tmp.close()
-
-    doc = xacro.process_file(tmp.name, mappings={
-        "config_path": config_dir,
-    })
-    robot_desc = doc.toxml()
-    os.unlink(tmp.name)
-
-    # Save final URDF to temp file for Gazebo
-    urdf_tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".urdf", delete=False)
-    urdf_tmp.write(robot_desc)
-    urdf_tmp.close()
+    # ── Process xacro (model assets from ylr1d_description；公共逻辑在
+    #    ylr1d_description/launch/python_utils/xacro_utils.py) ──
+    robot_desc, urdf_tmp_path = process_xacro_to_urdf(
+        os.path.join(pkg_desc, "urdf", "ylr1d.xacro"),
+        os.path.join(pkg_desc, "config"),
+        os.path.join(pkg_share, "config", "controllers.yaml"),
+    )
 
     # ── Nodes ──────────────────────────────────────────────────
     robot_state_publisher = Node(
@@ -136,7 +78,7 @@ def generate_launch_description():
         package="gazebo_ros",
         executable="spawn_entity.py",
         arguments=[
-            "-entity", robot_name, "-file", urdf_tmp.name, 
+            "-entity", robot_name, "-file", urdf_tmp_path,
             "-x", "0", "-y", "0", "-z", "0.3",
         ],
         output="screen",

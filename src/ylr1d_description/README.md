@@ -9,7 +9,7 @@ YLR1D 机器人的模型资产包，是 xacro / meshes / 模型配置 / rviz / w
 
 | 目录/文件 | 内容 |
 |-----------|------|
-| `urdf/ylr1d.xacro` | 模型宏定义，通过 `${links.X.Y}` 等占位符引用 `config/*.yaml` 的配置（launch 运行时解析） |
+| `urdf/ylr1d.xacro` | 模型宏定义，通过 `${links.X.Y}` 等占位符引用 `config/*.yaml` 的配置（launch 公共模块 `xacro_utils` 运行时解析） |
 | `urdf/ylr1d.urdf` | **静态自包含 URDF**：模型配置已内联为数值，不引用任何外部 yaml，可随工作空间移动 |
 | `config/` | 模型参数：`links`（质量/惯量）、`colors`、`limits`、`calibration`、`dynamics`；`scale`（密度）与 `sensors/` 为**参考/未消费**配置（待接入 xacro）；`controllers.yaml`（minimal 展示版） |
 | `meshes/` | STL 网格（`Link_*.STL`） |
@@ -19,6 +19,7 @@ YLR1D 机器人的模型资产包，是 xacro / meshes / 模型配置 / rviz / w
 | `model.config` | Gazebo model 数据库残留（指向不存在的 `model.sdf`），未被任何流程使用 |
 | `launch/xacro_display.launch.py` | 动态生成 URDF 展示（推荐） |
 | `launch/urdf_display.launch.py` | 静态 URDF 展示 |
+| `launch/python_utils/xacro_utils.py` | **xacro → URDF 公共导入逻辑（单一来源）**：`resolve_yaml_refs`（yaml 预替换）+ `process_xacro_to_urdf`（完整管道）；本包两个展示 launch 与 `ylr1d_plant` 的两个 gazebo launch 均从这里导入 |
 | `urdf/ylr1d_sensor_vis.xacro` | **传感器可视化诊断副本**：由 `ylr1d.xacro` 复制，给每个传感器加 `<visualize>true</visualize>`（ray 画扫描射线、camera 画视锥），并修正了部分传感器安装朝向（详见下方"传感器方向修正记录"） |
 | `launch/sensor_vis.launch.py` | 传感器可视化测试 launch：固定加载 `ylr1d_sensor_vis.xacro` + `sensors_test.world`，spawn 在 (0,0,0.3)，不起控制器 |
 
@@ -43,13 +44,13 @@ ros2 launch ylr1d_description urdf_display.launch.py
 
 ### 2. 供其他包使用
 
-- `ylr1d_plant` 的 `gazebo.launch.py` / `gazebo_effort.launch.py` 从本包取 xacro、模型 config、rviz、world，并注入**它们自己的** `controllers.yaml`
-- ⚠️ 命令行直接跑 xacro **会失败**：`${links.X.Y}` 等占位符必须由 launch 的 `_resolve_yaml_refs` 预替换（xacro 本身不加载 yaml），实测报错 `name 'links' is not defined`：
+- `ylr1d_plant` 的 `gazebo.launch.py` / `gazebo_effort.launch.py` 从本包取 xacro、模型 config、rviz、world，并注入**它们自己的** `controllers.yaml`；xacro → URDF 统一走本包公共模块 `launch/python_utils/xacro_utils.py` 的 `process_xacro_to_urdf`
+- ⚠️ 命令行直接跑 xacro **会失败**：`${links.X.Y}` 等占位符必须由 `xacro_utils.resolve_yaml_refs` 预替换（xacro 本身不加载 yaml），实测报错 `name 'links' is not defined`：
 
 ```bash
 # ❌ 失败：占位符未预替换
 ros2 run xacro xacro src/ylr1d_description/urdf/ylr1d.xacro
-# ✅ 正确：用 xacro_display launch 预览，或自行复制 _resolve_yaml_refs 逻辑预处理后再 xacro
+# ✅ 正确：用 xacro_display launch 预览，或 `from xacro_utils import process_xacro_to_urdf` 处理后生成 URDF
 ```
 
 ---
@@ -82,8 +83,8 @@ ros2 run xacro xacro src/ylr1d_description/urdf/ylr1d.xacro
 | [`lb_ultrasonic_sensor.yaml`](config/sensors/lb_ultrasonic_sensor.yaml) | 左后超声波 |
 | [`rb_ultrasonic_sensor.yaml`](config/sensors/rb_ultrasonic_sensor.yaml) | 右后超声波 |
 
-launch 通过 `_resolve_yaml_refs`（正则预处理器）在 xacro 处理前把 `${links.X.Y}` 等占位符
-替换为 yaml 中的数值，再交给 xacro 展开。
+launch 通过公共模块 `launch/python_utils/xacro_utils.py` 的 `resolve_yaml_refs`（正则预处理器）
+在 xacro 处理前把 `${links.X.Y}` 等占位符替换为 yaml 中的数值，再交给 xacro 展开。
 
 ### 静态 URDF（ylr1d.urdf）
 
@@ -104,10 +105,11 @@ launch 已自动把 meshes 目录与包 share 目录加入 `GAZEBO_MODEL_PATH`�
 - `config/controllers.yaml` 是 **minimal 展示版**（供 desc 展示 launch 用），与 `ylr1d_plant` 的
   `config/controllers.yaml` 相互独立、各归其位
 - 修改模型参数：改 `config/*.yaml` → 用 `xacro_display.launch.py` 预览。⚠️ 包内**没有**重新生成
-  `ylr1d.urdf` 的现成命令（launch 只生成到 `/tmp` 临时文件）；如需落盘需自写脚本
-  （复制 `_resolve_yaml_refs` + `xacro.process_file` 逻辑）
-- `_resolve_yaml_refs` 在 `xacro_display.launch.py` 与 `ylr1d_plant` 的 launch 各有一份，且**版本不同**
-  （plant 版额外加载 `sensors/*.yaml`），改一侧时注意另一侧同步
+  `ylr1d.urdf` 的现成命令（launch 只生成到 `/tmp` 临时文件）；如需落盘可调用
+  `launch/python_utils/xacro_utils.py` 的 `process_xacro_to_urdf` 自行生成
+- xacro 导入逻辑统一在 `launch/python_utils/xacro_utils.py`（单一来源）：`resolve_yaml_refs` 加载
+  `config/*.yaml` + `config/sensors/*.yaml`（超集），`process_xacro_to_urdf(xacro_path, config_dir,
+  controllers_yaml, transforms=())` 通过 `transforms` 承接 effort 版注入 `<command_interface effort/>`
 - xacro 中的 `base_footprint` 虚拟连接被注释掉，TF 根帧为 `Link_Base`（rviz 固定帧同）
 
 ### 模型资产细节（从代码可直接看到，README 概览未覆盖）

@@ -1,54 +1,16 @@
 import os
 import re
-import tempfile
-import yaml
+import sys
+
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, ExecuteProcess, TimerAction
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
-import xacro
 
-
-def _resolve_yaml_refs(content: str, config_dir: str) -> str:
-    """Resolve ${links.X.Y}, ${colors.X}, ${limits.X.Y} from YAML config files."""
-    configs = {}
-    for name in ["links", "colors", "limits", "scale", "calibration", "dynamics"]:
-        path = os.path.join(config_dir, f"{name}.yaml")
-        if os.path.exists(path):
-            with open(path) as f:
-                data = yaml.safe_load(f)
-            if data is not None:
-                configs[name] = data
-
-    # Load sensor configs from config/sensors/*.yaml
-    sensors_dir = os.path.join(config_dir, "sensors")
-    if os.path.isdir(sensors_dir):
-        for fname in sorted(os.listdir(sensors_dir)):
-            if fname.endswith(".yaml"):
-                name = fname[:-5]  # strip .yaml → e.g. "rgb_camera"
-                path = os.path.join(sensors_dir, fname)
-                with open(path) as f:
-                    data = yaml.safe_load(f)
-                if data is not None:
-                    configs[name] = data
-
-    def _resolve(match):
-        expr = match.group(1).strip()
-        if re.match(r'^[a-zA-Z_]\w*$', expr):
-            return match.group(0)
-        parts = expr.split(".")
-        if parts[0] in configs:
-            try:
-                val = configs[parts[0]]
-                for p in parts[1:]:
-                    val = val[p]
-                return str(val)
-            except (KeyError, TypeError):
-                pass
-        return match.group(0)
-
-    return re.sub(r'\$\{([^}]+)\}', _resolve, content)
+# 公共 xacro → URDF 导入逻辑（随 ylr1d_description 安装）
+sys.path.insert(0, os.path.join(get_package_share_directory("ylr1d_description"), "launch", "python_utils"))
+from xacro_utils import process_xacro_to_urdf
 
 
 def _inject_effort_interfaces(content: str) -> str:
@@ -59,13 +21,6 @@ def _inject_effort_interfaces(content: str) -> str:
         lambda m: m.group(1) + '\n      <command_interface name="effort"/>',
         content,
     )
-
-
-def _resolve_package_uris(content: str, pkg_name: str) -> str:
-    """Replace package://<pkg_name>/ URIs with absolute file paths using ament_index."""
-    from ament_index_python.packages import get_package_share_directory
-    pkg_path = get_package_share_directory(pkg_name)
-    return content.replace(f"package://{pkg_name}", pkg_path)
 
 
 def generate_launch_description():
@@ -98,43 +53,13 @@ def generate_launch_description():
     world_arg = LaunchConfiguration("world")
     world_path = PathJoinSubstitution([pkg_desc, "worlds", world_arg])
 
-    # model:// URIs are not used by this robot — package:// URIs are
-    # resolved to absolute paths via _resolve_package_uris below,
-    # so GAZEBO_MODEL_PATH is left unset to avoid Gazebo scanning
-    # unrelated share/ subdirectories (which triggers noisy
-    # "Missing model.config" errors).
-
-    # ── Read original xacro (from ylr1d_description) and inject effort interfaces ────
-    original_xacro_path = os.path.join(pkg_desc, "urdf", "ylr1d.xacro")
-    config_dir = os.path.join(pkg_desc, "config")
-    effort_controllers_yaml_path = os.path.join(pkg_share, "config", "effort_controllers.yaml")
-
-    with open(original_xacro_path) as f:
-        raw = f.read()
-
-    # Step 1: resolve YAML config references (${links.X.Y}, etc.)
-    resolved = _resolve_yaml_refs(raw, config_dir)
-    # Step 2: point controllers path to the effort controller config
-    resolved = resolved.replace("${controllers_yaml_path}", effort_controllers_yaml_path)
-    # Step 3: inject <command_interface name="effort"/> into ros2_control block
-    resolved = _inject_effort_interfaces(resolved)
-    # Step 4: resolve package:// URIs to absolute file paths so Gazebo can find meshes
-    # resolved = _resolve_package_uris(resolved, "ylr1d_description")
-
-    tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".xacro", delete=False)
-    tmp.write(resolved)
-    tmp.close()
-
-    doc = xacro.process_file(tmp.name, mappings={
-        "config_path": config_dir,
-    })
-    robot_desc = doc.toxml()
-    os.unlink(tmp.name)
-
-    # Save final URDF to temp file for Gazebo
-    urdf_tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".urdf", delete=False)
-    urdf_tmp.write(robot_desc)
-    urdf_tmp.close()
+    # ── Read original xacro (from ylr1d_description) and inject effort interfaces ──
+    robot_desc, urdf_tmp_path = process_xacro_to_urdf(
+        os.path.join(pkg_desc, "urdf", "ylr1d.xacro"),
+        os.path.join(pkg_desc, "config"),
+        os.path.join(pkg_share, "config", "effort_controllers.yaml"),
+        transforms=(_inject_effort_interfaces,),
+    )
 
     # ── Nodes ──────────────────────────────────────────────────
     robot_state_publisher = Node(
@@ -166,7 +91,7 @@ def generate_launch_description():
         package="gazebo_ros",
         executable="spawn_entity.py",
         arguments=[
-            "-entity", robot_name, "-file", urdf_tmp.name,
+            "-entity", robot_name, "-file", urdf_tmp_path,
             "-x", "0", "-y", "0", "-z", "0.3",
             "-unpause",
         ],

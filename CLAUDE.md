@@ -29,6 +29,9 @@ export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:$(pwd)/src
 
 ## 包结构速览
 
+> **语言约定**：项目主体基于 C++（`ylr1d_plant` / `ylr1d_control_sim` / `ylr1d_hmi` 的节点均为 C++）。
+> Python 仅限 launch 与 test 层（`launch/*.py`、`launch/python_utils/*.py`、`test/*.py`），核心逻辑禁止用 Python。
+
 五个包，职责分层（模型资产 → 物理层 → 控制层 → 人机界面），外加一键启动编排：
 
 ```
@@ -38,7 +41,7 @@ ylr1d_description  ylr1d_plant  ylr1d_control_sim  ylr1d_hmi   ylr1d_bringup
   xacro/mesh/config  Gazebo+ros2_control  PID过渡→5组命令   Qt5观测+控制  聚合三者launch
 ```
 
-- **`ylr1d_description`**: 模型资产单一来源（xacro、meshes、模型 config yaml、sensors、rviz、world）。`ylr1d_plant` 与展示 launch 均从这里取资产
+- **`ylr1d_description`**: 模型资产单一来源（xacro、meshes、模型 config yaml、sensors、rviz、world）。`ylr1d_plant` 与展示 launch 均从这里取资产。内含 **`launch/python_utils/xacro_utils.py`**（xacro → URDF 公共导入逻辑：`resolve_yaml_refs` + `process_xacro_to_urdf`，本包展示 launch 与 `ylr1d_plant` 的两个 gazebo launch 共用）
 - **`ylr1d_plant`**: 物理层/中控，管理 Gazebo + ros2_control 的配置与启动。提供 `gazebo.launch.py`（position 接口）与 `gazebo_effort.launch.py`（effort 力控）两套方案；内含 `joint_state_filter`（NaN → 0.0）
 - **`ylr1d_control_sim`**: 控制层/软仿真，模拟硬件位置/速度闭环。订阅 `/desired_joint_states` + `/joint_states`，PID 过渡后发布 5 组 ForwardCommandController 命令话题。参数从 `config/` 三个 yaml 加载（`<关节名>/limit/*`、`<关节名>/pid/*`）。**必须通过 `position_simulate.launch.py` 启动**。无头验证：`test/position_simulate_smoke_test.py`
 - **`ylr1d_hmi`**: Qt5 人机交互界面，关节状态观测 + 关节控制器。Lite 版（`hmi.launch.py`）正常，RViz2 版存在构建/运行问题

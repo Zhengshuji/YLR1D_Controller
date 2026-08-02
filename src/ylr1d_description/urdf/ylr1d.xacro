@@ -1132,27 +1132,27 @@
     <dynamics damping="${dynamics.Joint_Base_to_RBUltrasonicSensor.damping}" friction="${dynamics.Joint_Base_to_RBUltrasonicSensor.friction}"/>
   </joint>
     <gazebo reference="${prefix}Link_GlobalCameraSensor">
-    <sensor type="camera" name="rgb_camera">
+    <sensor type="${sensors.global_rgb_camera.type}" name="rgb_camera">
       <visualize>false</visualize>
       <always_on>true</always_on>
-      <update_rate>30</update_rate>
-      <topic>/global_camera/rgb/image_raw</topic>
+      <update_rate>${sensors.global_rgb_camera.update_rate}</update_rate>
+      <topic>${sensors.global_rgb_camera.topic}</topic>
       <frame_name>${prefix}Link_GlobalCameraSensor</frame_name>
       <camera>
-        <horizontal_fov>1.047</horizontal_fov>
+        <horizontal_fov>${sensors.global_rgb_camera.camera.horizontal_fov}</horizontal_fov>
         <image>
-          <width>1920</width>
-          <height>1080</height>
-          <format>R8G8B8</format>
+          <width>${sensors.global_rgb_camera.camera.image.width}</width>
+          <height>${sensors.global_rgb_camera.camera.image.height}</height>
+          <format>${sensors.global_rgb_camera.camera.image.format}</format>
         </image>
         <clip>
-          <near>0.1</near>
-          <far>100.0</far>
+          <near>${sensors.global_rgb_camera.camera.clip.near}</near>
+          <far>${sensors.global_rgb_camera.camera.clip.far}</far>
         </clip>
       </camera>
       <plugin name="global_camera_rgb_camera_plugin" filename="libgazebo_ros_camera.so">
-        <camera_name>global_camera/rgb</camera_name>
-        <cameraName>global_camera/rgb</cameraName>
+        <camera_name>${sensors.global_rgb_camera.plugin.camera_name}</camera_name>
+        <cameraName>${sensors.global_rgb_camera.plugin.camera_name}</cameraName>
         <image_topic_name>image_raw</image_topic_name>
         <imageTopicName>image_raw</imageTopicName>
         <camera_info_topic_name>camera_info</camera_info_topic_name>
@@ -1161,27 +1161,27 @@
         <frameName>${prefix}Link_GlobalCameraSensor</frameName>
       </plugin>
     </sensor>
-    <sensor type="depth" name="depth_camera">
+    <sensor type="${sensors.global_depth_camera.type}" name="depth_camera">
       <visualize>false</visualize>
       <always_on>true</always_on>
-      <update_rate>30</update_rate>
-      <topic>/global_camera/depth/image_raw</topic>
+      <update_rate>${sensors.global_depth_camera.update_rate}</update_rate>
+      <topic>${sensors.global_depth_camera.topic}</topic>
       <frame_name>${prefix}Link_GlobalCameraSensor</frame_name>
       <camera>
-        <horizontal_fov>1.047</horizontal_fov>
+        <horizontal_fov>${sensors.global_depth_camera.camera.horizontal_fov}</horizontal_fov>
         <image>
-          <width>640</width>
-          <height>480</height>
-          <format>R8G8B8</format>
+          <width>${sensors.global_depth_camera.camera.image.width}</width>
+          <height>${sensors.global_depth_camera.camera.image.height}</height>
+          <format>${sensors.global_depth_camera.camera.image.format}</format>
         </image>
         <clip>
-          <near>0.2</near>
-          <far>4.0</far>
+          <near>${sensors.global_depth_camera.camera.clip.near}</near>
+          <far>${sensors.global_depth_camera.camera.clip.far}</far>
         </clip>
       </camera>
       <plugin name="global_camera_depth_camera_plugin" filename="libgazebo_ros_camera.so">
-        <camera_name>global_camera/depth</camera_name>
-        <cameraName>global_camera/depth</cameraName>
+        <camera_name>${sensors.global_depth_camera.plugin.camera_name}</camera_name>
+        <cameraName>${sensors.global_depth_camera.plugin.camera_name}</cameraName>
         <image_topic_name>image_raw</image_topic_name>
         <imageTopicName>image_raw</imageTopicName>
         <camera_info_topic_name>camera_info</camera_info_topic_name>
@@ -1192,27 +1192,27 @@
         <frameName>${prefix}Link_GlobalCameraSensor</frameName>
       </plugin>
     </sensor>
-    <sensor type="camera" name="infrared_camera">
+    <sensor type="${sensors.global_infrared_camera.type}" name="infrared_camera">
       <visualize>false</visualize>
       <always_on>true</always_on>
-      <update_rate>15</update_rate>
-      <topic>/global_camera/infrared/image_raw</topic>
+      <update_rate>${sensors.global_infrared_camera.update_rate}</update_rate>
+      <topic>${sensors.global_infrared_camera.topic}</topic>
       <frame_name>${prefix}Link_GlobalCameraSensor</frame_name>
       <camera>
-        <horizontal_fov>1.047</horizontal_fov>
+        <horizontal_fov>${sensors.global_infrared_camera.camera.horizontal_fov}</horizontal_fov>
         <image>
-          <width>640</width>
-          <height>480</height>
-          <format>R8G8B8</format>
+          <width>${sensors.global_infrared_camera.camera.image.width}</width>
+          <height>${sensors.global_infrared_camera.camera.image.height}</height>
+          <format>${sensors.global_infrared_camera.camera.image.format}</format>
         </image>
         <clip>
-          <near>0.1</near>
-          <far>10.0</far>
+          <near>${sensors.global_infrared_camera.camera.clip.near}</near>
+          <far>${sensors.global_infrared_camera.camera.clip.far}</far>
         </clip>
       </camera>
       <plugin name="global_camera_infrared_camera_plugin" filename="libgazebo_ros_camera.so">
-        <camera_name>global_camera/infrared</camera_name>
-        <cameraName>global_camera/infrared</cameraName>
+        <camera_name>${sensors.global_infrared_camera.plugin.camera_name}</camera_name>
+        <cameraName>${sensors.global_infrared_camera.plugin.camera_name}</cameraName>
         <image_topic_name>image_raw</image_topic_name>
         <imageTopicName>image_raw</imageTopicName>
         <camera_info_topic_name>camera_info</camera_info_topic_name>
@@ -1223,27 +1223,27 @@
     </sensor>
   </gazebo>
   <gazebo reference="${prefix}Link_LeftCameraSensor">
-    <sensor type="camera" name="rgb_camera">
+    <sensor type="${sensors.left_rgb_camera.type}" name="rgb_camera">
       <visualize>false</visualize>
       <always_on>true</always_on>
-      <update_rate>30</update_rate>
-      <topic>/left_camera/rgb/image_raw</topic>
+      <update_rate>${sensors.left_rgb_camera.update_rate}</update_rate>
+      <topic>${sensors.left_rgb_camera.topic}</topic>
       <frame_name>${prefix}Link_LeftCameraSensor</frame_name>
       <camera>
-        <horizontal_fov>1.047</horizontal_fov>
+        <horizontal_fov>${sensors.left_rgb_camera.camera.horizontal_fov}</horizontal_fov>
         <image>
-          <width>1920</width>
-          <height>1080</height>
-          <format>R8G8B8</format>
+          <width>${sensors.left_rgb_camera.camera.image.width}</width>
+          <height>${sensors.left_rgb_camera.camera.image.height}</height>
+          <format>${sensors.left_rgb_camera.camera.image.format}</format>
         </image>
         <clip>
-          <near>0.1</near>
-          <far>100.0</far>
+          <near>${sensors.left_rgb_camera.camera.clip.near}</near>
+          <far>${sensors.left_rgb_camera.camera.clip.far}</far>
         </clip>
       </camera>
       <plugin name="left_camera_rgb_camera_plugin" filename="libgazebo_ros_camera.so">
-        <camera_name>left_camera/rgb</camera_name>
-        <cameraName>left_camera/rgb</cameraName>
+        <camera_name>${sensors.left_rgb_camera.plugin.camera_name}</camera_name>
+        <cameraName>${sensors.left_rgb_camera.plugin.camera_name}</cameraName>
         <image_topic_name>image_raw</image_topic_name>
         <imageTopicName>image_raw</imageTopicName>
         <camera_info_topic_name>camera_info</camera_info_topic_name>
@@ -1252,27 +1252,27 @@
         <frameName>${prefix}Link_LeftCameraSensor</frameName>
       </plugin>
     </sensor>
-    <sensor type="depth" name="depth_camera">
+    <sensor type="${sensors.left_depth_camera.type}" name="depth_camera">
       <visualize>false</visualize>
       <always_on>true</always_on>
-      <update_rate>30</update_rate>
-      <topic>/left_camera/depth/image_raw</topic>
+      <update_rate>${sensors.left_depth_camera.update_rate}</update_rate>
+      <topic>${sensors.left_depth_camera.topic}</topic>
       <frame_name>${prefix}Link_LeftCameraSensor</frame_name>
       <camera>
-        <horizontal_fov>1.047</horizontal_fov>
+        <horizontal_fov>${sensors.left_depth_camera.camera.horizontal_fov}</horizontal_fov>
         <image>
-          <width>640</width>
-          <height>480</height>
-          <format>R8G8B8</format>
+          <width>${sensors.left_depth_camera.camera.image.width}</width>
+          <height>${sensors.left_depth_camera.camera.image.height}</height>
+          <format>${sensors.left_depth_camera.camera.image.format}</format>
         </image>
         <clip>
-          <near>0.2</near>
-          <far>4.0</far>
+          <near>${sensors.left_depth_camera.camera.clip.near}</near>
+          <far>${sensors.left_depth_camera.camera.clip.far}</far>
         </clip>
       </camera>
       <plugin name="left_camera_depth_camera_plugin" filename="libgazebo_ros_camera.so">
-        <camera_name>left_camera/depth</camera_name>
-        <cameraName>left_camera/depth</cameraName>
+        <camera_name>${sensors.left_depth_camera.plugin.camera_name}</camera_name>
+        <cameraName>${sensors.left_depth_camera.plugin.camera_name}</cameraName>
         <image_topic_name>image_raw</image_topic_name>
         <imageTopicName>image_raw</imageTopicName>
         <camera_info_topic_name>camera_info</camera_info_topic_name>
@@ -1283,27 +1283,27 @@
         <frameName>${prefix}Link_LeftCameraSensor</frameName>
       </plugin>
     </sensor>
-    <sensor type="camera" name="infrared_camera">
+    <sensor type="${sensors.left_infrared_camera.type}" name="infrared_camera">
       <visualize>false</visualize>
       <always_on>true</always_on>
-      <update_rate>15</update_rate>
-      <topic>/left_camera/infrared/image_raw</topic>
+      <update_rate>${sensors.left_infrared_camera.update_rate}</update_rate>
+      <topic>${sensors.left_infrared_camera.topic}</topic>
       <frame_name>${prefix}Link_LeftCameraSensor</frame_name>
       <camera>
-        <horizontal_fov>1.047</horizontal_fov>
+        <horizontal_fov>${sensors.left_infrared_camera.camera.horizontal_fov}</horizontal_fov>
         <image>
-          <width>640</width>
-          <height>480</height>
-          <format>R8G8B8</format>
+          <width>${sensors.left_infrared_camera.camera.image.width}</width>
+          <height>${sensors.left_infrared_camera.camera.image.height}</height>
+          <format>${sensors.left_infrared_camera.camera.image.format}</format>
         </image>
         <clip>
-          <near>0.1</near>
-          <far>10.0</far>
+          <near>${sensors.left_infrared_camera.camera.clip.near}</near>
+          <far>${sensors.left_infrared_camera.camera.clip.far}</far>
         </clip>
       </camera>
       <plugin name="left_camera_infrared_camera_plugin" filename="libgazebo_ros_camera.so">
-        <camera_name>left_camera/infrared</camera_name>
-        <cameraName>left_camera/infrared</cameraName>
+        <camera_name>${sensors.left_infrared_camera.plugin.camera_name}</camera_name>
+        <cameraName>${sensors.left_infrared_camera.plugin.camera_name}</cameraName>
         <image_topic_name>image_raw</image_topic_name>
         <imageTopicName>image_raw</imageTopicName>
         <camera_info_topic_name>camera_info</camera_info_topic_name>
@@ -1314,27 +1314,27 @@
     </sensor>
   </gazebo>
   <gazebo reference="${prefix}Link_RightCameraSensor">
-    <sensor type="camera" name="rgb_camera">
+    <sensor type="${sensors.right_rgb_camera.type}" name="rgb_camera">
       <visualize>false</visualize>
       <always_on>true</always_on>
-      <update_rate>30</update_rate>
-      <topic>/right_camera/rgb/image_raw</topic>
+      <update_rate>${sensors.right_rgb_camera.update_rate}</update_rate>
+      <topic>${sensors.right_rgb_camera.topic}</topic>
       <frame_name>${prefix}Link_RightCameraSensor</frame_name>
       <camera>
-        <horizontal_fov>1.047</horizontal_fov>
+        <horizontal_fov>${sensors.right_rgb_camera.camera.horizontal_fov}</horizontal_fov>
         <image>
-          <width>1920</width>
-          <height>1080</height>
-          <format>R8G8B8</format>
+          <width>${sensors.right_rgb_camera.camera.image.width}</width>
+          <height>${sensors.right_rgb_camera.camera.image.height}</height>
+          <format>${sensors.right_rgb_camera.camera.image.format}</format>
         </image>
         <clip>
-          <near>0.1</near>
-          <far>100.0</far>
+          <near>${sensors.right_rgb_camera.camera.clip.near}</near>
+          <far>${sensors.right_rgb_camera.camera.clip.far}</far>
         </clip>
       </camera>
       <plugin name="right_camera_rgb_camera_plugin" filename="libgazebo_ros_camera.so">
-        <camera_name>right_camera/rgb</camera_name>
-        <cameraName>right_camera/rgb</cameraName>
+        <camera_name>${sensors.right_rgb_camera.plugin.camera_name}</camera_name>
+        <cameraName>${sensors.right_rgb_camera.plugin.camera_name}</cameraName>
         <image_topic_name>image_raw</image_topic_name>
         <imageTopicName>image_raw</imageTopicName>
         <camera_info_topic_name>camera_info</camera_info_topic_name>
@@ -1343,27 +1343,27 @@
         <frameName>${prefix}Link_RightCameraSensor</frameName>
       </plugin>
     </sensor>
-    <sensor type="depth" name="depth_camera">
+    <sensor type="${sensors.right_depth_camera.type}" name="depth_camera">
       <visualize>false</visualize>
       <always_on>true</always_on>
-      <update_rate>30</update_rate>
-      <topic>/right_camera/depth/image_raw</topic>
+      <update_rate>${sensors.right_depth_camera.update_rate}</update_rate>
+      <topic>${sensors.right_depth_camera.topic}</topic>
       <frame_name>${prefix}Link_RightCameraSensor</frame_name>
       <camera>
-        <horizontal_fov>1.047</horizontal_fov>
+        <horizontal_fov>${sensors.right_depth_camera.camera.horizontal_fov}</horizontal_fov>
         <image>
-          <width>640</width>
-          <height>480</height>
-          <format>R8G8B8</format>
+          <width>${sensors.right_depth_camera.camera.image.width}</width>
+          <height>${sensors.right_depth_camera.camera.image.height}</height>
+          <format>${sensors.right_depth_camera.camera.image.format}</format>
         </image>
         <clip>
-          <near>0.2</near>
-          <far>4.0</far>
+          <near>${sensors.right_depth_camera.camera.clip.near}</near>
+          <far>${sensors.right_depth_camera.camera.clip.far}</far>
         </clip>
       </camera>
       <plugin name="right_camera_depth_camera_plugin" filename="libgazebo_ros_camera.so">
-        <camera_name>right_camera/depth</camera_name>
-        <cameraName>right_camera/depth</cameraName>
+        <camera_name>${sensors.right_depth_camera.plugin.camera_name}</camera_name>
+        <cameraName>${sensors.right_depth_camera.plugin.camera_name}</cameraName>
         <image_topic_name>image_raw</image_topic_name>
         <imageTopicName>image_raw</imageTopicName>
         <camera_info_topic_name>camera_info</camera_info_topic_name>
@@ -1374,27 +1374,27 @@
         <frameName>${prefix}Link_RightCameraSensor</frameName>
       </plugin>
     </sensor>
-    <sensor type="camera" name="infrared_camera">
+    <sensor type="${sensors.right_infrared_camera.type}" name="infrared_camera">
       <visualize>false</visualize>
       <always_on>true</always_on>
-      <update_rate>15</update_rate>
-      <topic>/right_camera/infrared/image_raw</topic>
+      <update_rate>${sensors.right_infrared_camera.update_rate}</update_rate>
+      <topic>${sensors.right_infrared_camera.topic}</topic>
       <frame_name>${prefix}Link_RightCameraSensor</frame_name>
       <camera>
-        <horizontal_fov>1.047</horizontal_fov>
+        <horizontal_fov>${sensors.right_infrared_camera.camera.horizontal_fov}</horizontal_fov>
         <image>
-          <width>640</width>
-          <height>480</height>
-          <format>R8G8B8</format>
+          <width>${sensors.right_infrared_camera.camera.image.width}</width>
+          <height>${sensors.right_infrared_camera.camera.image.height}</height>
+          <format>${sensors.right_infrared_camera.camera.image.format}</format>
         </image>
         <clip>
-          <near>0.1</near>
-          <far>10.0</far>
+          <near>${sensors.right_infrared_camera.camera.clip.near}</near>
+          <far>${sensors.right_infrared_camera.camera.clip.far}</far>
         </clip>
       </camera>
       <plugin name="right_camera_infrared_camera_plugin" filename="libgazebo_ros_camera.so">
-        <camera_name>right_camera/infrared</camera_name>
-        <cameraName>right_camera/infrared</cameraName>
+        <camera_name>${sensors.right_infrared_camera.plugin.camera_name}</camera_name>
+        <cameraName>${sensors.right_infrared_camera.plugin.camera_name}</cameraName>
         <image_topic_name>image_raw</image_topic_name>
         <imageTopicName>image_raw</imageTopicName>
         <camera_info_topic_name>camera_info</camera_info_topic_name>
@@ -1405,30 +1405,30 @@
     </sensor>
   </gazebo>
   <gazebo reference="${prefix}Link_RadarSensor">
-    <sensor type="ray" name="radar_sensor">
+    <sensor type="${sensors.radar_sensor.type}" name="radar_sensor">
       <visualize>false</visualize>
       <always_on>true</always_on>
-      <update_rate>12</update_rate>
-      <topic>/radar/scan</topic>
+      <update_rate>${sensors.radar_sensor.update_rate}</update_rate>
+      <topic>${sensors.radar_sensor.topic}</topic>
       <frame_name>${prefix}Link_RadarSensor</frame_name>
       <ray>
         <scan>
           <horizontal>
-            <samples>2770</samples>
-            <resolution>1</resolution>
-            <min_angle>-3.14159</min_angle>
-            <max_angle>3.14159</max_angle>
+            <samples>${sensors.radar_sensor.ray.scan.horizontal.samples}</samples>
+            <resolution>${sensors.radar_sensor.ray.scan.horizontal.resolution}</resolution>
+            <min_angle>${sensors.radar_sensor.ray.scan.horizontal.min_angle}</min_angle>
+            <max_angle>${sensors.radar_sensor.ray.scan.horizontal.max_angle}</max_angle>
           </horizontal>
         </scan>
         <range>
-          <min>0.1</min>
-          <max>30.0</max>
-          <resolution>0.01</resolution>
+          <min>${sensors.radar_sensor.ray.range.min}</min>
+          <max>${sensors.radar_sensor.ray.range.max}</max>
+          <resolution>${sensors.radar_sensor.ray.range.resolution}</resolution>
         </range>
       </ray>
       <noise type="gaussian">
-        <mean>0.0</mean>
-        <stddev>0.01</stddev>
+        <mean>${sensors.radar_sensor.noise.mean}</mean>
+        <stddev>${sensors.radar_sensor.noise.stddev}</stddev>
       </noise>
       <plugin name="radar_radar_sensor_plugin" filename="libgazebo_ros_ray_sensor.so">
         <ros>
@@ -1439,14 +1439,14 @@
     </sensor>
   </gazebo>
   <gazebo reference="${prefix}Link_IMUSensor">
-    <sensor type="imu" name="imu_sensor">
+    <sensor type="${sensors.imu_sensor.type}" name="imu_sensor">
       <always_on>true</always_on>
-      <update_rate>116</update_rate>
-      <topic>/imu_data</topic>
+      <update_rate>${sensors.imu_sensor.update_rate}</update_rate>
+      <topic>${sensors.imu_sensor.topic}</topic>
       <frame_name>${prefix}Link_IMUSensor</frame_name>
       <noise type="gaussian">
-        <mean>0.0</mean>
-        <stddev>0.01</stddev>
+        <mean>${sensors.imu_sensor.noise.mean}</mean>
+        <stddev>${sensors.imu_sensor.noise.stddev}</stddev>
       </noise>
       <plugin name="imu_imu_sensor_plugin" filename="libgazebo_ros_imu_sensor.so">
         <ros>
@@ -1456,25 +1456,25 @@
     </sensor>
   </gazebo>
   <gazebo reference="${prefix}Link_LFUltrasonicSensor">
-    <sensor type="ray" name="lf_ultrasonic_sensor">
+    <sensor type="${sensors.lf_ultrasonic_sensor.type}" name="lf_ultrasonic_sensor">
       <visualize>false</visualize>
       <always_on>true</always_on>
-      <update_rate>20</update_rate>
-      <topic>/lf_ultrasonic/range</topic>
+      <update_rate>${sensors.lf_ultrasonic_sensor.update_rate}</update_rate>
+      <topic>${sensors.lf_ultrasonic_sensor.topic}</topic>
       <frame_name>${prefix}Link_LFUltrasonicSensor</frame_name>
       <ray>
         <scan>
           <horizontal>
-            <samples>1</samples>
-            <resolution>1</resolution>
-            <min_angle>-0.5236</min_angle>
-            <max_angle>0.5236</max_angle>
+            <samples>${sensors.lf_ultrasonic_sensor.ray.scan.horizontal.samples}</samples>
+            <resolution>${sensors.lf_ultrasonic_sensor.ray.scan.horizontal.resolution}</resolution>
+            <min_angle>${sensors.lf_ultrasonic_sensor.ray.scan.horizontal.min_angle}</min_angle>
+            <max_angle>${sensors.lf_ultrasonic_sensor.ray.scan.horizontal.max_angle}</max_angle>
           </horizontal>
         </scan>
         <range>
-          <min>0.25</min>
-          <max>4.5</max>
-          <resolution>0.01</resolution>
+          <min>${sensors.lf_ultrasonic_sensor.ray.range.min}</min>
+          <max>${sensors.lf_ultrasonic_sensor.ray.range.max}</max>
+          <resolution>${sensors.lf_ultrasonic_sensor.ray.range.resolution}</resolution>
         </range>
       </ray>
       <plugin name="lf_ultrasonic_lf_ultrasonic_sensor_plugin" filename="libgazebo_ros_ray_sensor.so">
@@ -1486,25 +1486,25 @@
     </sensor>
   </gazebo>
   <gazebo reference="${prefix}Link_RFUltrasonicSensor">
-    <sensor type="ray" name="rf_ultrasonic_sensor">
+    <sensor type="${sensors.rf_ultrasonic_sensor.type}" name="rf_ultrasonic_sensor">
       <visualize>false</visualize>
       <always_on>true</always_on>
-      <update_rate>20</update_rate>
-      <topic>/rf_ultrasonic/range</topic>
+      <update_rate>${sensors.rf_ultrasonic_sensor.update_rate}</update_rate>
+      <topic>${sensors.rf_ultrasonic_sensor.topic}</topic>
       <frame_name>${prefix}Link_RFUltrasonicSensor</frame_name>
       <ray>
         <scan>
           <horizontal>
-            <samples>1</samples>
-            <resolution>1</resolution>
-            <min_angle>-0.5236</min_angle>
-            <max_angle>0.5236</max_angle>
+            <samples>${sensors.rf_ultrasonic_sensor.ray.scan.horizontal.samples}</samples>
+            <resolution>${sensors.rf_ultrasonic_sensor.ray.scan.horizontal.resolution}</resolution>
+            <min_angle>${sensors.rf_ultrasonic_sensor.ray.scan.horizontal.min_angle}</min_angle>
+            <max_angle>${sensors.rf_ultrasonic_sensor.ray.scan.horizontal.max_angle}</max_angle>
           </horizontal>
         </scan>
         <range>
-          <min>0.25</min>
-          <max>4.5</max>
-          <resolution>0.01</resolution>
+          <min>${sensors.rf_ultrasonic_sensor.ray.range.min}</min>
+          <max>${sensors.rf_ultrasonic_sensor.ray.range.max}</max>
+          <resolution>${sensors.rf_ultrasonic_sensor.ray.range.resolution}</resolution>
         </range>
       </ray>
       <plugin name="rf_ultrasonic_rf_ultrasonic_sensor_plugin" filename="libgazebo_ros_ray_sensor.so">
@@ -1516,25 +1516,25 @@
     </sensor>
   </gazebo>
   <gazebo reference="${prefix}Link_LBUltrasonicSensor">
-    <sensor type="ray" name="lb_ultrasonic_sensor">
+    <sensor type="${sensors.lb_ultrasonic_sensor.type}" name="lb_ultrasonic_sensor">
       <visualize>false</visualize>
       <always_on>true</always_on>
-      <update_rate>20</update_rate>
-      <topic>/lb_ultrasonic/range</topic>
+      <update_rate>${sensors.lb_ultrasonic_sensor.update_rate}</update_rate>
+      <topic>${sensors.lb_ultrasonic_sensor.topic}</topic>
       <frame_name>${prefix}Link_LBUltrasonicSensor</frame_name>
       <ray>
         <scan>
           <horizontal>
-            <samples>1</samples>
-            <resolution>1</resolution>
-            <min_angle>-0.5236</min_angle>
-            <max_angle>0.5236</max_angle>
+            <samples>${sensors.lb_ultrasonic_sensor.ray.scan.horizontal.samples}</samples>
+            <resolution>${sensors.lb_ultrasonic_sensor.ray.scan.horizontal.resolution}</resolution>
+            <min_angle>${sensors.lb_ultrasonic_sensor.ray.scan.horizontal.min_angle}</min_angle>
+            <max_angle>${sensors.lb_ultrasonic_sensor.ray.scan.horizontal.max_angle}</max_angle>
           </horizontal>
         </scan>
         <range>
-          <min>0.25</min>
-          <max>4.5</max>
-          <resolution>0.01</resolution>
+          <min>${sensors.lb_ultrasonic_sensor.ray.range.min}</min>
+          <max>${sensors.lb_ultrasonic_sensor.ray.range.max}</max>
+          <resolution>${sensors.lb_ultrasonic_sensor.ray.range.resolution}</resolution>
         </range>
       </ray>
       <plugin name="lb_ultrasonic_lb_ultrasonic_sensor_plugin" filename="libgazebo_ros_ray_sensor.so">
@@ -1546,25 +1546,25 @@
     </sensor>
   </gazebo>
   <gazebo reference="${prefix}Link_RBUltrasonicSensor">
-    <sensor type="ray" name="rb_ultrasonic_sensor">
+    <sensor type="${sensors.rb_ultrasonic_sensor.type}" name="rb_ultrasonic_sensor">
       <visualize>false</visualize>
       <always_on>true</always_on>
-      <update_rate>20</update_rate>
-      <topic>/rb_ultrasonic/range</topic>
+      <update_rate>${sensors.rb_ultrasonic_sensor.update_rate}</update_rate>
+      <topic>${sensors.rb_ultrasonic_sensor.topic}</topic>
       <frame_name>${prefix}Link_RBUltrasonicSensor</frame_name>
       <ray>
         <scan>
           <horizontal>
-            <samples>1</samples>
-            <resolution>1</resolution>
-            <min_angle>-0.5236</min_angle>
-            <max_angle>0.5236</max_angle>
+            <samples>${sensors.rb_ultrasonic_sensor.ray.scan.horizontal.samples}</samples>
+            <resolution>${sensors.rb_ultrasonic_sensor.ray.scan.horizontal.resolution}</resolution>
+            <min_angle>${sensors.rb_ultrasonic_sensor.ray.scan.horizontal.min_angle}</min_angle>
+            <max_angle>${sensors.rb_ultrasonic_sensor.ray.scan.horizontal.max_angle}</max_angle>
           </horizontal>
         </scan>
         <range>
-          <min>0.25</min>
-          <max>4.5</max>
-          <resolution>0.01</resolution>
+          <min>${sensors.rb_ultrasonic_sensor.ray.range.min}</min>
+          <max>${sensors.rb_ultrasonic_sensor.ray.range.max}</max>
+          <resolution>${sensors.rb_ultrasonic_sensor.ray.range.resolution}</resolution>
         </range>
       </ray>
       <plugin name="rb_ultrasonic_rb_ultrasonic_sensor_plugin" filename="libgazebo_ros_ray_sensor.so">

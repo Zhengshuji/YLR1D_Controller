@@ -1,0 +1,271 @@
+# 传感器统一配置（单一来源）
+# =========================================================
+# ylr1d_description 的传感器参数集中在本文件，替代原先零散的
+# config/sensors/*.yaml 子目录。ylr1d.xacro 通过
+# ${sensors.<id>.<param>} 引用（由 launch 的 xacro_utils.py
+# 预替换为字面量后再展开）。
+#
+# 取值以 ylr1d.xacro 中实际生效值为准。
+# =========================================================
+
+# ==================== 相机 ====================
+# 每组相机（rgb / depth / infrared）挂在同一个相机 link 上。
+# plugin.camera_name 决定 libgazebo_ros_camera.so 的话题命名空间。
+
+# ---- 全局相机 GlobalCameraSensor ----
+global_rgb_camera:
+  type: camera
+  link: Link_GlobalCameraSensor
+  update_rate: 30
+  topic: /global_camera/rgb/image_raw
+  camera:
+    horizontal_fov: 1.047
+    image:
+      width: 1920
+      height: 1080
+      format: R8G8B8
+    clip:
+      near: 0.1
+      far: 100.0
+  plugin:
+    camera_name: global_camera/rgb
+
+global_depth_camera:
+  type: depth
+  link: Link_GlobalCameraSensor
+  update_rate: 30
+  topic: /global_camera/depth/image_raw
+  camera:
+    horizontal_fov: 1.047
+    image:
+      width: 640
+      height: 480
+      format: R8G8B8
+    clip:
+      near: 0.2
+      far: 4.0
+  plugin:
+    camera_name: global_camera/depth
+
+global_infrared_camera:
+  type: camera
+  link: Link_GlobalCameraSensor
+  update_rate: 15
+  topic: /global_camera/infrared/image_raw
+  camera:
+    horizontal_fov: 1.047
+    image:
+      width: 640
+      height: 480
+      format: R8G8B8
+    clip:
+      near: 0.1
+      far: 10.0
+  plugin:
+    camera_name: global_camera/infrared
+
+# ---- 左手相机 LeftCameraSensor ----
+left_rgb_camera:
+  type: camera
+  link: Link_LeftCameraSensor
+  update_rate: 30
+  topic: /left_camera/rgb/image_raw
+  camera:
+    horizontal_fov: 1.047
+    image:
+      width: 1920
+      height: 1080
+      format: R8G8B8
+    clip:
+      near: 0.1
+      far: 100.0
+  plugin:
+    camera_name: left_camera/rgb
+
+left_depth_camera:
+  type: depth
+  link: Link_LeftCameraSensor
+  update_rate: 30
+  topic: /left_camera/depth/image_raw
+  camera:
+    horizontal_fov: 1.047
+    image:
+      width: 640
+      height: 480
+      format: R8G8B8
+    clip:
+      near: 0.2
+      far: 4.0
+  plugin:
+    camera_name: left_camera/depth
+
+left_infrared_camera:
+  type: camera
+  link: Link_LeftCameraSensor
+  update_rate: 15
+  topic: /left_camera/infrared/image_raw
+  camera:
+    horizontal_fov: 1.047
+    image:
+      width: 640
+      height: 480
+      format: R8G8B8
+    clip:
+      near: 0.1
+      far: 10.0
+  plugin:
+    camera_name: left_camera/infrared
+
+# ---- 右手相机 RightCameraSensor ----
+right_rgb_camera:
+  type: camera
+  link: Link_RightCameraSensor
+  update_rate: 30
+  topic: /right_camera/rgb/image_raw
+  camera:
+    horizontal_fov: 1.047
+    image:
+      width: 1920
+      height: 1080
+      format: R8G8B8
+    clip:
+      near: 0.1
+      far: 100.0
+  plugin:
+    camera_name: right_camera/rgb
+
+right_depth_camera:
+  type: depth
+  link: Link_RightCameraSensor
+  update_rate: 30
+  topic: /right_camera/depth/image_raw
+  camera:
+    horizontal_fov: 1.047
+    image:
+      width: 640
+      height: 480
+      format: R8G8B8
+    clip:
+      near: 0.2
+      far: 4.0
+  plugin:
+    camera_name: right_camera/depth
+
+right_infrared_camera:
+  type: camera
+  link: Link_RightCameraSensor
+  update_rate: 15
+  topic: /right_camera/infrared/image_raw
+  camera:
+    horizontal_fov: 1.047
+    image:
+      width: 640
+      height: 480
+      format: R8G8B8
+    clip:
+      near: 0.1
+      far: 10.0
+  plugin:
+    camera_name: right_camera/infrared
+
+# ==================== 雷达 ====================
+# 360° 单层 ray，2770 线，等效激光雷达
+radar_sensor:
+  type: ray
+  link: Link_RadarSensor
+  update_rate: 12
+  topic: /radar/scan
+  ray:
+    scan:
+      horizontal:
+        samples: 2770
+        resolution: 1
+        min_angle: -3.14159
+        max_angle: 3.14159
+    range:
+      min: 0.1
+      max: 30.0
+      resolution: 0.01
+  noise:
+    mean: 0.0
+    stddev: 0.01
+
+# ==================== IMU ====================
+imu_sensor:
+  type: imu
+  link: Link_IMUSensor
+  update_rate: 116
+  topic: /imu_data
+  noise:
+    mean: 0.0
+    stddev: 0.01
+
+# ==================== 超声波（4 个）====================
+# 单线 ray 模拟声呐，水平张角 ±0.5236 rad
+lf_ultrasonic_sensor:
+  type: ray
+  link: Link_LFUltrasonicSensor
+  update_rate: 20
+  topic: /lf_ultrasonic/range
+  ray:
+    scan:
+      horizontal:
+        samples: 1
+        resolution: 1
+        min_angle: -0.5236
+        max_angle: 0.5236
+    range:
+      min: 0.25
+      max: 4.5
+      resolution: 0.01
+
+rf_ultrasonic_sensor:
+  type: ray
+  link: Link_RFUltrasonicSensor
+  update_rate: 20
+  topic: /rf_ultrasonic/range
+  ray:
+    scan:
+      horizontal:
+        samples: 1
+        resolution: 1
+        min_angle: -0.5236
+        max_angle: 0.5236
+    range:
+      min: 0.25
+      max: 4.5
+      resolution: 0.01
+
+lb_ultrasonic_sensor:
+  type: ray
+  link: Link_LBUltrasonicSensor
+  update_rate: 20
+  topic: /lb_ultrasonic/range
+  ray:
+    scan:
+      horizontal:
+        samples: 1
+        resolution: 1
+        min_angle: -0.5236
+        max_angle: 0.5236
+    range:
+      min: 0.25
+      max: 4.5
+      resolution: 0.01
+
+rb_ultrasonic_sensor:
+  type: ray
+  link: Link_RBUltrasonicSensor
+  update_rate: 20
+  topic: /rb_ultrasonic/range
+  ray:
+    scan:
+      horizontal:
+        samples: 1
+        resolution: 1
+        min_angle: -0.5236
+        max_angle: 0.5236
+    range:
+      min: 0.25
+      max: 4.5
+      resolution: 0.01
