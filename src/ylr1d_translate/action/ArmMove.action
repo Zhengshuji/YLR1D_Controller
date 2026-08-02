@@ -1,0 +1,24 @@
+# 机械臂 / 躯干关节位置控制（转译层 → 控制层）
+# 把部位名 + 关节坐标 转译成对应关节组的期望位置
+#
+# ── 常量约定（节点侧以同名符号常量引用）──
+#   部位 part:
+#     PART_TORSO    = 0  躯干（4 关节）
+#     PART_LEFT_ARM = 1  左臂（9 关节）
+#     PART_RIGHT_ARM= 2  右臂（9 关节）
+
+# 部位（见常量约定）
+int8 part
+
+# 该部位全部关节的期望位置，顺序与关节表一致：
+#   躯干(4)：Body1, Body1_to_Body2, Body2_to_Body3, Body3_to_Body4
+#   左臂(9)：Body2_to_LeftArm1..LeftArm7, LeftFinger1, LeftFinger2
+#   右臂(9)：Body2_to_RightArm1..RightArm7, RightFinger1, RightFinger2
+float64[] positions
+---
+# result
+bool success
+string message
+---
+# feedback
+float64 progress

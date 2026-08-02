@@ -1,0 +1,25 @@
+# 夹爪开合控制（转译层 → 控制层）
+# 由两个夹指关节的坐标控制，简化为一个布尔量
+#
+# ── 常量约定（节点侧以同名符号常量引用）──
+#   夹爪部位 part:
+#     GRIPPER_LEFT  = 0  左夹爪
+#     GRIPPER_RIGHT = 1  右夹爪
+#   开合 open:
+#     true  = GRIPPER_OPEN  开（张到限位）
+#     false = GRIPPER_CLOSE 关（并拢）
+
+# 夹爪部位（见常量约定）
+int8 part
+
+# 开合（见常量约定）
+#   左夹爪：开→两指 -0.014（全开），关→0（全闭）
+#   右夹爪：开→两指 +0.014（全开），关→0（全闭）
+bool open
+---
+# result
+bool success
+string message
+---
+# feedback
+float64 progress

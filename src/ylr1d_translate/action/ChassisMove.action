@@ -1,0 +1,38 @@
+# 小车底座运动控制（转译层 → 控制层）
+# 转译层解算：运动方式 + 方向 + 速度 → 4 转向角 + 4 轮速
+# 约定：总是先完成转向，再开始移动
+#
+# ── 常量约定（节点侧以同名符号常量引用）──
+#   运动方式 mode:
+#     MODE_TRANSLATE = 0  平移：四轮同向（转向角 = direction）、同速（speed）
+#     MODE_ROTATE    = 1  原地旋转：固定转向角，轮速 = speed / 3.7538（ω = 3.7538 * v）
+#     MODE_STOP      = 2  停车：固定转向角，轮速 = 0
+#   反馈阶段 phase:
+#     PHASE_STEERING = "steering"  转向中（轮速保持 0）
+#     PHASE_MOVING   = "moving"    移动中（duration 计时开始）
+#     PHASE_STOPPED  = "stopped"   已停车
+
+# 运动方式（见常量约定）
+int8 mode
+
+# 平移模式：运动方向角（弧度，绕 Z，底盘坐标系）。四个轮子全部转到该角度
+# 旋转 / 停车模式：忽略（使用固定转向角）
+float64 direction
+
+# 速度（标量）：
+#   平移模式：车轮滚转速度（rad/s），所有轮一致；负号表示反向
+#   原地旋转：车体角速度（rad/s，带符号）；轮速 = speed / 3.7538
+#   停车模式：忽略
+float64 speed
+
+# 执行时长（s）；0 = 持续执行直到被新目标替换或取消
+# 平移 / 旋转模式在转向到位后开始计时
+float64 duration
+---
+# result
+bool success
+string message
+---
+# feedback
+# 阶段（见常量约定）
+string phase
