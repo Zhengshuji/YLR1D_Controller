@@ -27,6 +27,14 @@
   <!-- limits.yaml, scale.yaml) are passed via xacro -->
   <!-- mappings from the launch file at runtime.     -->
   <!-- ============================================ -->
+  <!-- SENSOR VISUALIZATION (diagnostic)             -->
+  <!-- ============================================ -->
+  <!-- This variant of ylr1d.xacro is used ONLY to eyeball sensor
+       position/orientation in Gazebo (see sensor_vis.launch.py). It is
+       identical to ylr1d.xacro except every sensor sets
+       <visualize>false</visualize>: ray sensors (radar + 4 ultrasonic) draw
+       their actual scan rays, cameras draw their view frustum. No physics /
+       sensor config is changed. -->
 
   <xacro:macro name="ylr1d" params="prefix">
   
@@ -446,7 +454,7 @@
     </inertial>
   </link>
   <joint name="${prefix}Joint_Body4_to_GlobalCameraSensor" type="fixed">
-    <origin xyz="0.0566950000000047 -0.0674999999999963 0" rpy="0.000125465834204824 1.56906022137597 0.000125465645199403"/>
+    <origin xyz="0.0566950000000047 -0.0674999999999963 0" rpy="1.56906022137597 0 0.000125465645199403"/>
     <parent link="Link_Body4"/>
     <child link="Link_GlobalCameraSensor"/>
     <axis xyz="0 0 0"/>
@@ -740,7 +748,7 @@
     </inertial>
   </link>
   <joint name="${prefix}Joint_LeftArm7_to_LeftCameraSensor" type="fixed">
-    <origin xyz="-0.041999 0.00025491 0.08155" rpy="0 0 -1.5769"/>
+    <origin xyz="-0.041999 0.00025491 0.08155" rpy="3.14 -1.57686575197005 -1.5769"/>
     <parent link="Link_LeftArm7"/>
     <child link="Link_LeftCameraSensor"/>
     <axis xyz="0 0 0"/>
@@ -1034,7 +1042,7 @@
     </inertial>
   </link>
   <joint name="${prefix}Joint_RightArm7_to_RightCameraSensor" type="fixed">
-    <origin xyz="-0.0419992264026258 0.000254914269492257 0.0815499999909122" rpy="0 0 -1.57686575197005"/>
+    <origin xyz="-0.0419992264026258 0.000254914269492257 0.0815499999909122" rpy="0 -1.57686575197005 -1.57686575197005"/>
     <parent link="Link_RightArm7"/>
     <child link="Link_RightCameraSensor"/>
     <axis xyz="0 0 0"/>
@@ -1049,7 +1057,7 @@
     </inertial>
   </link>
   <joint name="${prefix}Joint_Base_to_RadarSensor" type="fixed">
-    <origin xyz="-0.237 0 0.2364" rpy="1.5708 0 -2.9674"/>
+    <origin xyz="-0.237 0 0.2364" rpy="0 0 -2.9674"/>
     <parent link="Link_Base"/>
     <child link="Link_RadarSensor"/>
     <axis xyz="0 0 0"/>
@@ -1071,7 +1079,7 @@
     </inertial>
   </link>
   <joint name="${prefix}Joint_Base_to_LFUltrasonicSensor" type="fixed">
-    <origin xyz="-0.26708 -0.18708 0.183" rpy="1.5708 0 -0.7854"/>
+    <origin xyz="-0.26708 -0.18708 0.183" rpy="1.5708 0 -2.3562"/>
     <parent link="Link_Base"/>
     <child link="Link_LFUltrasonicSensor"/>
     <axis xyz="0 0 0"/>
@@ -1086,7 +1094,7 @@
     </inertial>
   </link>
   <joint name="${prefix}Joint_Base_to_RFUltrasonicSensor" type="fixed">
-    <origin xyz="-0.26708 0.18708 0.183" rpy="1.5708 0 -2.3562"/>
+    <origin xyz="-0.26708 0.18708 0.183" rpy="1.5708 0 2.3562"/>
     <parent link="Link_Base"/>
     <child link="Link_RFUltrasonicSensor"/>
     <axis xyz="0 0 0"/>
@@ -1101,7 +1109,7 @@
     </inertial>
   </link>
   <joint name="${prefix}Joint_Base_to_LBUltrasonicSensor" type="fixed">
-    <origin xyz="0.26708 -0.18708 0.183" rpy="1.5708 0 0.7854"/>
+    <origin xyz="0.26708 -0.18708 0.183" rpy="1.5708 0 -0.7854"/>
     <parent link="Link_Base"/>
     <child link="Link_LBUltrasonicSensor"/>
     <axis xyz="0 0 0"/>
@@ -1116,7 +1124,7 @@
     </inertial>
   </link>
   <joint name="${prefix}Joint_Base_to_RBUltrasonicSensor" type="fixed">
-    <origin xyz="0.26708 0.18708 0.183" rpy="1.5708 0 2.3562"/>
+    <origin xyz="0.26708 0.18708 0.183" rpy="1.5708 0 0.7854"/>
     <parent link="Link_Base"/>
     <child link="Link_RBUltrasonicSensor"/>
     <axis xyz="0 0 0"/>
@@ -1125,6 +1133,7 @@
   </joint>
     <gazebo reference="${prefix}Link_GlobalCameraSensor">
     <sensor type="camera" name="rgb_camera">
+      <visualize>false</visualize>
       <always_on>true</always_on>
       <update_rate>30</update_rate>
       <topic>/global_camera/rgb/image_raw</topic>
@@ -1153,6 +1162,7 @@
       </plugin>
     </sensor>
     <sensor type="depth" name="depth_camera">
+      <visualize>false</visualize>
       <always_on>true</always_on>
       <update_rate>30</update_rate>
       <topic>/global_camera/depth/image_raw</topic>
@@ -1183,6 +1193,7 @@
       </plugin>
     </sensor>
     <sensor type="camera" name="infrared_camera">
+      <visualize>false</visualize>
       <always_on>true</always_on>
       <update_rate>15</update_rate>
       <topic>/global_camera/infrared/image_raw</topic>
@@ -1213,6 +1224,7 @@
   </gazebo>
   <gazebo reference="${prefix}Link_LeftCameraSensor">
     <sensor type="camera" name="rgb_camera">
+      <visualize>false</visualize>
       <always_on>true</always_on>
       <update_rate>30</update_rate>
       <topic>/left_camera/rgb/image_raw</topic>
@@ -1241,6 +1253,7 @@
       </plugin>
     </sensor>
     <sensor type="depth" name="depth_camera">
+      <visualize>false</visualize>
       <always_on>true</always_on>
       <update_rate>30</update_rate>
       <topic>/left_camera/depth/image_raw</topic>
@@ -1271,6 +1284,7 @@
       </plugin>
     </sensor>
     <sensor type="camera" name="infrared_camera">
+      <visualize>false</visualize>
       <always_on>true</always_on>
       <update_rate>15</update_rate>
       <topic>/left_camera/infrared/image_raw</topic>
@@ -1301,6 +1315,7 @@
   </gazebo>
   <gazebo reference="${prefix}Link_RightCameraSensor">
     <sensor type="camera" name="rgb_camera">
+      <visualize>false</visualize>
       <always_on>true</always_on>
       <update_rate>30</update_rate>
       <topic>/right_camera/rgb/image_raw</topic>
@@ -1329,6 +1344,7 @@
       </plugin>
     </sensor>
     <sensor type="depth" name="depth_camera">
+      <visualize>false</visualize>
       <always_on>true</always_on>
       <update_rate>30</update_rate>
       <topic>/right_camera/depth/image_raw</topic>
@@ -1359,6 +1375,7 @@
       </plugin>
     </sensor>
     <sensor type="camera" name="infrared_camera">
+      <visualize>false</visualize>
       <always_on>true</always_on>
       <update_rate>15</update_rate>
       <topic>/right_camera/infrared/image_raw</topic>
@@ -1389,6 +1406,7 @@
   </gazebo>
   <gazebo reference="${prefix}Link_RadarSensor">
     <sensor type="ray" name="radar_sensor">
+      <visualize>false</visualize>
       <always_on>true</always_on>
       <update_rate>12</update_rate>
       <topic>/radar/scan</topic>
@@ -1439,6 +1457,7 @@
   </gazebo>
   <gazebo reference="${prefix}Link_LFUltrasonicSensor">
     <sensor type="ray" name="lf_ultrasonic_sensor">
+      <visualize>false</visualize>
       <always_on>true</always_on>
       <update_rate>20</update_rate>
       <topic>/lf_ultrasonic/range</topic>
@@ -1468,6 +1487,7 @@
   </gazebo>
   <gazebo reference="${prefix}Link_RFUltrasonicSensor">
     <sensor type="ray" name="rf_ultrasonic_sensor">
+      <visualize>false</visualize>
       <always_on>true</always_on>
       <update_rate>20</update_rate>
       <topic>/rf_ultrasonic/range</topic>
@@ -1497,6 +1517,7 @@
   </gazebo>
   <gazebo reference="${prefix}Link_LBUltrasonicSensor">
     <sensor type="ray" name="lb_ultrasonic_sensor">
+      <visualize>false</visualize>
       <always_on>true</always_on>
       <update_rate>20</update_rate>
       <topic>/lb_ultrasonic/range</topic>
@@ -1526,6 +1547,7 @@
   </gazebo>
   <gazebo reference="${prefix}Link_RBUltrasonicSensor">
     <sensor type="ray" name="rb_ultrasonic_sensor">
+      <visualize>false</visualize>
       <always_on>true</always_on>
       <update_rate>20</update_rate>
       <topic>/rb_ultrasonic/range</topic>
