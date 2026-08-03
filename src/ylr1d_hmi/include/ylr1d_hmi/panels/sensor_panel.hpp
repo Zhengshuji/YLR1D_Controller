@@ -16,43 +16,13 @@
 #include <QTabWidget>
 #include <QComboBox>
 #include <array>
-#include <chrono>
 #include <memory>
 #include <string>
 #include <vector>
 
+#include "ylr1d_hmi/panels/topic_status.hpp"
+
 namespace ylr1d_hmi {
-
-/// Per-topic receive bookkeeping, shown in every sensor view so the panel
-/// reports whether a topic is alive, how long ago it last updated and the
-/// observed receive rate — independent of whether the data renders.
-struct TopicStatus {
-  std::chrono::steady_clock::time_point first{};
-  std::chrono::steady_clock::time_point last{};
-  size_t count{0};
-
-  void touch() {
-    const auto now = std::chrono::steady_clock::now();
-    if (count++ == 0) first = now;
-    last = now;
-  }
-
-  /// "got N msgs · updated Xs ago · ~Y Hz" — or a "no message" note when
-  /// nothing arrived yet. English only (WSL Qt lacks CJK fonts → mojibake).
-  QString text() const {
-    if (count == 0) return QStringLiteral("no message received");
-    const double age = std::chrono::duration<double>(
-        std::chrono::steady_clock::now() - last).count();
-    QString s = QStringLiteral("got %1 msgs · updated %2s ago")
-                    .arg(count).arg(age, 0, 'f', 1);
-    if (count > 1) {
-      const double span = std::chrono::duration<double>(last - first).count();
-      if (span > 0.0)
-        s += QStringLiteral(" · ~%1 Hz").arg((count - 1) / span, 0, 'f', 1);
-    }
-    return s;
-  }
-};
 
 /// Sensor visualization panel.
 /// Subscribes to every sensor on the robot and renders each type in its

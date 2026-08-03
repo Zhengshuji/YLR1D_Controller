@@ -13,7 +13,13 @@
   <depend>rclcpp_action</depend>
   <depend>sensor_msgs</depend>
   <depend>std_msgs</depend>
+  <depend>rosgraph_msgs</depend>
+  <depend>rcl_interfaces</depend>
+  <depend>controller_manager_msgs</depend>
   <depend>ylr1d_translate</depend>
+  <depend>rviz_common</depend>
+  <depend>pluginlib</depend>
+  <depend>class_loader</depend>
 
   <exec_depend>qtbase5-dev</exec_depend>
 

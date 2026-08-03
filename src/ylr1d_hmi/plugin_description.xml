@@ -1,0 +1,7 @@
+<library path="ylr1d_hmi_monitor_panel">
+  <class name="ylr1d_hmi/MonitorRvizPanel"
+         type="ylr1d_hmi::MonitorRvizPanel"
+         base_class_type="rviz_common::Panel">
+    <description>YLR1D simulation monitor: controllers, nodes, sensors, rosout log, joint groups.</description>
+  </class>
+</library>
