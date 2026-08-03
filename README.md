@@ -39,8 +39,8 @@ HMI ──/desired_joint_states──▶ control_sim ──5组命令话题─�
 | `ylr1d_plant` | 物理层：管理 Gazebo + ros2_control，把控制命令落到物理仿真 | 承接 `ylr1d_control_sim` 的命令，向全系统发布 30 关节反馈 |
 | `ylr1d_control_sim` | 控制层：软仿真，软件模拟硬件位置/速度闭环 | 接收 `ylr1d_hmi` / `ylr1d_translate` 的期望值；命令发往 `ylr1d_plant`；以 `ylr1d_plant` 反馈为输入 |
 | `ylr1d_translate` | 转译层：把上层高级指令（action）解算为关节期望值 | 接收上层 / `ylr1d_hmi` 的 action；解算结果发给 `ylr1d_control_sim` |
-| `ylr1d_hmi` | 人机界面：Qt5 观测 + 控制 | 订阅 `ylr1d_plant` 反馈；控制层链路发期望值给 `ylr1d_control_sim`，转译层链路发 action 给 `ylr1d_translate` |
-| `ylr1d_bringup` | 一键启动：聚合各包 launch（无节点） | 聚合除 `ylr1d_description` 外的各包 launch，提供控制层 / 转译层两套链路 |
+| `ylr1d_hmi` | 人机界面：Qt5 多面板（控制 / 转译 / 传感器 / 监视） | 订阅 `ylr1d_plant` 反馈；控制层链路发期望值给 `ylr1d_control_sim`，转译层链路发 action 给 `ylr1d_translate` |
+| `ylr1d_bringup` | 一键启动：聚合各包 launch（无节点） | 聚合除 `ylr1d_description` 外的各包 launch，提供控制层 / 转译层两套链路（`bringup_control` / `bringup_translate`） |
 
 ---
 
@@ -58,7 +58,7 @@ export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:$(pwd)/src
 ### 一键启动（推荐）
 ```bash
 # 控制层链路：Gazebo + 软仿真 + HMI
-ros2 launch ylr1d_bringup bringup.launch.py
+ros2 launch ylr1d_bringup bringup_control.launch.py
 
 # 转译层链路：Gazebo + 软仿真 + translate + 转译层 HMI
 ros2 launch ylr1d_bringup bringup_translate.launch.py

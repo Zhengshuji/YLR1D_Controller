@@ -9,12 +9,14 @@
 
 双机械臂 + 全向四轮底盘 + 升降躯干的复合移动机器人仿真，基于 **ROS2 Humble + Gazebo Classic**，全模型 30 关节。六个功能包分层协作：
 
-```
-ylr1d_description  ylr1d_plant  ylr1d_control_sim  ylr1d_translate  ylr1d_hmi  ylr1d_bringup
-      │                │               │                 │               │           │
-  模型资产(单一来源)  物理层(中控)    控制层(软仿真)    转译层(action)  人机界面     一键启动
-  xacro/mesh/config  Gazebo+ros2_control  PID过渡→5组命令  上层→desired   Qt5观测+控制  聚合launch
-```
+| 包 | 职责 |
+|----|------|
+| `ylr1d_description` | 模型资产单一来源（xacro / mesh / config / rviz / world） |
+| `ylr1d_plant` | 物理层（中控）：Gazebo + ros2_control |
+| `ylr1d_control_sim` | 控制层（软仿真）：PID 过渡 → 5 组命令 |
+| `ylr1d_translate` | 转译层：上层 action → `/desired_joint_states` |
+| `ylr1d_hmi` | 人机界面：Qt5 四面板观测 + 控制 |
+| `ylr1d_bringup` | 一键启动：聚合各包 launch |
 
 > **语言约定**：项目主体基于 C++（各包节点均为 C++）。Python 仅限 launch 与 test 层
 > （`launch/*.py`、`launch/python_utils/*.py`、`test/*.py`），核心逻辑禁止用 Python。
@@ -52,9 +54,9 @@ export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:$(pwd)/src
 
 #### 一键启动（完整闭环，推荐）
 ```bash
-ros2 launch ylr1d_bringup bringup.launch.py
+ros2 launch ylr1d_bringup bringup_control.launch.py
 ```
-等价于依次启动 `gazebo.launch.py`（position 方案）+ `position_simulate.launch.py` + `hmi.launch.py`。
+等价于依次启动 `gazebo.launch.py`（position 方案）+ `position_simulate.launch.py` + `hmi.launch.py` + `sensor_panel.launch.py`。
 
 #### 力控测试（effort 方案，单独启动）
 ```bash
