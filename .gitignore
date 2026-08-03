@@ -2,10 +2,13 @@ build/
 install/
 log/
 .claude/
+
 *.log
 __pycache__/
 *.pyc
 others/
 
 colcon_build.sh
+
+test
 
