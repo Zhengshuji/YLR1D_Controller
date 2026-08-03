@@ -94,7 +94,8 @@
 
 ### 2. Arm 标签页（action: `/arm_move`）
 - **Part**：`躯干 / 左臂 / 右臂`（对应 `PART_TORSO=0 / PART_LEFT_ARM=1 / PART_RIGHT_ARM=2`）
-- 选中部位后，用 `QStackedWidget` 切换显示该部位的关节滑杆行（躯干 4 个，左右臂各 9 个）
+- 选中部位后，用 `QStackedWidget` 切换显示该部位的关节滑杆行（躯干 4 个，左右臂各 7 个）
+- **机械臂与夹爪解耦**：左右臂面板只含臂关节（Arm1~Arm7），**不含夹爪两指**；夹爪由 Gripper 标签页单独控制
 - 关节名称/顺序与 `ylr1d_translate` 的关节表完全一致，`positions` 按此顺序打包
 - 点击发送即发送该部位全部关节的期望位置；状态栏显示 feedback 进度与 result
 

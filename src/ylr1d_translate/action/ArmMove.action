@@ -4,16 +4,17 @@
 # ── 常量约定（节点侧以同名符号常量引用）──
 #   部位 part:
 #     PART_TORSO    = 0  躯干（4 关节）
-#     PART_LEFT_ARM = 1  左臂（9 关节）
-#     PART_RIGHT_ARM= 2  右臂（9 关节）
+#     PART_LEFT_ARM = 1  左臂（7 关节）
+#     PART_RIGHT_ARM= 2  右臂（7 关节）
+# 机械臂与夹爪解耦：夹爪两指由 GripperMove 控制，不在本 action 的关节表中。
 
 # 部位（见常量约定）
 int8 part
 
 # 该部位全部关节的期望位置，顺序与关节表一致：
 #   躯干(4)：Body1, Body1_to_Body2, Body2_to_Body3, Body3_to_Body4
-#   左臂(9)：Body2_to_LeftArm1..LeftArm7, LeftFinger1, LeftFinger2
-#   右臂(9)：Body2_to_RightArm1..RightArm7, RightFinger1, RightFinger2
+#   左臂(7)：Body2_to_LeftArm1..LeftArm7
+#   右臂(7)：Body2_to_RightArm1..RightArm7
 float64[] positions
 ---
 # result

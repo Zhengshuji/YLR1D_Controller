@@ -27,7 +27,7 @@ const std::vector<std::vector<ArmJoint>> & armDefs() {
       {"Joint_Body2_to_Body3",   "Pitch1",  -1.57,  1.57},
       {"Joint_Body3_to_Body4",   "Pitch2",  -1.57,  1.57},
     },
-    {  // 1 左臂 (9)
+    {  // 1 Left arm (7, fingers are handled by the Gripper tab)
       {"Joint_Body2_to_LeftArm1",     "Shoulder1", -2.62,  2.62},
       {"Joint_LeftArm1_to_LeftArm2",  "Shoulder2", -1.57,  1.83},
       {"Joint_LeftArm2_to_LeftArm3",  "Shoulder3", -2.62,  2.62},
@@ -35,10 +35,8 @@ const std::vector<std::vector<ArmJoint>> & armDefs() {
       {"Joint_LeftArm4_to_LeftArm5",  "Elbow2",    -2.62,  2.62},
       {"Joint_LeftArm5_to_LeftArm6",  "Wrist1",    -2.09,  2.09},
       {"Joint_LeftArm6_to_LeftArm7",  "Wrist2",    -6.28,  6.28},
-      {"Joint_LeftArm7_to_LeftFinger1","Finger1",  -0.015, 0.0},
-      {"Joint_LeftArm7_to_LeftFinger2","Finger2",  -0.015, 0.0},
     },
-    {  // 2 右臂 (9)
+    {  // 2 Right arm (7, fingers are handled by the Gripper tab)
       {"Joint_Body2_to_RightArm1",    "Shoulder1", -2.62,  2.62},
       {"Joint_RightArm1_to_RightArm2","Shoulder2", -1.57,  1.83},
       {"Joint_RightArm2_to_RightArm3","Shoulder3", -2.62,  2.62},
@@ -46,8 +44,6 @@ const std::vector<std::vector<ArmJoint>> & armDefs() {
       {"Joint_RightArm4_to_RightArm5","Elbow2",    -2.62,  2.62},
       {"Joint_RightArm5_to_RightArm6","Wrist1",    -2.09,  2.09},
       {"Joint_RightArm6_to_RightArm7","Wrist2",    -6.28,  6.28},
-      {"Joint_RightArm7_to_RightFinger1","Finger1", 0.0,  0.015},
-      {"Joint_RightArm7_to_RightFinger2","Finger2", 0.0,  0.015},
     },
   };
   return defs;
@@ -120,9 +116,9 @@ QWidget * TranslatePanel::buildChassisTab() {
   auto mode_row = new QHBoxLayout();
   mode_row->addWidget(new QLabel(QStringLiteral("Mode: ")));
   ch_mode_cb_ = new QComboBox();
-  ch_mode_cb_->addItem(QStringLiteral("Translate (平移)"), 0);
-  ch_mode_cb_->addItem(QStringLiteral("Rotate (旋转)"), 1);
-  ch_mode_cb_->addItem(QStringLiteral("Stop (停车)"), 2);
+  ch_mode_cb_->addItem(QStringLiteral("Translate"), 0);
+  ch_mode_cb_->addItem(QStringLiteral("Rotate"), 1);
+  ch_mode_cb_->addItem(QStringLiteral("Stop"), 2);
   mode_row->addWidget(ch_mode_cb_, 1);
   lay->addLayout(mode_row);
 
@@ -188,7 +184,7 @@ QWidget * TranslatePanel::buildChassisTab() {
     sendChassis();
   });
 
-  ch_status_lbl_ = new QLabel(QStringLiteral("idle"));
+  ch_status_lbl_ = new QLabel(QStringLiteral("Ready"));
   ch_status_lbl_->setTextInteractionFlags(Qt::TextSelectableByMouse);
   lay->addWidget(ch_status_lbl_);
 
@@ -208,9 +204,9 @@ QWidget * TranslatePanel::buildArmTab() {
   auto part_row = new QHBoxLayout();
   part_row->addWidget(new QLabel(QStringLiteral("Part: ")));
   arm_part_cb_ = new QComboBox();
-  arm_part_cb_->addItem(QStringLiteral("Torso (躯干, 4)"), 0);
-  arm_part_cb_->addItem(QStringLiteral("Left Arm (左臂, 9)"), 1);
-  arm_part_cb_->addItem(QStringLiteral("Right Arm (右臂, 9)"), 2);
+  arm_part_cb_->addItem(QStringLiteral("Torso (4)"), 0);
+  arm_part_cb_->addItem(QStringLiteral("Left Arm (7)"), 1);
+  arm_part_cb_->addItem(QStringLiteral("Right Arm (7)"), 2);
   part_row->addWidget(arm_part_cb_, 1);
   lay->addLayout(part_row);
 
@@ -277,7 +273,7 @@ QWidget * TranslatePanel::buildArmTab() {
   lay->addWidget(send_btn);
   connect(send_btn, &QPushButton::clicked, this, &TranslatePanel::sendArm);
 
-  arm_status_lbl_ = new QLabel(QStringLiteral("idle"));
+  arm_status_lbl_ = new QLabel(QStringLiteral("Ready"));
   arm_status_lbl_->setTextInteractionFlags(Qt::TextSelectableByMouse);
   lay->addWidget(arm_status_lbl_);
   return w;
@@ -295,21 +291,21 @@ QWidget * TranslatePanel::buildGripperTab() {
   auto part_row = new QHBoxLayout();
   part_row->addWidget(new QLabel(QStringLiteral("Part: ")));
   g_part_cb_ = new QComboBox();
-  g_part_cb_->addItem(QStringLiteral("Left (左)"), 0);
-  g_part_cb_->addItem(QStringLiteral("Right (右)"), 1);
+  g_part_cb_->addItem(QStringLiteral("Left"), 0);
+  g_part_cb_->addItem(QStringLiteral("Right"), 1);
   part_row->addWidget(g_part_cb_, 1);
   lay->addLayout(part_row);
 
   auto btn_row = new QHBoxLayout();
-  auto open_btn = new QPushButton(QStringLiteral("Open (开)"));
-  auto close_btn = new QPushButton(QStringLiteral("Close (关)"));
+  auto open_btn = new QPushButton(QStringLiteral("Open"));
+  auto close_btn = new QPushButton(QStringLiteral("Close"));
   btn_row->addWidget(open_btn, 1);
   btn_row->addWidget(close_btn, 1);
   lay->addLayout(btn_row);
   connect(open_btn, &QPushButton::clicked, this, [this]() { sendGripper(true); });
   connect(close_btn, &QPushButton::clicked, this, [this]() { sendGripper(false); });
 
-  g_status_lbl_ = new QLabel(QStringLiteral("idle"));
+  g_status_lbl_ = new QLabel(QStringLiteral("Ready"));
   g_status_lbl_->setTextInteractionFlags(Qt::TextSelectableByMouse);
   lay->addWidget(g_status_lbl_);
 

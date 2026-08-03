@@ -296,10 +296,12 @@ void TranslateNode::tick_gripper() {
   const auto & fingers = (gripper_.part == GRIPPER_LEFT) ? joints::kLeftFingers
                                                          : joints::kRightFingers;
 
+  // 用独立的小容差 GRIPPER_TOL：夹指行程仅 0.014 m，若复用 ARM_TOL(0.02)
+  // 会在夹爪尚未动作时就被误判"已到位"而假成功
   size_t reached = 0;
   for (const auto & n : fingers) {
     auto it = cur_pos_.find(n);
-    if (it != cur_pos_.end() && std::abs(it->second - target) <= ARM_TOL) {
+    if (it != cur_pos_.end() && std::abs(it->second - target) <= GRIPPER_TOL) {
       ++reached;
     }
   }
