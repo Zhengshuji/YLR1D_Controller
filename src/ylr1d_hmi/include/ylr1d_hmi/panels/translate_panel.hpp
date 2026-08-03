@@ -15,6 +15,8 @@
 #include <QComboBox>
 #include <QPushButton>
 #include <QStackedWidget>
+#include <QPlainTextEdit>
+#include <QTimer>
 
 #include <memory>
 #include <string>
@@ -22,13 +24,14 @@
 
 namespace ylr1d_hmi {
 
+class ChassisDirectionWidget;
+
 /// 传输层 HMI：向 ylr1d_translate 发送 action goal
 /// （/chassis_move、/arm_move、/gripper_move）。
 ///
-/// 输出语义与 ylr1d_translate/action/*.action 对齐：
-///   - ChassisMove: mode(0 平移 / 1 旋转 / 2 停车), direction(rad), speed, duration
-///   - ArmMove:     part(0 躯干 / 1 左臂 / 2 右臂), positions(全部关节)
-///   - GripperMove: part(0 左 / 1 右), open
+/// 面板底部提供 action 通信状态区：三个 server 的连接指示（1s 刷新）+ 事件日志。
+/// Chassis 标签页按运动模式联动：Translate 速度单位 m/s（车体线速度）、
+/// Rotate 单位 rad/s（车体角速度）；无效控制量禁用并重置为默认。
 class TranslatePanel : public QWidget {
   Q_OBJECT
 
@@ -58,9 +61,14 @@ private:
 
   // ── Chassis ──
   QComboBox * ch_mode_cb_{nullptr};
+  ChassisDirectionWidget * ch_dir_widget_{nullptr};
+  QSlider * ch_dir_slider_{nullptr};
   QDoubleSpinBox * ch_dir_sb_{nullptr};
+  QSlider * ch_speed_slider_{nullptr};
   QDoubleSpinBox * ch_speed_sb_{nullptr};
+  QSlider * ch_dur_slider_{nullptr};
   QDoubleSpinBox * ch_dur_sb_{nullptr};
+  QLabel * ch_hint_lbl_{nullptr};
   QLabel * ch_status_lbl_{nullptr};
 
   // ── Arm ──
@@ -73,12 +81,27 @@ private:
   QComboBox * g_part_cb_{nullptr};
   QLabel * g_status_lbl_{nullptr};
 
+  // ── ROS / action status ──
+  QLabel * conn_lbl_{nullptr};
+  QPlainTextEdit * log_view_{nullptr};
+  QTimer * conn_timer_{nullptr};
+
+  // feedback 节流记录状态（避免高频反馈刷屏）
+  QString last_ch_phase_;
+  double last_arm_prog_{-1.0};
+  double last_gripper_prog_{-1.0};
+
   // UI builders
   void buildUi();
   QWidget * buildCard(const QString & title, const QString & color, QWidget * content);
   QWidget * buildChassisTab();
   QWidget * buildArmTab();
   QWidget * buildGripperTab();
+  QWidget * buildStatusPanel();
+
+  // Chassis helpers
+  void applyChassisMode();
+  void updateDirectionWidget();
 
   // Actions
   void sendChassis();
@@ -86,6 +109,8 @@ private:
   void sendGripper(bool open);
 
   void setStatus(QLabel * lbl, const QString & text, bool ok);
+  void appendLog(const QString & msg);
+  void refreshConnections();
 };
 
 }  // namespace ylr1d_hmi

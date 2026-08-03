@@ -111,12 +111,12 @@ static void resolve_chassis(const ChassisMove::Goal & goal,
   switch (goal.mode) {
     case MODE_TRANSLATE:
       steer = {goal.direction, goal.direction, goal.direction, goal.direction};
-      wheel = {goal.speed, goal.speed, goal.speed, goal.speed};
+      wheel = {goal.speed / TRANSLATE_RATIO, goal.speed / TRANSLATE_RATIO, goal.speed / TRANSLATE_RATIO, goal.speed / TRANSLATE_RATIO};
       break;
     case MODE_ROTATE:
       steer = ROTATE_STEERING;
-      wheel = {goal.speed / ROTATE_RATIO, goal.speed / ROTATE_RATIO,
-               goal.speed / ROTATE_RATIO, goal.speed / ROTATE_RATIO};
+      wheel = {goal.speed / TRANSLATE_RATIO / ROTATE_RATIO, goal.speed / TRANSLATE_RATIO / ROTATE_RATIO,
+               goal.speed / TRANSLATE_RATIO / ROTATE_RATIO, goal.speed / TRANSLATE_RATIO / ROTATE_RATIO};
       break;
     case MODE_STOP:
     default:

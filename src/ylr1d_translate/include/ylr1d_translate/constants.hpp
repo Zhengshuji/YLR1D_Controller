@@ -36,8 +36,8 @@ constexpr std::array<double, 4> ROTATE_STEERING = {-2.2150, -0.9265, 2.2150, 0.9
 constexpr std::array<double, 4> STOP_STEERING = {-0.6443, 0.6443, -2.4973, 2.4973};
 // 旋转换算：车体角速度 ω = ROTATE_RATIO * 轮速
 constexpr double ROTATE_RATIO = -3.7538;
-// 行进换算：车体角速度 v = TRANSLATE_RATIO * 轮速
-constexpr double TRANSLATE_RATIO = 0.5;
+// 轮速换算：车轮角速度 ω = TRANSLATE_RATIO * 轮速
+constexpr double TRANSLATE_RATIO = 0.0775;
 
 // ── 到位容差 / 超时 ────────────────────────────────
 constexpr double TURN_TOL = 0.03;    // 转向到位容差 (rad)
