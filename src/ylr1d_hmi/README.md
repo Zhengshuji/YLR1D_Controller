@@ -14,7 +14,7 @@
 | 控制层 HMI | `ylr1d_hmi_control` | `hmi.launch.py` | `ylr1d_control_sim` | 观测 `/joint_states`，发 `/desired_joint_states` |
 | 转译层 HMI | `ylr1d_hmi_translate` | `hmi_translate.launch.py` | `ylr1d_translate` | 发 action goal（底盘 / 机械臂 / 夹爪） |
 | 传感器 HMI | `ylr1d_hmi_sensor` | `sensor_panel.launch.py` | 各传感器话题 | 只读观测相机 / 点云 / 雷达 / 超声波 / IMU |
-| 监视 HMI | rviz2 插件 或 `ylr1d_hmi_monitor` | `monitor.launch.py` / `ros2 run` | 仿真全局 | 监视控制器 / 节点 / rosout / 传感器 / 关节；暂停 / 继续 / 重置仿真 |
+| 监视 HMI | rviz2 插件（随 bringup 预加载）或 `ylr1d_hmi_monitor` | `ros2 run` | 仿真全局 | 监视控制器 / 节点 / rosout / 传感器 / 关节；暂停 / 继续 / 重置仿真 |
 
 - **不做什么**：不参与控制闭环（控制层 HMI 只发期望值，运动由 `control_sim` 过渡），只做观测与指令下发。
 
@@ -49,8 +49,7 @@ ylr1d_hmi/
 │   │   ├── monitor_panel.cpp / monitor_rviz_panel.cpp
 │   │   └── chassis_direction_widget.cpp  # ChassisDirectionWidget 实现
 │   └── common/sim_control.cpp# 仿真控制客户端实现
-├── launch/                   # hmi / hmi_translate / sensor_panel / monitor 四个 launch
-├── rviz/monitor.rviz         # 监视面板的 rviz2 配置
+├── launch/                   # hmi / hmi_translate / sensor_panel 三个 launch
 ├── plugin_description.xml    # rviz2 插件声明
 ├── CMakeLists.txt            # 5 个 target（4 可执行 + 1 插件库）
 └── package.xml
@@ -72,10 +71,9 @@ ros2 launch ylr1d_hmi hmi_translate.launch.py
 # 传感器 HMI
 ros2 launch ylr1d_hmi sensor_panel.launch.py
 
-# 监视 HMI：rviz2 版（预加载 YLR1D Monitor 面板）
-ros2 launch ylr1d_hmi monitor.launch.py
-# 或独立窗口版（无 3D 视图，便于无头验证）
+# 监视 HMI：独立窗口版（无 3D 视图，便于无头验证）
 ros2 run ylr1d_hmi ylr1d_hmi_monitor
+# rviz2 版监视（YLR1D Monitor 面板）无需单独启动——随 bringup 的 rviz2 自动预加载
 
 # 完整链路（推荐直接走 bringup，已聚合对应 HMI + 传感器面板）
 ros2 launch ylr1d_bringup bringup_control.launch.py
@@ -120,7 +118,7 @@ ros2 launch ylr1d_bringup bringup_translate.launch.py
   - ⚠️ 夹爪展示口径取 ±0.015，比仿真层 `position_control_limits.yaml` 的 ±0.014 **略宽松**；越界目标会被仿真层硬钳制到实际限位。转译层 HMI 的夹爪语义取 ±0.014（与转译层常量一致）。
 - **传感器话题单一来源**：`config/sensor_topics.hpp` 统一了传感器面板（`sensor_panel`）与监视面板（`monitor_panel`）的话题清单（相机 3 台 × RGB/深度/红外 + camera_info、点云 3、雷达 1、超声 4、IMU 1）。
 - **action 发送公共 helper**：`common/action_sender.hpp` 统一三个 action（chassis/arm/gripper）的 server 等待与 goal 收发回调，日志/状态格式与改造前逐字一致。
-- **监视面板**：`rviz/monitor.rviz` 预加载 "YLR1D Monitor" 面板。
+- **监视面板加载**：`ylr1d_description/rviz/display.rviz`（bringup 的 rviz2 使用）预加载 "YLR1D Monitor" 面板。
 
 ---
 
@@ -154,7 +152,7 @@ ros2 launch ylr1d_bringup bringup_translate.launch.py
 
 ### 6.4 监视面板（MonitorWidget）
 
-rviz2 插件（`monitor.launch.py`）与独立窗口（`ylr1d_hmi_monitor`）共用同一核心。四个标签页：
+rviz2 插件（随 bringup 的 rviz2 预加载，`ylr1d_description/rviz/display.rviz` 配置）与独立窗口（`ylr1d_hmi_monitor`）共用同一核心。四个标签页：
 - **Overview**：仿真控制按钮 + 彩色状态条、控制器状态（`controller_manager` ListControllers）、预期节点存活、异常汇总
   - **仿真控制**：Pause / Continue / Reset Sim / Reset World 四个按钮，分别调用 gzserver 的 `/pause_physics` `/unpause_physics` `/reset_simulation` `/reset_world`（均为 `std_srvs/srv/Empty`，由 gazebo_ros_init 提供，**无需改 launch**）；服务未就绪时按钮禁用，Pause/Continue 随仿真状态联动
   - **状态条**：一个 QLabel，底色随状态变色（绿 RUNNING / 黄 PAUSED / 红 NO CLOCK），右侧附仿真时间；状态由 `/clock` 推断，带**滞回**——连续 ~3s 收不到 `/clock` 才判 PAUSED，收到任意 `/clock` 立即恢复 RUNNING，用于滤除电脑卡顿导致的 RUNNING/PAUSED 抖动
@@ -178,5 +176,5 @@ rviz2 插件（`monitor.launch.py`）与独立窗口（`ylr1d_hmi_monitor`）共
 - **勿混用两套 HMI**：控制层 HMI 与转译层 HMI 同时使用会**竞争同一批关节**（各自下游都发期望值），完整链路应走 `bringup_control` / `bringup_translate` 之一
 - **单线程卡顿**：GUI 与 ROS spin 同线程，重负载下可能卡顿
 - **WSL 渲染性能**：WSL 下 GUI 响应较慢（软件渲染）；三台相机在软渲染下不能全量渲染，只渲染选中的相机（其余仅缓存）
-- **监视面板需仿真在跑**：`monitor.launch.py` 需在仿真（`gazebo.launch.py` 或 bringup）运行时另行启动
+- **监视面板需仿真在跑**：监视面板（bringup 的 rviz2 预加载 或 `ylr1d_hmi_monitor`）需在仿真运行时才显示有效状态
 - **依赖**：rclcpp / rclcpp_action（仅转译层）/ sensor_msgs / std_msgs / std_srvs（仅监视面板，仿真控制服务）/ ylr1d_translate（仅转译层）/ rviz_common + pluginlib + class_loader（监视插件）/ Qt5 Widgets, Core

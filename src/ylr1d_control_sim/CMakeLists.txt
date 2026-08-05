@@ -27,6 +27,7 @@ ament_target_dependencies(ylr1d_simulate_common
 add_executable(chassis_simulate
   src/nodes/chassis_simulate_node.cpp
   src/main_chassis.cpp
+  include/ylr1d_control_sim/config/joint_config.hpp
 )
 target_link_libraries(chassis_simulate ylr1d_simulate_common)
 ament_target_dependencies(chassis_simulate
@@ -36,6 +37,7 @@ ament_target_dependencies(chassis_simulate
 add_executable(arm_simulate
   src/nodes/arm_simulate_node.cpp
   src/main_arm.cpp
+  include/ylr1d_control_sim/config/joint_config.hpp
 )
 target_link_libraries(arm_simulate ylr1d_simulate_common)
 ament_target_dependencies(arm_simulate

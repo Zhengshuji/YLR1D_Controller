@@ -2,49 +2,24 @@
 #include "ylr1d_control_sim/params/param_reader.hpp"
 
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace ylr1d_control_sim {
-
-namespace {
-
-/// 每组的位置关节名 + 控制器命令话题（顺序与 enum ArmGroup 一致）
-struct ArmGroupSpec {
-  const char * topic;
-  std::vector<std::string> joints;
-};
-
-const std::array<ArmGroupSpec, ARM_GROUP_COUNT> kArmGroupSpecs = {{
-  {"/torso_controller/commands",
-   {"Joint_Base_to_Body1", "Joint_Body1_to_Body2",
-    "Joint_Body2_to_Body3", "Joint_Body3_to_Body4"}},
-  {"/left_arm_controller/commands",
-   {"Joint_Body2_to_LeftArm1", "Joint_LeftArm1_to_LeftArm2",
-    "Joint_LeftArm2_to_LeftArm3", "Joint_LeftArm3_to_LeftArm4",
-    "Joint_LeftArm4_to_LeftArm5", "Joint_LeftArm5_to_LeftArm6",
-    "Joint_LeftArm6_to_LeftArm7", "Joint_LeftArm7_to_LeftFinger1",
-    "Joint_LeftArm7_to_LeftFinger2"}},
-  {"/right_arm_controller/commands",
-   {"Joint_Body2_to_RightArm1", "Joint_RightArm1_to_RightArm2",
-    "Joint_RightArm2_to_RightArm3", "Joint_RightArm3_to_RightArm4",
-    "Joint_RightArm4_to_RightArm5", "Joint_RightArm5_to_RightArm6",
-    "Joint_RightArm6_to_RightArm7", "Joint_RightArm7_to_RightFinger1",
-    "Joint_RightArm7_to_RightFinger2"}},
-}};
-
-}  // namespace
 
 ArmSimulateNode::ArmSimulateNode() : Node("arm_simulate") {
   double loop_hz = declare_parameter("loop_hz", 100.0);
   dt_ = 1.0 / loop_hz;
 
-  // 数组 + 枚举统一配置三组（躯干 / 左臂 / 右臂）
+  // 数组 + 枚举统一配置三组（躯干 / 左臂 / 右臂），组定义取自 config/joint_config.hpp
   for (size_t g = 0; g < ARM_GROUP_COUNT; ++g) {
+    const ArmGroupDef & def = kArmGroups[g];
+    std::vector<std::string> names(def.joints, def.joints + def.count);
     std::vector<JointParams> params;
-    for (const auto & n : kArmGroupSpecs[g].joints) {
+    for (const auto & n : names) {
       params.push_back(read_joint_params(*this, n, defaultPositionParams()));
     }
-    groups_[g].setup(kArmGroupSpecs[g].joints, params, kArmGroupSpecs[g].topic, this);
+    groups_[g].setup(names, params, def.topic, this);
   }
 
   // 订阅
@@ -63,7 +38,8 @@ ArmSimulateNode::ArmSimulateNode() : Node("arm_simulate") {
     [this]() { update(); });
 
   RCLCPP_INFO(get_logger(), "arm_simulate started (%.1f Hz, %zu groups, %zu joints)",
-              loop_hz, ARM_GROUP_COUNT, 4ul + 9ul + 9ul);
+              loop_hz, ARM_GROUP_COUNT,
+              kTorsoJointCount + kLeftArmJointCount + kRightArmJointCount);
 }
 
 void ArmSimulateNode::init_callback(const sensor_msgs::msg::JointState::SharedPtr msg) {

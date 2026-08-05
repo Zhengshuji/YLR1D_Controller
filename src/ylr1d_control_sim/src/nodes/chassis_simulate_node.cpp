@@ -2,6 +2,7 @@
 #include "ylr1d_control_sim/params/param_reader.hpp"
 
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace ylr1d_control_sim {
@@ -11,26 +12,22 @@ ChassisSimulateNode::ChassisSimulateNode() : Node("chassis_simulate") {
   dt_ = 1.0 / loop_hz;
 
   // ── 转向（位置接口，4 关节，独立 PID + 限位） ──
-  const std::vector<std::string> steering_names = {
-    "Joint_Base_to_RFWheelF", "Joint_Base_to_LFWheelF",
-    "Joint_Base_to_RBWheelF", "Joint_Base_to_LBWheelF"};
+  std::vector<std::string> steering_names(kSteeringJoints,
+                                          kSteeringJoints + kSteeringJointCount);
   std::vector<JointParams> steering_params;
   for (const auto & n : steering_names) {
     steering_params.push_back(read_joint_params(*this, n, defaultPositionParams()));
   }
-  steering_.setup(steering_names, steering_params,
-                  "/chassis_steering_controller/commands", this);
+  steering_.setup(steering_names, steering_params, kSteeringTopic, this);
 
   // ── 轮子（速度接口，4 关节，独立 PID + 速度/加速度限幅） ──
-  const std::vector<std::string> wheel_names = {
-    "Joint_RFWheelF_to_RFWheel", "Joint_LFWheelF_to_LFWheel",
-    "Joint_RBWheelF_to_RBWheel", "Joint_LBWheelF_to_LBWheel"};
+  std::vector<std::string> wheel_names(kWheelJoints,
+                                       kWheelJoints + kWheelJointCount);
   std::vector<JointParams> wheel_params;
   for (const auto & n : wheel_names) {
     wheel_params.push_back(read_joint_params(*this, n, defaultVelocityParams()));
   }
-  wheels_.setup(wheel_names, wheel_params,
-                "/chassis_wheels_controller/commands", this);
+  wheels_.setup(wheel_names, wheel_params, kWheelTopic, this);
 
   // 订阅
   desired_sub_ = create_subscription<sensor_msgs::msg::JointState>(
@@ -48,7 +45,7 @@ ChassisSimulateNode::ChassisSimulateNode() : Node("chassis_simulate") {
     [this]() { update(); });
 
   RCLCPP_INFO(get_logger(), "chassis_simulate started (%.1f Hz, %zu steering + %zu wheels)",
-              loop_hz, 4ul, 4ul);
+              loop_hz, kSteeringJointCount, kWheelJointCount);
 }
 
 void ChassisSimulateNode::init_callback(const sensor_msgs::msg::JointState::SharedPtr msg) {

@@ -15,19 +15,13 @@ def _load_yaml(path):
     return data if data is not None else {}
 
 
-def _collect_params(limit_files, pid_file):
-    """把 config 下的 limit/pid yaml 合并为节点参数。
+def _collect_pid_params(pid_file):
+    """把 config 下的 pid.yaml 合并为节点参数。
 
-    统一命名: <关节名>/limit/<参数名> 与 <关节名>/pid/<参数名>
-    例如 Joint_Base_to_RFWheelF/limit/lower, Joint_Base_to_RFWheelF/pid/kp
+    统一命名: <关节名>/pid/<参数名>，例如 Joint_Base_to_RFWheelF/pid/kp。
+    limit 已改为头文件静态配置（config/joint_config.hpp），不再从 yaml 加载。
     """
     params = {}
-    for lf in limit_files:
-        data = _load_yaml(lf)
-        for joint, cfg in data.items():
-            lim = cfg.get("limit", {})
-            for k, v in lim.items():
-                params[f"{joint}/limit/{k}"] = v
     data = _load_yaml(pid_file)
     for joint, cfg in data.items():
         pid = cfg.get("pid", {})
@@ -49,11 +43,7 @@ def generate_launch_description():
     pkg_share = get_package_share_directory("ylr1d_control_sim")
     config_dir = os.path.join(pkg_share, "config")
 
-    params = _collect_params(
-        [os.path.join(config_dir, "position_control_limits.yaml"),
-         os.path.join(config_dir, "velocity_control_limits.yaml")],
-        os.path.join(config_dir, "pid.yaml"),
-    )
+    params = _collect_pid_params(os.path.join(config_dir, "pid.yaml"))
     params["loop_hz"] = 100.0
 
     # 两个节点都接收全部关节参数；各自只声明/读取自己管理关节的参数。

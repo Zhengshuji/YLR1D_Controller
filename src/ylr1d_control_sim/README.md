@@ -17,6 +17,7 @@
 
 ```
 include/ylr1d_control_sim/
+├── config/  joint_config.hpp       # 限位 + 关节分组静态配置单一来源（纯头、全 constexpr）
 ├── core/    joint_params.hpp  pid.hpp  joint_simulator.hpp   # 纯 C++，不依赖 rclcpp
 ├── groups/  joint_group.hpp        # PositionJointGroup / VelocityJointGroup
 ├── params/  param_reader.hpp       # read_joint_params(node, name, preset)
@@ -27,17 +28,15 @@ src/
 ├── nodes/   chassis_simulate_node.cpp  arm_simulate_node.cpp  (无 main)
 └── main_chassis.cpp  main_arm.cpp     # 独立入口
 config/
-├── position_control_limits.yaml   # 26 个位置关节 limit（lower/upper/velocity/accelerate）
-├── velocity_control_limits.yaml   # 4 个轮子 limit（velocity/accelerate）
 └── pid.yaml                        # 全部 30 关节 pid（kp/ki/kd）
-launch/position_simulate.launch.py  # 必须经此启动（加载 config）
+launch/position_simulate.launch.py  # 经此启动（加载 pid.yaml）
 ```
 
 ---
 
 ## 三、使用方法
 
-> ⚠️ **必须通过 `position_simulate.launch.py` 启动**（加载 config 三个 yaml）。直接 `ros2 run` 时位置关节按默认限位 [0,0] 且限位开启，**所有 26 个位置关节被钳死到 0**。
+> ⚠️ **建议通过 `position_simulate.launch.py` 启动**（加载 `pid.yaml`）。limit 已编译进头文件（`config/joint_config.hpp`），直接 `ros2 run` 限位仍正确，但 pid 退化为预设默认值（kp=4/kd=0.2，非 pid.yaml 的 150/20），控制响应偏软。完整闭环请走 launch。
 
 ```bash
 # 分步启动（配合 plant + HMI）
@@ -96,36 +95,37 @@ ros2 topic echo /joint_states --once   # 观察反馈
 
 ### 参数
 
-所有关节参数统一按 **`<关节名>/limit/<参数名>`** 与 **`<关节名>/pid/<参数名>`** 命名，由 launch 从 config 加载。另有 `loop_hz`（默认 100.0）控制频率。参数回退**两层**（默认值只在预设 struct 中定义一次）：
+pid 参数按 **`<关节名>/pid/<参数名>`** 命名，由 launch 从 `pid.yaml` 加载；limit 为**头文件静态配置**（`config/joint_config.hpp`，编译期确定，无 `<关节名>/limit/*` 参数）。另有 `loop_hz`（默认 100.0）控制频率。pid 参数回退**两层**（默认值只在预设 struct 中定义一次）：
 
 ```
-yaml (<关节名>/limit/*、<关节名>/pid/*)
+pid.yaml (<关节名>/pid/*)
   → 节点参数 (declare_parameter 默认 = 预设 struct)
     → 预设 struct defaultPositionParams / defaultVelocityParams（定义于 core/joint_params.hpp）
 ```
 
-参数仅在**节点构造时读取一次**，运行中 `ros2 param set` 修改**不会生效**，调参需改 yaml 后重启节点。
+pid 参数仅在**节点构造时读取一次**，运行中 `ros2 param set` 修改**不会生效**，调参需改 `pid.yaml` 后重启节点；limit 修改需改头文件后重新编译。
 
 ---
 
 ## 五、配置
 
-### config 三个 yaml
+### config 文件
 
 | 文件 | 内容 | 说明 |
 |------|------|------|
-| `position_control_limits.yaml` | 26 个位置关节 `limit: {lower, upper, velocity, accelerate}` | 位置限位 + 速度/加速度限幅 |
-| `velocity_control_limits.yaml` | 4 个轮子 `limit: {velocity, accelerate}` | 速度/加速度限幅（连续关节无位置限位） |
-| `pid.yaml` | 全部 30 关节 `pid: {kp, ki, kd}` | 每关节独立 PID 增益 |
+| `pid.yaml` | 全部 30 关节 `pid: {kp, ki, kd}` | 每关节独立 PID 增益（经 launch 加载） |
 
-### limit 参数
+### limit 参数（头文件常量）
 
-| 参数 | 位置关节默认 | 轮子默认 | 说明 |
+limit 数据全部编译进 `include/ylr1d_control_sim/config/joint_config.hpp`（`jointLimitFor(name)` 查表，`kPositionLimits`[26] / `kVelocityLimits`[4]），**不再经 yaml / ROS 参数**：
+
+| 项 | 位置关节（26） | 轮子（4） | 说明 |
 |------|-------------|---------|------|
-| `limit/lower` | 来自 yaml（转向 ±3.14，Body1 ±0.3 等） | — | 位置下限（rad 或 m） |
-| `limit/upper` | 来自 yaml | — | 位置上限 |
-| `limit/velocity` | 3.0 | 5.0 | 最大速度（rad/s） |
-| `limit/accelerate` | 50.0 | 20.0 | 最大加速度（rad/s²） |
+| `lower` / `upper` | 各关节限位（转向 ±3.14，Body1 ±0.3，夹爪左指 [-0.014, 0] 等） | — | 位置限位（rad 或 m） |
+| `max_vel` | 逐关节不同（Body1 0.6782、夹爪 0.05、其余 3.0/2.83/5.65） | 5.0 | 最大速度（rad/s） |
+| `max_accel` | 5.0（夹爪 1.0） | **10.0** | 最大加速度（rad/s²） |
+
+> 上表数值与原 `position_control_limits.yaml` / `velocity_control_limits.yaml` **逐字一致**；轮子 accelerate=10.0 为原 yaml 实际生效值（非预设默认 20.0）。改动限位前对照 `ylr1d_description/config/limits.yaml` 语境。
 
 ### pid 参数
 
@@ -222,7 +222,7 @@ yaml (<关节名>/limit/*、<关节名>/pid/*)
 
 ### 6.4 位置限幅
 
-位置限位来自 `config/position_control_limits.yaml`，节点在 `JointSimulator::update()` 内**硬钳制**到 `[lower, upper]`（越限目标只会停在限位处，不会越过）。HMI 或上层节点仍应遵守限位约束：转向 ±3.14；轮子无位置限位（速度上限 `limit/velocity`）；躯干 `Joint_Base_to_Body1` ±0.30（米）；双臂大部分 ±1.57~±2.62、`*Arm6_to_*Arm7` ±6.28；夹爪左指 [-0.014, 0]、右指 [0, 0.014]。
+位置限位来自 `config/joint_config.hpp` 头文件常量，节点在 `JointSimulator::update()` 内**硬钳制**到 `[lower, upper]`（越限目标只会停在限位处，不会越过）。HMI 或上层节点仍应遵守限位约束：转向 ±3.14；轮子无位置限位（速度上限 `max_vel`）；躯干 `Joint_Base_to_Body1` ±0.30（米）；双臂大部分 ±1.57~±2.62、`*Arm6_to_*Arm7` ±6.28；夹爪左指 [-0.014, 0]、右指 [0, 0.014]。
 
 ---
 
@@ -230,9 +230,9 @@ yaml (<关节名>/limit/*、<关节名>/pid/*)
 
 ### 启动与配置
 
-- **必须通过 `position_simulate.launch.py` 启动**（加载 config 三个 yaml），直接 `ros2 run` 时所有 26 个位置关节被钳死到 0
-- yaml 中漏关节或关节名拼错**不会报错**：该关节静默使用默认值（配合上一条可能锁死关节）。请保持 30 关节配置完整，改配置后用 `ros2 param list` 核对
-- 参数仅在节点构造时读取一次，运行中 `ros2 param set` 不生效
+- **建议通过 `position_simulate.launch.py` 启动**（加载 `pid.yaml`）；直接 `ros2 run` 限位正确但 pid 用预设默认值，控制响应偏软
+- limit 为**编译期常量**（`config/joint_config.hpp`），关节名拼错不会报错、该关节静默回退 `JointLimit{}`（无位置限位 + 默认限幅 3.0/50.0）。请保持 26+4 关节配置完整，改动后重新编译并用 `ros2 param list` 核对 pid
+- pid 参数仅在节点构造时读取一次，运行中 `ros2 param set` 不生效
 - 订阅/发布用相对话题名（`desired_joint_states` / `joint_states` / `simulated_*_states`）。节点应运行在根命名空间 `/`；放入子命名空间会导致订阅断链
 
 ### 初始化与话题

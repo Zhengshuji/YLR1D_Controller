@@ -120,9 +120,9 @@ pkill -f gzserver; pkill -f gzclient
 **问题**: spawner 在 Gazebo 完全加载前启动会连不上 controller_manager 服务
 **解决**: launch 文件中使用 `TimerAction(period=8.0)` 延迟 spawner 启动
 
-#### 10. control_sim 必须经 launch 启动
-**问题**: 直接 `ros2 run`（不经 launch）时 `config/*.yaml` 未加载，位置关节按默认限位 [0,0] 且限位开启，所有位置关节被钳死到 0
-**解决**: 始终用 `ros2 launch ylr1d_control_sim position_simulate.launch.py` 启动；改参数需改 `config/*.yaml` 后重启节点（运行中 `ros2 param set` 不生效）
+#### 10. control_sim 建议经 launch 启动
+**问题**: 直接 `ros2 run`（不经 launch）时 `pid.yaml` 未加载，pid 退化为预设默认值（kp=4/kd=0.2，非 yaml 的 150/20），控制响应偏软（limit 已编译进头文件，不再受此影响）
+**解决**: 用 `ros2 launch ylr1d_control_sim position_simulate.launch.py` 启动；改 pid 需改 `config/pid.yaml` 后重启节点（运行中 `ros2 param set` 不生效），改 limit 需改头文件后重新编译
 
 #### 11. pkill -f 会自匹配（WSL bash）
 **问题**: `pkill -f chassis_simulate` 会匹配到 bash 自身命令行里的同名模式，把执行 shell 杀掉（exit 15）
@@ -130,6 +130,9 @@ pkill -f gzserver; pkill -f gzclient
 
 #### 12. ylr1d_hmi 静态配置单一来源
 **约定**: `ylr1d_hmi` 的关节定义统一在 `include/ylr1d_hmi/config/joint_defs.hpp`（30 关节原子 + 控制/监视/转译三组视图），传感器话题统一在 `config/sensor_topics.hpp`。改限位/话题只改这两处，并对照 `ylr1d_description/config/limits.yaml` 语境；action 发送公共逻辑在 `common/action_sender.hpp`。
+
+#### 13. ylr1d_control_sim 静态配置单一来源
+**约定**: `ylr1d_control_sim` 的 limit 与关节分组唯一在 `include/ylr1d_control_sim/config/joint_config.hpp`（`kPositionLimits`[26] / `kVelocityLimits`[4] + `jointLimitFor(name)` + 底盘/臂分组常量），pid 在 `config/pid.yaml`（经 launch 加载为 `<关节>/pid/*` 参数）。改限位/关节分组只改头文件后重新编译；改 pid 只改 yaml 后重启节点；改限位前对照 `ylr1d_description/config/limits.yaml` 语境。
 
 ---
 

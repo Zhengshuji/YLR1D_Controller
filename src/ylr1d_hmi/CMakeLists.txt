@@ -111,7 +111,6 @@ install(TARGETS ylr1d_hmi_control ylr1d_hmi_sensor ylr1d_hmi_translate
         ylr1d_hmi_monitor_panel ylr1d_hmi_monitor
         DESTINATION lib/${PROJECT_NAME})
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME}/)
-install(DIRECTORY rviz DESTINATION share/${PROJECT_NAME}/)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
