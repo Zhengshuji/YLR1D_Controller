@@ -24,17 +24,9 @@
 #include <string>
 #include <vector>
 
-namespace ylr1d_hmi {
+#include "ylr1d_hmi/config/joint_defs.hpp"
 
-/// Static joint definition (limits/unit from ylr1d_description/config/limits.yaml)
-struct JointDef {
-  std::string name;
-  QString label;
-  bool is_velocity{false};     // true = wheel (velocity control)
-  bool is_prismatic{false};    // true = translational joint (unit: m / m/s)
-  double lower{-3.14};
-  double upper{3.14};
-};
+namespace ylr1d_hmi {
 
 /// Describe a joint in the UI
 struct JointInfo {

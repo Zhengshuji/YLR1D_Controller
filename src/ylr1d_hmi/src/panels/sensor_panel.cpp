@@ -1,5 +1,7 @@
 #include "ylr1d_hmi/panels/sensor_panel.hpp"
 
+#include "ylr1d_hmi/config/sensor_topics.hpp"
+
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QGroupBox>
@@ -35,83 +37,60 @@ inline QRgb depthColor(float t) {
 SensorPanel::SensorPanel(rclcpp::Node::SharedPtr node, QWidget * parent)
   : QWidget(parent), node_(node)
 {
-  // Camera names must be set before buildUi() fills the selector combo.
-  static const char * kCamNames[3] = {"Global", "Left", "Right"};
+  // Camera names/rates must be set before buildUi() fills the selector combo.
   for (int i = 0; i < 3; ++i) {
-    cams_[i].name = kCamNames[i];
-    cams_[i].update_rate = 30;
+    cams_[i].name = QLatin1String(kCameras[i].name);
+    cams_[i].update_rate = kCameras[i].update_rate;
   }
 
   buildUi();
 
   // ── Cameras: Global / Left / Right — rgb / depth / ir + their camera_info ──
-  static const struct {
-    const char * rgb, * depth, * ir;
-    const char * rgb_info, * depth_info, * ir_info;
-  } kCams[3] = {
-    {"/global_camera/rgb/image_raw",        "/global_camera/depth/image_raw",        "/global_camera/infrared/image_raw",
-     "/global_camera/rgb/camera_info",      "/global_camera/depth/camera_info",      "/global_camera/infrared/camera_info"},
-    {"/left_camera/rgb/image_raw",          "/left_camera/depth/image_raw",          "/left_camera/infrared/image_raw",
-     "/left_camera/rgb/camera_info",        "/left_camera/depth/camera_info",        "/left_camera/infrared/camera_info"},
-    {"/right_camera/rgb/image_raw",         "/right_camera/depth/image_raw",         "/right_camera/infrared/image_raw",
-     "/right_camera/rgb/camera_info",       "/right_camera/depth/camera_info",       "/right_camera/infrared/camera_info"},
-  };
   for (int i = 0; i < 3; ++i) {
     subs_.push_back(node_->create_subscription<sensor_msgs::msg::Image>(
-      kCams[i].rgb, 1, [this, i](const sensor_msgs::msg::Image::SharedPtr m) {
+      kCameras[i].rgb, 1, [this, i](const sensor_msgs::msg::Image::SharedPtr m) {
         cams_[i].rgb = m; cams_[i].st_rgb.touch(); }));
     subs_.push_back(node_->create_subscription<sensor_msgs::msg::Image>(
-      kCams[i].depth, 1, [this, i](const sensor_msgs::msg::Image::SharedPtr m) {
+      kCameras[i].depth, 1, [this, i](const sensor_msgs::msg::Image::SharedPtr m) {
         cams_[i].depth = m; cams_[i].st_depth.touch(); }));
     subs_.push_back(node_->create_subscription<sensor_msgs::msg::Image>(
-      kCams[i].ir, 1, [this, i](const sensor_msgs::msg::Image::SharedPtr m) {
+      kCameras[i].ir, 1, [this, i](const sensor_msgs::msg::Image::SharedPtr m) {
         cams_[i].ir = m; cams_[i].st_ir.touch(); }));
     subs_.push_back(node_->create_subscription<sensor_msgs::msg::CameraInfo>(
-      kCams[i].rgb_info, 1, [this, i](const sensor_msgs::msg::CameraInfo::SharedPtr m) { cams_[i].cinfo_rgb = m; }));
+      kCameras[i].rgb_info, 1, [this, i](const sensor_msgs::msg::CameraInfo::SharedPtr m) { cams_[i].cinfo_rgb = m; }));
     subs_.push_back(node_->create_subscription<sensor_msgs::msg::CameraInfo>(
-      kCams[i].depth_info, 1, [this, i](const sensor_msgs::msg::CameraInfo::SharedPtr m) { cams_[i].cinfo_depth = m; }));
+      kCameras[i].depth_info, 1, [this, i](const sensor_msgs::msg::CameraInfo::SharedPtr m) { cams_[i].cinfo_depth = m; }));
     subs_.push_back(node_->create_subscription<sensor_msgs::msg::CameraInfo>(
-      kCams[i].ir_info, 1, [this, i](const sensor_msgs::msg::CameraInfo::SharedPtr m) { cams_[i].cinfo_ir = m; }));
+      kCameras[i].ir_info, 1, [this, i](const sensor_msgs::msg::CameraInfo::SharedPtr m) { cams_[i].cinfo_ir = m; }));
   }
 
-  // ── Depth-camera point clouds (3) ──
-  static const struct { const char * name; const char * topic; } kClouds[3] = {
-    {"Global", "/global_camera/depth/points"},
-    {"Left",   "/left_camera/depth/points"},
-    {"Right",  "/right_camera/depth/points"},
-  };
+  // ── Depth-camera point clouds (3) — one per camera ──
   for (int i = 0; i < 3; ++i) {
     auto & cl = clouds_[i];
-    cl.name = kClouds[i].name;
+    cl.name = QLatin1String(kCameras[i].name);
     subs_.push_back(node_->create_subscription<sensor_msgs::msg::PointCloud2>(
-      kClouds[i].topic, 1, [this, i](const sensor_msgs::msg::PointCloud2::SharedPtr m) {
+      kCloudTopics[i], 1, [this, i](const sensor_msgs::msg::PointCloud2::SharedPtr m) {
         clouds_[i].msg = m; clouds_[i].status.touch(); }));
   }
 
   // ── Radar (polar) + 4 ultrasonic (fan) ──
-  scans_[0].name = "Radar";
+  scans_[0].name = QStringLiteral("Radar");
   subs_.push_back(node_->create_subscription<sensor_msgs::msg::LaserScan>(
-    "/radar/scan", 1, [this](const sensor_msgs::msg::LaserScan::SharedPtr m) {
+    kRadarTopic, 1, [this](const sensor_msgs::msg::LaserScan::SharedPtr m) {
       scans_[0].msg = m; scans_[0].status.touch(); }));
 
-  static const struct { const char * name; const char * topic; } kSonars[4] = {
-    {"LF", "/lf_ultrasonic/range"},
-    {"RF", "/rf_ultrasonic/range"},
-    {"LB", "/lb_ultrasonic/range"},
-    {"RB", "/rb_ultrasonic/range"},
-  };
   for (int i = 0; i < 4; ++i) {
     auto & s = scans_[i + 1];
-    s.name = kSonars[i].name;
+    s.name = QLatin1String(kSonarNames[i]);
     subs_.push_back(node_->create_subscription<sensor_msgs::msg::LaserScan>(
-      kSonars[i].topic, 1,
+      kSonarTopics[i], 1,
       [this, i](const sensor_msgs::msg::LaserScan::SharedPtr m) {
         scans_[i + 1].msg = m; scans_[i + 1].status.touch(); }));
   }
 
   // ── IMU ──
   subs_.push_back(node_->create_subscription<sensor_msgs::msg::Imu>(
-    "/imu_data", 1, [this](const sensor_msgs::msg::Imu::SharedPtr m) {
+    kImuTopic, 1, [this](const sensor_msgs::msg::Imu::SharedPtr m) {
       imu_msg_ = m; imu_status_.touch(); }));
 
   // Refresh at a fixed, low rate (2 Hz) from the latest cached frames —

@@ -20,7 +20,7 @@
 #include <string>
 #include <vector>
 
-#include "ylr1d_hmi/panels/topic_status.hpp"
+#include "ylr1d_hmi/common/topic_status.hpp"
 
 namespace ylr1d_hmi {
 

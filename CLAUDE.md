@@ -128,6 +128,9 @@ pkill -f gzserver; pkill -f gzclient
 **问题**: `pkill -f chassis_simulate` 会匹配到 bash 自身命令行里的同名模式，把执行 shell 杀掉（exit 15）
 **解决**: 用字符类技巧 `pkill -f "[c]hassis_simulate"`，或先 `ps` 确认 PID 再精确 kill
 
+#### 12. ylr1d_hmi 静态配置单一来源
+**约定**: `ylr1d_hmi` 的关节定义统一在 `include/ylr1d_hmi/config/joint_defs.hpp`（30 关节原子 + 控制/监视/转译三组视图），传感器话题统一在 `config/sensor_topics.hpp`。改限位/话题只改这两处，并对照 `ylr1d_description/config/limits.yaml` 语境；action 发送公共逻辑在 `common/action_sender.hpp`。
+
 ---
 
 ## 三、工作流程

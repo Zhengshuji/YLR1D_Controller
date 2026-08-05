@@ -1,5 +1,5 @@
-#ifndef YLR1D_HMI__PANELS__TOPIC_STATUS_HPP_
-#define YLR1D_HMI__PANELS__TOPIC_STATUS_HPP_
+#ifndef YLR1D_HMI__COMMON__TOPIC_STATUS_HPP_
+#define YLR1D_HMI__COMMON__TOPIC_STATUS_HPP_
 
 #include <QString>
 
@@ -52,4 +52,4 @@ struct TopicStatus {
 
 }  // namespace ylr1d_hmi
 
-#endif  // YLR1D_HMI__PANELS__TOPIC_STATUS_HPP_
+#endif  // YLR1D_HMI__COMMON__TOPIC_STATUS_HPP_

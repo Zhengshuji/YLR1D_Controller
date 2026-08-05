@@ -13,53 +13,6 @@
 namespace ylr1d_hmi {
 
 // ============================================================
-// Joint group definitions
-// Limits/units are kept in sync with
-//   src/ylr1d_description/config/limits.yaml  (what Gazebo actually loads)
-// ============================================================
-static std::vector<JointDef> chassis_joints = {
-  {"Joint_Base_to_RFWheelF",    "RF_Steer",  false, false, -3.14, 3.14},
-  {"Joint_Base_to_LFWheelF",    "LF_Steer",  false, false, -3.14, 3.14},
-  {"Joint_Base_to_RBWheelF",    "RB_Steer",  false, false, -3.14, 3.14},
-  {"Joint_Base_to_LBWheelF",    "LB_Steer",  false, false, -3.14, 3.14},
-  {"Joint_RFWheelF_to_RFWheel", "RF_Wheel",  true},
-  {"Joint_LFWheelF_to_LFWheel", "LF_Wheel",  true},
-  {"Joint_RBWheelF_to_RBWheel", "RB_Wheel",  true},
-  {"Joint_LBWheelF_to_LBWheel", "LB_Wheel",  true},
-};
-
-static std::vector<JointDef> torso_joints = {
-  {"Joint_Base_to_Body1",    "Lift",    false, true,  -0.30,  0.30},
-  {"Joint_Body1_to_Body2",   "Yaw",     false, false, -3.14,  3.14},
-  {"Joint_Body2_to_Body3",   "Pitch1",  false, false, -1.57,  1.57},
-  {"Joint_Body3_to_Body4",   "Pitch2",  false, false, -1.57,  1.57},
-};
-
-static std::vector<JointDef> left_arm_joints = {
-  {"Joint_Body2_to_LeftArm1",    "Shoulder1", false, false, -2.62,  2.62},
-  {"Joint_LeftArm1_to_LeftArm2", "Shoulder2", false, false, -1.57,  1.83},
-  {"Joint_LeftArm2_to_LeftArm3", "Shoulder3", false, false, -2.62,  2.62},
-  {"Joint_LeftArm3_to_LeftArm4", "Elbow1",    false, false, -1.57,  1.57},
-  {"Joint_LeftArm4_to_LeftArm5", "Elbow2",    false, false, -2.62,  2.62},
-  {"Joint_LeftArm5_to_LeftArm6", "Wrist1",    false, false, -2.09,  2.09},
-  {"Joint_LeftArm6_to_LeftArm7", "Wrist2",    false, false, -6.28,  6.28},
-  {"Joint_LeftArm7_to_LeftFinger1","Finger1", false, true,  -0.015, 0.0},
-  {"Joint_LeftArm7_to_LeftFinger2","Finger2", false, true,  -0.015, 0.0},
-};
-
-static std::vector<JointDef> right_arm_joints = {
-  {"Joint_Body2_to_RightArm1",   "Shoulder1", false, false, -2.62,  2.62},
-  {"Joint_RightArm1_to_RightArm2","Shoulder2", false, false, -1.57,  1.83},
-  {"Joint_RightArm2_to_RightArm3","Shoulder3", false, false, -2.62,  2.62},
-  {"Joint_RightArm3_to_RightArm4","Elbow1",    false, false, -1.57,  1.57},
-  {"Joint_RightArm4_to_RightArm5","Elbow2",    false, false, -2.62,  2.62},
-  {"Joint_RightArm5_to_RightArm6","Wrist1",    false, false, -2.09,  2.09},
-  {"Joint_RightArm6_to_RightArm7","Wrist2",    false, false, -6.28,  6.28},
-  {"Joint_RightArm7_to_RightFinger1","Finger1", false, true,  0.0, 0.015},
-  {"Joint_RightArm7_to_RightFinger2","Finger2", false, true,  0.0, 0.015},
-};
-
-// ============================================================
 // HmiWindow
 // ============================================================
 
@@ -124,13 +77,13 @@ void HmiWindow::buildUiLite() {
   struct TabSpec {
     QString title;
     QString color;
-    std::vector<JointDef> * defs;
+    const std::vector<JointDef> * defs;
   };
   TabSpec tab_specs[4] = {
-    {QStringLiteral("Chassis"),   QStringLiteral("#2d6cdf"), &chassis_joints},
-    {QStringLiteral("Torso"),     QStringLiteral("#1e9e4a"), &torso_joints},
-    {QStringLiteral("Left Arm"),  QStringLiteral("#e07b00"), &left_arm_joints},
-    {QStringLiteral("Right Arm"), QStringLiteral("#8e44ad"), &right_arm_joints},
+    {QStringLiteral("Chassis"),   QStringLiteral("#2d6cdf"), &chassis_joints()},
+    {QStringLiteral("Torso"),     QStringLiteral("#1e9e4a"), &torso_joints()},
+    {QStringLiteral("Left Arm"),  QStringLiteral("#e07b00"), &left_arm_joints()},
+    {QStringLiteral("Right Arm"), QStringLiteral("#8e44ad"), &right_arm_joints()},
   };
 
   for (int i = 0; i < 4; ++i) {

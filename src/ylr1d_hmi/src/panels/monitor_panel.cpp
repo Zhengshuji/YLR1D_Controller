@@ -1,5 +1,7 @@
 #include "ylr1d_hmi/panels/monitor_panel.hpp"
 
+#include <QFileDialog>
+#include <QFile>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QGroupBox>
@@ -11,102 +13,29 @@
 #include <QColor>
 #include <QSet>
 #include <QStringList>
+#include <QTextStream>
 
 #include <cmath>
 #include <chrono>
 #include <cstring>
+#include <iterator>
 #include <set>
 #include <string>
 #include <utility>
+
+#include "ylr1d_hmi/panels/monitor_nodes.hpp"
+#include "ylr1d_hmi/config/sensor_topics.hpp"
+#include "ylr1d_hmi/config/joint_defs.hpp"
+#include "ylr1d_hmi/common/sim_control.hpp"
 
 namespace ylr1d_hmi {
 
 namespace {
 
 // ────────────────────────────────────────────────────────────
-// Static configuration
+// Static configuration lives in monitor_nodes.hpp / joint_defs.hpp /
+// sensor_topics.hpp (inline, shared)
 // ────────────────────────────────────────────────────────────
-
-/// Nodes the monitor expects for the standard position-sim setup.
-const std::vector<ExpectedNode> kExpectedNodes = {
-  {"robot_state_publisher", "URDF + TF"},
-  {"gazebo_ros2_control",   "ros2_control plugin"},
-  {"controller_manager",    "controller manager"},
-  {"arm_simulate",          "arm soft-sim (position)"},
-  {"chassis_simulate",      "chassis soft-sim (position)"},
-  {"rviz2",                 "3D view (optional)"},
-};
-
-struct SensorSpec { const char * label; const char * topic; int kind; };
-const SensorSpec kSensorSpecs[] = {
-  {"Global Cam RGB",   "/global_camera/rgb/image_raw",         0},
-  {"Global Cam Depth", "/global_camera/depth/image_raw",       0},
-  {"Global Cam IR",    "/global_camera/infrared/image_raw",    0},
-  {"Left Cam RGB",     "/left_camera/rgb/image_raw",           0},
-  {"Left Cam Depth",   "/left_camera/depth/image_raw",         0},
-  {"Left Cam IR",      "/left_camera/infrared/image_raw",      0},
-  {"Right Cam RGB",    "/right_camera/rgb/image_raw",          0},
-  {"Right Cam Depth",  "/right_camera/depth/image_raw",        0},
-  {"Right Cam IR",     "/right_camera/infrared/image_raw",     0},
-  {"Global Cloud",     "/global_camera/depth/points",          1},
-  {"Left Cloud",       "/left_camera/depth/points",            1},
-  {"Right Cloud",      "/right_camera/depth/points",           1},
-  {"Radar",            "/radar/scan",                          2},
-  {"Ultrasonic LF",    "/lf_ultrasonic/range",                 2},
-  {"Ultrasonic RF",    "/rf_ultrasonic/range",                 2},
-  {"Ultrasonic LB",    "/lb_ultrasonic/range",                 2},
-  {"Ultrasonic RB",    "/rb_ultrasonic/range",                 2},
-  {"IMU",              "/imu_data",                            3},
-};
-
-/// Joint groups for the Joints dropdown — same 5-group split as
-/// ylr1d_control_sim (steering / wheels / torso / left / right), limits in
-/// sync with src/ylr1d_hmi/src/panels/hmi_window.cpp and
-/// src/ylr1d_control_sim/config/position_control_limits.yaml.
-std::vector<JointGroup> makeJointGroups() {
-  return {
-    {"Chassis Steering", {
-      {"RF_Steer", "Joint_Base_to_RFWheelF", false, false, -3.14, 3.14},
-      {"LF_Steer", "Joint_Base_to_LFWheelF", false, false, -3.14, 3.14},
-      {"RB_Steer", "Joint_Base_to_RBWheelF", false, false, -3.14, 3.14},
-      {"LB_Steer", "Joint_Base_to_LBWheelF", false, false, -3.14, 3.14},
-    }},
-    {"Chassis Wheels", {
-      {"RF_Wheel", "Joint_RFWheelF_to_RFWheel", true},
-      {"LF_Wheel", "Joint_LFWheelF_to_LFWheel", true},
-      {"RB_Wheel", "Joint_RBWheelF_to_RBWheel", true},
-      {"LB_Wheel", "Joint_LBWheelF_to_LBWheel", true},
-    }},
-    {"Torso", {
-      {"Lift",   "Joint_Base_to_Body1",  false, true,  -0.30, 0.30},
-      {"Yaw",    "Joint_Body1_to_Body2", false, false, -3.14, 3.14},
-      {"Pitch1", "Joint_Body2_to_Body3", false, false, -1.57, 1.57},
-      {"Pitch2", "Joint_Body3_to_Body4", false, false, -1.57, 1.57},
-    }},
-    {"Left Arm", {
-      {"Shoulder1", "Joint_Body2_to_LeftArm1",    false, false, -2.62, 2.62},
-      {"Shoulder2", "Joint_LeftArm1_to_LeftArm2", false, false, -1.57, 1.83},
-      {"Shoulder3", "Joint_LeftArm2_to_LeftArm3", false, false, -2.62, 2.62},
-      {"Elbow1",    "Joint_LeftArm3_to_LeftArm4", false, false, -1.57, 1.57},
-      {"Elbow2",    "Joint_LeftArm4_to_LeftArm5", false, false, -2.62, 2.62},
-      {"Wrist1",    "Joint_LeftArm5_to_LeftArm6", false, false, -2.09, 2.09},
-      {"Wrist2",    "Joint_LeftArm6_to_LeftArm7", false, false, -6.28, 6.28},
-      {"Finger1",   "Joint_LeftArm7_to_LeftFinger1", false, true, -0.015, 0.0},
-      {"Finger2",   "Joint_LeftArm7_to_LeftFinger2", false, true, -0.015, 0.0},
-    }},
-    {"Right Arm", {
-      {"Shoulder1", "Joint_Body2_to_RightArm1",    false, false, -2.62, 2.62},
-      {"Shoulder2", "Joint_RightArm1_to_RightArm2", false, false, -1.57, 1.83},
-      {"Shoulder3", "Joint_RightArm2_to_RightArm3", false, false, -2.62, 2.62},
-      {"Elbow1",    "Joint_RightArm3_to_RightArm4", false, false, -1.57, 1.57},
-      {"Elbow2",    "Joint_RightArm4_to_RightArm5", false, false, -2.62, 2.62},
-      {"Wrist1",    "Joint_RightArm5_to_RightArm6", false, false, -2.09, 2.09},
-      {"Wrist2",    "Joint_RightArm6_to_RightArm7", false, false, -6.28, 6.28},
-      {"Finger1",   "Joint_RightArm7_to_RightFinger1", false, true, 0.0, 0.015},
-      {"Finger2",   "Joint_RightArm7_to_RightFinger2", false, true, 0.0, 0.015},
-    }},
-  };
-}
 
 QTableWidget * makeTable(const std::vector<QString> & headers) {
   auto t = new QTableWidget(0, static_cast<int>(headers.size()));
@@ -120,16 +49,6 @@ QTableWidget * makeTable(const std::vector<QString> & headers) {
   t->setSelectionMode(QAbstractItemView::NoSelection);
   t->setFocusPolicy(Qt::NoFocus);
   return t;
-}
-
-/// Compare a graph node name against an expected short name, tolerating
-/// leading slashes and namespaces (take the last path segment).
-bool nodeNameMatch(const QString & detected, const QString & expected) {
-  QString d = detected;
-  while (d.startsWith(QLatin1Char('/'))) d = d.mid(1);
-  const int slash = d.lastIndexOf(QLatin1Char('/'));
-  if (slash >= 0) d = d.mid(slash + 1);
-  return d == expected;
 }
 
 }  // namespace
@@ -149,6 +68,8 @@ MonitorWidget::MonitorWidget(rclcpp::Node::SharedPtr node, QWidget * parent)
     sensors_.push_back(std::move(r));
   }
   joint_groups_ = makeJointGroups();
+
+  sim_ctl_ = std::make_unique<SimControl>(node_);
 
   buildUi();
 
@@ -261,6 +182,11 @@ void MonitorWidget::onClock(const rosgraph_msgs::msg::Clock::SharedPtr m) {
   sim_sec_ = rclcpp::Time(m->clock).seconds();
   clock_seen_ = true;
   clock_last_ = std::chrono::steady_clock::now();
+  // Any clock message immediately (re)asserts the running state — a single
+  // fresh tick resets the stall counter, so transient jitter never flips the
+  // indicator to PAUSED. Real pauses stop /clock and stay PAUSED.
+  sim_state_ = SimState::Running;
+  stall_count_ = 0;
 }
 
 void MonitorWidget::onPoll() {
@@ -312,17 +238,33 @@ QWidget * MonitorWidget::buildOverview() {
   auto v = new QVBoxLayout(wrap);
   v->setSpacing(6);
 
-  auto row = new QHBoxLayout();
-  sim_status_lbl_ = new QLabel(QStringLiteral("Sim: --"));
-  js_rate_lbl_ = new QLabel(QStringLiteral("/joint_states: --"));
-  node_cnt_lbl_ = new QLabel(QStringLiteral("nodes: --"));
-  ctrl_cnt_lbl_ = new QLabel(QStringLiteral("controllers: --"));
-  for (auto * l : {sim_status_lbl_, js_rate_lbl_, node_cnt_lbl_, ctrl_cnt_lbl_}) {
-    l->setStyleSheet(QStringLiteral("background:#222; padding:3px 8px; border-radius:3px;"));
-    row->addWidget(l);
+  // ── Sim control buttons (enabled once the gazebo services are up) ──
+  auto btn_row = new QHBoxLayout();
+  btn_pause_ = new QPushButton(QStringLiteral("Pause"));
+  btn_continue_ = new QPushButton(QStringLiteral("Continue"));
+  btn_reset_sim_ = new QPushButton(QStringLiteral("Reset Sim"));
+  btn_reset_world_ = new QPushButton(QStringLiteral("Reset World"));
+  for (auto * b : {btn_pause_, btn_continue_, btn_reset_sim_, btn_reset_world_}) {
+    b->setEnabled(false);
+    btn_row->addWidget(b);
   }
-  row->addStretch();
-  v->addLayout(row);
+  btn_row->addStretch();
+  v->addLayout(btn_row);
+  connect(btn_pause_, &QPushButton::clicked, this, &MonitorWidget::onSimPause);
+  connect(btn_continue_, &QPushButton::clicked, this, &MonitorWidget::onSimContinue);
+  connect(btn_reset_sim_, &QPushButton::clicked, this, &MonitorWidget::onSimResetSim);
+  connect(btn_reset_world_, &QPushButton::clicked, this, &MonitorWidget::onSimResetWorld);
+
+  // ── Sim status bar — colored background reflects the state ──
+  sim_status_lbl_ = new QLabel(QStringLiteral("● --"));
+  sim_status_lbl_->setStyleSheet(
+    QStringLiteral("color:#fff; background:#555; padding:4px 10px; border-radius:3px;"));
+  v->addWidget(sim_status_lbl_);
+
+  // ── One quiet stats line (no box) ──
+  stat_line_lbl_ = new QLabel(QStringLiteral("js -- · nodes -- · controllers --"));
+  stat_line_lbl_->setStyleSheet(QStringLiteral("color:#bbb;"));
+  v->addWidget(stat_line_lbl_);
 
   auto ctrl_box = new QGroupBox(QStringLiteral("Controllers"));
   auto cv = new QVBoxLayout(ctrl_box);
@@ -362,7 +304,11 @@ QWidget * MonitorWidget::buildLog() {
   row->addStretch();
   log_count_lbl_ = new QLabel();
   row->addWidget(log_count_lbl_);
+  log_save_btn_ = new QPushButton(QStringLiteral("Save"));
+  log_save_btn_->setToolTip(QStringLiteral("Export the filtered log to a text file"));
+  row->addWidget(log_save_btn_);
   v->addLayout(row);
+  connect(log_save_btn_, &QPushButton::clicked, this, &MonitorWidget::onSaveLog);
   connect(log_level_cb_, qOverload<int>(&QComboBox::currentIndexChanged),
           this, &MonitorWidget::onLogFilterChanged);
   connect(log_source_cb_, qOverload<int>(&QComboBox::currentIndexChanged),
@@ -428,6 +374,18 @@ void MonitorWidget::onRefresh() {
   clock_recent_ = clock_seen_ &&
     (std::chrono::steady_clock::now() - clock_last_) < std::chrono::seconds(2);
 
+  // Hysteresis: only flip RUNNING → PAUSED after 6 consecutive 500 ms refreshes
+  // (~3 s) without a fresh /clock, so a momentarily stalling clock on a loaded
+  // machine does not flicker the indicator. Any /clock tick resets both (onClock).
+  if (clock_recent_) {
+    sim_state_ = SimState::Running;
+    stall_count_ = 0;
+  } else if (sim_state_ == SimState::Running) {
+    if (++stall_count_ >= 6) {
+      sim_state_ = SimState::Paused;
+    }
+  }
+
   refreshOverview();
   refreshLog();
   refreshSensors();
@@ -448,18 +406,35 @@ void MonitorWidget::onRefresh() {
 }
 
 void MonitorWidget::refreshOverview() {
-  QString sim;
-  if (!clock_seen_) sim = QStringLiteral("<span style='color:#e77'>no /clock</span> (gzserver not publishing)");
-  else if (clock_recent_) sim = QStringLiteral("<span style='color:#8d8'>RUNNING</span> t=%1 s").arg(sim_sec_, 0, 'f', 2);
-  else sim = QStringLiteral("<span style='color:#ec6'>PAUSED</span> (clock stalled)");
-  sim_status_lbl_->setText(QStringLiteral("Sim: ") + sim);
+  // ── Sim status bar — background color reflects state ──
+  {
+    const char * text = "NO CLOCK";
+    const char * bg = "#a33";
+    switch (sim_state_) {
+      case SimState::Running: text = "RUNNING"; bg = "#2e7d32"; break;
+      case SimState::Paused:  text = "PAUSED";  bg = "#b08a1e"; break;
+      default: break;
+    }
+    QString label = QStringLiteral("\u25CF %1").arg(QLatin1String(text));
+    if (sim_state_ == SimState::Running)
+      label += QStringLiteral("  t=%1 s").arg(sim_sec_, 0, 'f', 2);
+    sim_status_lbl_->setText(label);
+    sim_status_lbl_->setStyleSheet(
+      QStringLiteral("color:#fff; background:%1; padding:4px 10px; border-radius:3px;")
+        .arg(QLatin1String(bg)));
+  }
 
-  const double r = js_st_.rateHz();
-  js_rate_lbl_->setText(QStringLiteral("/joint_states: %1")
-    .arg(r >= 0.0 ? QStringLiteral("%1 Hz").arg(r, 0, 'f', 1) : QStringLiteral("no data")));
-  node_cnt_lbl_->setText(QStringLiteral("nodes: %1").arg(detected_nodes_.size()));
+  // ── Stats line ──
+  {
+    const double r = js_st_.rateHz();
+    QString js = r >= 0.0 ? QStringLiteral("%1 Hz").arg(r, 0, 'f', 1)
+                          : QStringLiteral("no data");
+    int active = 0;
+    for (const auto & s : ctrl_states_) if (s == "active") ++active;
+    stat_line_lbl_->setText(QStringLiteral("js %1 · nodes %2 · controllers %3/%4 active")
+      .arg(js).arg(detected_nodes_.size()).arg(active).arg(ctrl_names_.size()));
+  }
 
-  int active = 0;
   if (controllers_ok_) {
     ctrl_table_->setRowCount(static_cast<int>(ctrl_names_.size()));
     for (int i = 0; i < static_cast<int>(ctrl_names_.size()); ++i) {
@@ -471,7 +446,6 @@ void MonitorWidget::refreshOverview() {
         : (state == QLatin1String("configured") || state == QLatin1String("inactive"))
             ? QColor(230, 190, 60) : QColor(230, 80, 80);
       st->setForeground(QBrush(c));
-      if (state == QLatin1String("active")) ++active;
       ctrl_table_->setItem(i, 0, n);
       ctrl_table_->setItem(i, 1, st);
       ctrl_table_->setItem(i, 2, ty);
@@ -484,20 +458,32 @@ void MonitorWidget::refreshOverview() {
     ctrl_table_->setItem(0, 1, st);
     ctrl_table_->setItem(0, 2, new QTableWidgetItem(QStringLiteral("—")));
   }
-  ctrl_cnt_lbl_->setText(QStringLiteral("controllers: %1 active").arg(active));
-
-  node_table_->setRowCount(static_cast<int>(kExpectedNodes.size()));
-  for (int i = 0; i < static_cast<int>(kExpectedNodes.size()); ++i) {
+  node_table_->setRowCount(static_cast<int>(std::size(kExpectedNodes)));
+  for (int i = 0; i < static_cast<int>(std::size(kExpectedNodes)); ++i) {
     const auto & en = kExpectedNodes[i];
     bool found = false;
     for (const auto & dn : detected_nodes_) {
       if (nodeNameMatch(QString::fromStdString(dn), en.name)) { found = true; break; }
     }
-    auto * s = new QTableWidgetItem(found ? QStringLiteral("online") : QStringLiteral("missing"));
-    s->setForeground(QBrush(found ? QColor(60, 180, 80) : QColor(230, 80, 80)));
+    QString status;
+    QColor color;
+    if (found) { status = QStringLiteral("online"); color = QColor(60, 180, 80); }
+    else if (en.optional) { status = QStringLiteral("missing (optional)"); color = QColor(230, 190, 60); }
+    else { status = QStringLiteral("missing"); color = QColor(230, 80, 80); }
+    auto * s = new QTableWidgetItem(status);
+    s->setForeground(QBrush(color));
     node_table_->setItem(i, 0, new QTableWidgetItem(en.name));
     node_table_->setItem(i, 1, new QTableWidgetItem(en.role));
     node_table_->setItem(i, 2, s);
+  }
+
+  // ── Sim control buttons — gated on service availability + sim state ──
+  if (sim_ctl_) {
+    const bool ready = sim_ctl_->servicesReady();
+    btn_pause_->setEnabled(ready && sim_state_ == SimState::Running);
+    btn_continue_->setEnabled(ready && sim_state_ == SimState::Paused);
+    btn_reset_sim_->setEnabled(ready);
+    btn_reset_world_->setEnabled(ready);
   }
 
   updateNotables();
@@ -519,7 +505,7 @@ void MonitorWidget::updateNotables() {
     for (const auto & dn : detected_nodes_) {
       if (nodeNameMatch(QString::fromStdString(dn), en.name)) { found = true; break; }
     }
-    if (!found && en.role != QLatin1String("3D view (optional)")) {
+    if (!found && !en.optional) {
       addAnomaly(QStringLiteral("node missing: %1 (%2)").arg(en.name, en.role),
                  QStringLiteral("#e77"));
     }
@@ -597,6 +583,13 @@ void MonitorWidget::refreshLog() {
   if (!log_dirty_) return;
   log_dirty_ = false;
 
+  log_view_->clear();
+  for (const auto & e : visibleLogEntries()) {
+    log_view_->appendHtml(logHtml(e));
+  }
+}
+
+std::vector<LogEntry> MonitorWidget::visibleLogEntries() const {
   int min_level = 0;
   switch (log_level_cb_->currentIndex()) {
     case 1: min_level = 30; break;
@@ -606,12 +599,13 @@ void MonitorWidget::refreshLog() {
   const QString src = log_source_cb_->currentIndex() == 0
     ? QString() : log_source_cb_->currentText();
 
-  log_view_->clear();
+  std::vector<LogEntry> out;
   for (const auto & e : log_buf_) {
     if (e.level < min_level) continue;
     if (!src.isEmpty() && e.source != src) continue;
-    log_view_->appendHtml(logHtml(e));
+    out.push_back(e);
   }
+  return out;
 }
 
 void MonitorWidget::refreshSensors() {
@@ -723,6 +717,44 @@ void MonitorWidget::onLogFilterChanged() {
 
 void MonitorWidget::onJointGroupChanged(int /*index*/) {
   refreshJoints();
+}
+
+void MonitorWidget::onSimPause() {
+  if (sim_ctl_) sim_ctl_->request(SimControl::Action::Pause);
+}
+
+void MonitorWidget::onSimContinue() {
+  if (sim_ctl_) sim_ctl_->request(SimControl::Action::Continue);
+}
+
+void MonitorWidget::onSimResetSim() {
+  if (sim_ctl_) sim_ctl_->request(SimControl::Action::ResetSim);
+}
+
+void MonitorWidget::onSimResetWorld() {
+  if (sim_ctl_) sim_ctl_->request(SimControl::Action::ResetWorld);
+}
+
+void MonitorWidget::onSaveLog() {
+  const auto entries = visibleLogEntries();
+  const QString path = QFileDialog::getSaveFileName(
+    this, QStringLiteral("Save log"), QString(),
+    QStringLiteral("Log files (*.log);;All files (*)"));
+  if (path.isEmpty()) return;
+
+  QFile f(path);
+  if (!f.open(QIODevice::WriteOnly | QIODevice::Text)) {
+    RCLCPP_WARN(node_->get_logger(), "cannot open %s for writing",
+                path.toStdString().c_str());
+    return;
+  }
+  QTextStream out(&f);
+  for (const auto & e : entries) {
+    out << QStringLiteral("[%1] %2: %3\n")
+            .arg(levelName(e.level), e.source, e.text);
+  }
+  RCLCPP_INFO(node_->get_logger(), "saved %zu log entries to %s",
+              entries.size(), path.toStdString().c_str());
 }
 
 }  // namespace ylr1d_hmi

@@ -9,7 +9,9 @@
 #include "ylr1d_translate/action/gripper_move.hpp"
 
 #include <QWidget>
+#include <QColor>
 #include <QLabel>
+#include <QPointF>
 #include <QSlider>
 #include <QDoubleSpinBox>
 #include <QComboBox>
@@ -22,9 +24,34 @@
 #include <string>
 #include <vector>
 
+class QPaintEvent;
+class QPainter;
+
 namespace ylr1d_hmi {
 
-class ChassisDirectionWidget;
+/// 底盘运动方向可视化。模式与 ChassisMove.mode 一致：0 平移 / 1 旋转 / 2 停车。
+/// 方位约定：车头朝上（屏幕上方，对应 +X 前方），direction=0 指向上，
+/// 正方向为左转（视觉逆时针），与 rotate 正角速度方向一致。
+/// 平移：直线箭头指向 direction，长度 ∝ |speed|（speed<0 反向）；
+/// 旋转：圆弧箭头从顶部起，弧长 ∝ |speed|，正角速度逆时针；停车：红色方块。
+class ChassisDirectionWidget : public QWidget {
+public:
+  explicit ChassisDirectionWidget(QWidget * parent = nullptr);
+  void setParams(int mode, double direction, double speed);
+
+protected:
+  void paintEvent(QPaintEvent *) override;
+
+private:
+  static void drawLineArrow(QPainter & p, const QPointF & from, const QPointF & to,
+                            const QColor & color);
+  static void drawArcArrow(QPainter & p, const QPointF & center, double radius,
+                           int start16, int sweep16, const QColor & color);
+
+  int mode_{2};
+  double direction_{0.0};
+  double speed_{0.0};
+};
 
 /// 传输层 HMI：向 ylr1d_translate 发送 action goal
 /// （/chassis_move、/arm_move、/gripper_move）。
@@ -108,7 +135,6 @@ private:
   void sendArm();
   void sendGripper(bool open);
 
-  void setStatus(QLabel * lbl, const QString & text, bool ok);
   void appendLog(const QString & msg);
   void refreshConnections();
 };

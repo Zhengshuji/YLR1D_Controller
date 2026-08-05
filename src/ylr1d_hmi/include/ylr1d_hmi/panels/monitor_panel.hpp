@@ -13,6 +13,7 @@
 
 #include <QWidget>
 #include <QLabel>
+#include <QPushButton>
 #include <QTableWidget>
 #include <QListWidget>
 #include <QTabWidget>
@@ -27,25 +28,12 @@
 #include <string>
 #include <vector>
 
-#include "ylr1d_hmi/panels/topic_status.hpp"
+#include "ylr1d_hmi/panels/monitor_nodes.hpp"
+#include "ylr1d_hmi/config/joint_defs.hpp"
+#include "ylr1d_hmi/common/sim_control.hpp"
+#include "ylr1d_hmi/common/topic_status.hpp"
 
 namespace ylr1d_hmi {
-
-/// Joint definition for the monitor's joint table (limits in SI).
-struct MonitorJointDef {
-  QString label;
-  std::string name;
-  bool is_velocity{false};   // true = wheel (velocity control)
-  bool is_prismatic{false};  // true = translational joint (unit m / m/s)
-  double lower{-3.14};
-  double upper{3.14};
-};
-
-/// One expected node the monitor tracks for liveness.
-struct ExpectedNode {
-  QString name;  // node name (namespace slash stripped)
-  QString role;
-};
 
 /// One logical sensor row: subscribes a topic, tracks liveness.
 struct SensorRow {
@@ -54,12 +42,6 @@ struct SensorRow {
   int kind{0};  // 0=Image, 1=PointCloud2, 2=LaserScan, 3=Imu
   TopicStatus st;
   QLabel * cell{nullptr};
-};
-
-/// One dropdown entry in the Joints tab.
-struct JointGroup {
-  QString name;
-  std::vector<MonitorJointDef> joints;
 };
 
 /// A captured /rosout entry.
@@ -126,10 +108,12 @@ private:
   QTimer * refresh_timer_{nullptr};
 
   // ── UI (Overview) ──
+  QPushButton * btn_pause_{nullptr};
+  QPushButton * btn_continue_{nullptr};
+  QPushButton * btn_reset_sim_{nullptr};
+  QPushButton * btn_reset_world_{nullptr};
   QLabel * sim_status_lbl_{nullptr};
-  QLabel * js_rate_lbl_{nullptr};
-  QLabel * node_cnt_lbl_{nullptr};
-  QLabel * ctrl_cnt_lbl_{nullptr};
+  QLabel * stat_line_lbl_{nullptr};
   QTableWidget * ctrl_table_{nullptr};
   QTableWidget * node_table_{nullptr};
   QListWidget * anomaly_list_{nullptr};
@@ -139,6 +123,7 @@ private:
   QComboBox * log_source_cb_{nullptr};
   QLabel * log_count_lbl_{nullptr};
   QLabel * milestone_lbl_{nullptr};
+  QPushButton * log_save_btn_{nullptr};
   QPlainTextEdit * log_view_{nullptr};
 
   // ── UI (Sensors) ──
@@ -156,6 +141,12 @@ private:
   bool log_dirty_{true};
   int summary_counter_{0};
 
+  // ── Sim state (hysteresis against clock jitter on a loaded machine) ──
+  enum class SimState { Unknown, Running, Paused };
+  SimState sim_state_{SimState::Unknown};
+  int stall_count_{0};
+  std::unique_ptr<SimControl> sim_ctl_;
+
   // ── Helpers ──
   template<typename MsgT>
   rclcpp::SubscriptionBase::SharedPtr makeStatusSub(const std::string & topic,
@@ -166,6 +157,12 @@ private:
   void onRefresh();
   void onLogFilterChanged();
   void onJointGroupChanged(int index);
+
+  void onSimPause();
+  void onSimContinue();
+  void onSimResetSim();
+  void onSimResetWorld();
+  void onSaveLog();
 
   void onRosout(const rcl_interfaces::msg::Log::SharedPtr m);
   void onJointState(const sensor_msgs::msg::JointState::SharedPtr m);
@@ -184,6 +181,9 @@ private:
   void refreshJoints();
   void updateNotables();
   void addAnomaly(const QString & text, const QString & color);
+  /// Log entries passing the current Level/Source filter — shared by
+  /// refreshLog() and the Save-to-file action.
+  std::vector<LogEntry> visibleLogEntries() const;
 
   /// HTML-color a log line for the plain-text stream.
   static QString logHtml(const LogEntry & e);
