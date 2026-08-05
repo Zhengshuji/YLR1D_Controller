@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>ylr1d_test</name>
+  <version>0.0.0</version>
+  <description>YLR1D functional test package (unified smoke tests)</description>
+  <maintainer email="2607430020@qq.com">zsj</maintainer>
+  <license>BSD</license>
+
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>ylr1d_description</exec_depend>
+  <exec_depend>ylr1d_plant</exec_depend>
+  <exec_depend>ylr1d_control_sim</exec_depend>
+  <exec_depend>ylr1d_translate</exec_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

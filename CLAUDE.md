@@ -50,6 +50,12 @@ export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:$(pwd)/src
 - WSL 下 GPU 渲染受限，Gazebo 需 `LIBGL_ALWAYS_SOFTWARE=1`
 - Gazebo Classic 在 WSL 下启动很慢（~30-60s 控制器才完全加载），务必耐心等待 `ros2 control list_controllers` 全部显示 `active`
 
+### 功能测试约定
+- 功能测试统一收敛到 `ylr1d_test` 包（`src/ylr1d_tools/ylr1d_test`），入口脚本 `src/ylr1d_tools/scripts/run_tests.sh`，结果落盘 `test_results/`（已加入 `.gitignore`）。详见 [ylr1d_test README](src/ylr1d_tools/ylr1d_test/README.md)。
+- 新增/改动功能包时，同步补充/更新对应测试（Tier0 `env` 环境检查、Tier1 各层冒烟、Tier2 集成/全流程）。
+- 需 ROS2 的测试必须**独立 launch**（`ylr1d_test` 自带 `plant_stack.launch.py` / `test_stack.launch.py`），**不得并入 bringup**（bringup 一行不改）。
+- 测试互不干扰：独立进程组 + 测试前后清理 + 结束核查无残留；失败诊断只给「问题信息 + 解决方案建议」。
+
 ### 仿真验证（常用命令）
 
 #### 一键启动（完整闭环，推荐）
