@@ -16,7 +16,7 @@
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>
   <exec_depend>ylr1d_plant</exec_depend>
-  <exec_depend>ylr1d_control_sim</exec_depend>
+  <exec_depend>ylr1d_control</exec_depend>
   <exec_depend>ylr1d_translate</exec_depend>
   <exec_depend>ylr1d_hmi</exec_depend>
 

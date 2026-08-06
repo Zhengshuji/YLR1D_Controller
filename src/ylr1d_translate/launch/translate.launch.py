@@ -7,7 +7,7 @@ def generate_launch_description():
 
     依赖下层已运行：
         ros2 launch ylr1d_plant gazebo.launch.py
-        ros2 launch ylr1d_control_sim position_simulate.launch.py
+        ros2 launch ylr1d_control position_simulate.launch.py
     """
     return LaunchDescription([
         Node(

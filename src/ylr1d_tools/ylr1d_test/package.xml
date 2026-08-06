@@ -14,7 +14,7 @@
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>ylr1d_description</exec_depend>
   <exec_depend>ylr1d_plant</exec_depend>
-  <exec_depend>ylr1d_control_sim</exec_depend>
+  <exec_depend>ylr1d_control</exec_depend>
   <exec_depend>ylr1d_translate</exec_depend>
 
   <export>

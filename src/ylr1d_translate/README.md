@@ -1,13 +1,13 @@
 # ylr1d_translate — 转译层
 
-位于上层（规划层 / 上层 HMI）与控制层 `ylr1d_control_sim` 之间。基于 action 接收上层的高级指令，解算后以 `/desired_joint_states` 下发到控制层。
+位于上层（规划层 / 上层 HMI）与控制层 `ylr1d_control` 之间。基于 action 接收上层的高级指令，解算后以 `/desired_joint_states` 下发到控制层。
 
 ---
 
 ## 一、功能定位
 
 - **架构位置**：转译层，让上层以"高级指令"而非"关节坐标"的方式操控机器人。
-- **职责**：提供 3 个 action server，把上层指令解算为 `ylr1d_control_sim` 需要的期望值。
+- **职责**：提供 3 个 action server，把上层指令解算为 `ylr1d_control` 需要的期望值。
   - **底盘**：把"运动方式 + 方向 + 速度"解算为 4 转向角 + 4 轮速（先转向后移动）
   - **机械臂 / 躯干**：把"部位名 + 关节坐标"映射为对应关节组的期望位置
   - **夹爪**：把布尔开合映射为两个夹指的目标位置
@@ -47,7 +47,7 @@ ros2 launch ylr1d_bringup bringup_translate.launch.py
 # 终端 1: 物理层
 ros2 launch ylr1d_plant gazebo.launch.py
 # 终端 2: 控制层软仿真
-ros2 launch ylr1d_control_sim position_simulate.launch.py
+ros2 launch ylr1d_control position_simulate.launch.py
 # 终端 3: 转译层
 ros2 launch ylr1d_translate translate.launch.py
 # 终端 4: 上层客户端（转译层 HMI，发 action goal）
@@ -146,7 +146,7 @@ ros2 action send_goal /gripper_move ylr1d_translate/action/GripperMove \
 
 ### 关节表
 
-关节顺序与 `ylr1d_control_sim`（及 `/desired_joint_states` 约定）完全一致，定义于 `joint_names.hpp`：
+关节顺序与 `ylr1d_control`（及 `/desired_joint_states` 约定）完全一致，定义于 `joint_names.hpp`：
 
 | 组 | 数量 | 关节名（顺序） |
 |----|------|----------------|
@@ -169,4 +169,4 @@ ros2 action send_goal /gripper_move ylr1d_translate/action/GripperMove \
 - **勿与控制层 HMI 混用**：完整链路用 `ylr1d_bringup bringup_translate.launch.py`；与控制层 HMI（`hmi.launch.py`）同时使用会竞争同一批关节
 - **JointState 对齐约定**：`/desired_joint_states` 的 name / position / velocity 三数组等长按索引对齐，未用字段填 0（控制层按关节名取期望值）
 - **20Hz 推进**：定时器周期 `LOOP_DT` = 0.05 s；到位判定基于最后一次 `/joint_states` 消息，反馈有延迟时判定会滞后
-- **依赖**：仅 rclcpp / rclcpp_action / std_msgs / sensor_msgs / rosidl_default_generators；与 `ylr1d_control_sim` / `ylr1d_hmi` 仅通过话题 / action 接口耦合，无构建期依赖
+- **依赖**：仅 rclcpp / rclcpp_action / std_msgs / sensor_msgs / rosidl_default_generators；与 `ylr1d_control` / `ylr1d_hmi` 仅通过话题 / action 接口耦合，无构建期依赖

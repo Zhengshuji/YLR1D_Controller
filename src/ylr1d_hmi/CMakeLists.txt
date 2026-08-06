@@ -26,7 +26,7 @@ set(HMI_INCLUDES
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
-# ── 控制层 HMI（面向 ylr1d_control_sim，发 /desired_joint_states）──
+# ── 控制层 HMI（面向 ylr1d_control，发 /desired_joint_states）──
 add_executable(ylr1d_hmi_control
   src/main_control.cpp
   src/panels/hmi_window.cpp

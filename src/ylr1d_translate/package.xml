@@ -3,7 +3,7 @@
 <package format="3">
   <name>ylr1d_translate</name>
   <version>0.0.0</version>
-  <description>转译层：基于 action 接收上层指令，解算并下发到 ylr1d_control_sim（小车底座 / 机械臂 / 夹爪）</description>
+  <description>转译层：基于 action 接收上层指令，解算并下发到 ylr1d_control（小车底座 / 机械臂 / 夹爪）</description>
   <maintainer email="2607430020@qq.com">zsj</maintainer>
   <license>Apache-2.0</license>
 

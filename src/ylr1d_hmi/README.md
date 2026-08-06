@@ -6,12 +6,12 @@
 
 ## 一、功能定位
 
-- **架构位置**：最顶层人机交互，面向 `ylr1d_control_sim` / `ylr1d_translate` 与各传感器话题。
+- **架构位置**：最顶层人机交互，面向 `ylr1d_control` / `ylr1d_translate` 与各传感器话题。
 - **四个面板**：
 
 | 面板 | 可执行 | Launch | 面向 | 用途 |
 |------|--------|--------|------|------|
-| 控制层 HMI | `ylr1d_hmi_control` | `hmi.launch.py` | `ylr1d_control_sim` | 观测 `/joint_states`，发 `/desired_joint_states` |
+| 控制层 HMI | `ylr1d_hmi_control` | `hmi.launch.py` | `ylr1d_control` | 观测 `/joint_states`，发 `/desired_joint_states` |
 | 转译层 HMI | `ylr1d_hmi_translate` | `hmi_translate.launch.py` | `ylr1d_translate` | 发 action goal（底盘 / 机械臂 / 夹爪） |
 | 传感器 HMI | `ylr1d_hmi_sensor` | `sensor_panel.launch.py` | 各传感器话题 | 只读观测相机 / 点云 / 雷达 / 超声波 / IMU |
 | 监视 HMI | rviz2 插件（随 bringup 预加载）或 `ylr1d_hmi_monitor` | `ros2 run` | 仿真全局 | 监视控制器 / 节点 / rosout / 传感器 / 关节；暂停 / 继续 / 重置仿真 |
@@ -55,7 +55,7 @@ ylr1d_hmi/
 └── package.xml
 ```
 
-> 文件按职责分层：面板 UI 类在 `panels/`，共享静态配置在 `config/`（单一来源），跨面板工具在 `common/`（参考 `ylr1d_control_sim` 的文件管理原则）。
+> 文件按职责分层：面板 UI 类在 `panels/`，共享静态配置在 `config/`（单一来源），跨面板工具在 `common/`（参考 `ylr1d_control` 的文件管理原则）。
 
 ---
 
@@ -82,7 +82,7 @@ ros2 launch ylr1d_bringup bringup_translate.launch.py
 
 > - **无头验证**：监视独立窗口与传感器面板可在 `QT_QPA_PLATFORM=offscreen` 下运行。
 > - WSL 下需 X server（WSLg 或 VcXsrv）支持 GUI 显示；`LIBGL_ALWAYS_SOFTWARE=1` 已在各 launch 中自动设置。
-> - **注意**：控制层 HMI 只发布 `/desired_joint_states`，若只启动 HMI + `gazebo_effort.launch.py`（力控方案），该话题无人订阅，滑动不会产生任何运动——必须经过 `ylr1d_control_sim` 过渡。
+> - **注意**：控制层 HMI 只发布 `/desired_joint_states`，若只启动 HMI + `gazebo_effort.launch.py`（力控方案），该话题无人订阅，滑动不会产生任何运动——必须经过 `ylr1d_control` 过渡。
 
 ---
 
@@ -159,7 +159,7 @@ rviz2 插件（随 bringup 的 rviz2 预加载，`ylr1d_description/rviz/display
   - **节点表**：期望节点清单（`monitor_nodes.hpp` 中的 `kExpectedNodes`）逐个匹配 graph 节点名；`translate_server` 与 `rviz2` 标 **optional**——position 链路下它们显示黄色 "missing (optional)" 但**不产生红色 anomaly**
 - **Log**：`/rosout` 流 + 过滤 + 里程碑/异常聚合 + **Save 按钮**（按当前 Level/Source 过滤条件导出 `[LEVEL] source: msg` 文本文件）
 - **Sensors**：全部传感器话题的存活状态
-- **Joints**：按关节分组下拉（与 `ylr1d_control_sim` 分组一致）
+- **Joints**：按关节分组下拉（与 `ylr1d_control` 分组一致）
 
 监视面板的静态配置（期望节点 / 传感器清单 / 关节分组）集中在 `monitor_nodes.hpp` + `config/sensor_topics.hpp` + `config/joint_defs.hpp`（纯头文件、全 inline），仿真控制客户端封装在 `common/sim_control.hpp/.cpp`（`SimControl` 类）。
 

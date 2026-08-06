@@ -70,7 +70,7 @@ struct Highlights {
 ///   Overview — sim clock, controllers, expected nodes, anomaly summary
 ///   Log      — /rosout stream + filter + milestones/anomaly aggregation
 ///   Sensors  — liveness of every sensor topic on the robot
-///   Joints   — dropdown per joint group (matches ylr1d_control_sim grouping)
+///   Joints   — dropdown per joint group (matches ylr1d_control grouping)
 ///
 /// Threading: mirrors the other panels — ROS callbacks run on the GUI thread
 /// (a QTimer calls rclcpp::spin_some), so cached data needs no locking.

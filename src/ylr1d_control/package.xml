@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>ylr1d_control</name>
+  <version>0.0.0</version>
+  <description>
+    控制层：通信节点 + 采样保持器 + 算法层外部接口。订阅期望关节状态与算法层仿真输出，
+    采样保持后转发给算法层仿真控制器节点（/ctrl/[组]/desired、feedback），并下发
+    5 组 ForwardCommandController 命令。不做算法计算，对外接口不变。
+  </description>
+  <maintainer email="2607430020@qq.com">zsj</maintainer>
+  <license>BSD-3-Clause</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>std_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>ylr1d_algorithm_sim</depend>
+
+  <exec_depend>robot_state_publisher</exec_depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

@@ -27,13 +27,13 @@ def generate_launch_description():
 
     聚合：
         ylr1d_plant         gazebo.launch.py             物理层（Gazebo + ros2_control）
-        ylr1d_control_sim   position_simulate.launch.py  控制层软仿真
+        ylr1d_control       position_simulate.launch.py  控制层软仿真
         ylr1d_translate     translate.launch.py          转译层（translate_server，3 个 action server）
         ylr1d_hmi           hmi_translate.launch.py      转译层 HMI（发 action goal）
         ylr1d_hmi           sensor_panel.launch.py       传感器观测面板
 
     链路：translate HMI → action goal → translate_server → /desired_joint_states
-          → control_sim → 5 组命令 → plant(Gazebo)
+          → control → 5 组命令 → plant(Gazebo)
 
     用法:
         ros2 launch ylr1d_bringup bringup_translate.launch.py [world:=<world 文件名>]
@@ -53,7 +53,7 @@ def generate_launch_description():
     return LaunchDescription([
         declare_world,
         _include("ylr1d_plant", "gazebo.launch.py", [("world", world_arg)]),
-        _include("ylr1d_control_sim", "position_simulate.launch.py"),
+        _include("ylr1d_control", "position_simulate.launch.py"),
         _include("ylr1d_translate", "translate.launch.py"),
         _include("ylr1d_hmi", "hmi_translate.launch.py"),
         _include("ylr1d_hmi", "sensor_panel.launch.py"),

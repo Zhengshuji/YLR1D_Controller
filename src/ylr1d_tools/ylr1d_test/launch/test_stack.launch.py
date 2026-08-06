@@ -27,14 +27,17 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(_launch_path("ylr1d_test", "plant_stack.launch.py")),
         launch_arguments={"world": world_arg}.items(),
     )
+    algorithm_sim = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(_launch_path("ylr1d_algorithm_sim", "sim_controller.launch.py")))
     control_sim = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(_launch_path("ylr1d_control_sim", "position_simulate.launch.py")))
+        PythonLaunchDescriptionSource(_launch_path("ylr1d_control", "position_simulate.launch.py")))
     translate = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(_launch_path("ylr1d_translate", "translate.launch.py")))
 
     ld = LaunchDescription()
     ld.add_action(declare_world)
     ld.add_action(plant)
+    ld.add_action(algorithm_sim)
     ld.add_action(control_sim)
     ld.add_action(translate)
     return ld

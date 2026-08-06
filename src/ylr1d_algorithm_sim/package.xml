@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>ylr1d_algorithm_sim</name>
+  <version>0.0.0</version>
+  <description>
+    算法层：控制算法与被控对象模型的 ROS2 包（阶段 B 起）。
+    核心为纯 C++ + Eigen（协同控制器 P=1、独立 PID、整体位置/速度仿真对象，支持直通），
+    壳为"仿真控制器"组件（每组一个节点，固定框架：输入→协同→独立→仿真→输出），
+    由 control 层分类编排、通过 topic 驱动，composition 合成单进程。
+  </description>
+  <maintainer email="2607430020@qq.com">zsj</maintainer>
+  <license>BSD-3-Clause</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>rclcpp_components</depend>
+  <depend>std_msgs</depend>
+  <depend>sensor_msgs</depend>
+
+  <test_depend>ament_cmake_gtest</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

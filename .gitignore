@@ -10,5 +10,5 @@ others/
 
 colcon_build.sh
 
-test
+test_results/
 

@@ -23,15 +23,17 @@ def _include(package_name: str, launch_file: str, launch_arguments=None):
 
 
 def generate_launch_description():
-    """控制层完整栈（控制层 → 物理层）。
+    """控制层完整栈（算法层 → 控制层 → 物理层）。
 
     聚合：
-        ylr1d_plant         gazebo.launch.py             物理层（Gazebo + ros2_control）
-        ylr1d_control_sim   position_simulate.launch.py  控制层软仿真
-        ylr1d_hmi           hmi.launch.py                控制层 HMI（发 /desired_joint_states）
-        ylr1d_hmi           sensor_panel.launch.py       传感器观测面板
+        ylr1d_plant           gazebo.launch.py               物理层（Gazebo + ros2_control）
+        ylr1d_algorithm_sim   sim_controller.launch.py       算法层仿真控制器（composition）
+        ylr1d_control         position_simulate.launch.py    控制层采样保持 + 通信
+        ylr1d_hmi             hmi.launch.py                  控制层 HMI（发 /desired_joint_states）
+        ylr1d_hmi             sensor_panel.launch.py         传感器观测面板
 
-    链路：control HMI → /desired_joint_states → control_sim → 5 组命令 → plant(Gazebo)
+    链路：control HMI → /desired_joint_states → control 采样保持
+          → 算法层仿真控制器（/ctrl/<组>/*）→ control → 5 组命令 → plant(Gazebo)
 
     用法:
         ros2 launch ylr1d_bringup bringup_control.launch.py [world:=<world 文件名>]
@@ -51,7 +53,8 @@ def generate_launch_description():
     return LaunchDescription([
         declare_world,
         _include("ylr1d_plant", "gazebo.launch.py", [("world", world_arg)]),
-        _include("ylr1d_control_sim", "position_simulate.launch.py"),
+        _include("ylr1d_algorithm_sim", "sim_controller.launch.py"),
+        _include("ylr1d_control", "position_simulate.launch.py"),
         _include("ylr1d_hmi", "hmi.launch.py"),
         _include("ylr1d_hmi", "sensor_panel.launch.py"),
     ])

@@ -11,7 +11,7 @@ namespace ylr1d_hmi {
 /// One static joint definition. Limits/units are the HMI display envelope and
 /// stay in sync with the robot model authority:
 ///   src/ylr1d_description/config/limits.yaml   (what Gazebo actually loads)
-///   src/ylr1d_control_sim/config/position_control_limits.yaml
+///   src/ylr1d_control/include/ylr1d_control/config/joint_config.hpp
 /// Note: the gripper fingers use the ±0.015 m display envelope here — the
 /// translate layer resolves GripperMove with ±0.014 (see ylr1d_translate
 /// constants), so the two are intentionally slightly different.

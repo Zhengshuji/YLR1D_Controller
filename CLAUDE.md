@@ -7,13 +7,14 @@
 
 ## 一、项目概述
 
-双机械臂 + 全向四轮底盘 + 升降躯干的复合移动机器人仿真，基于 **ROS2 Humble + Gazebo Classic**，全模型 30 关节。六个功能包分层协作：
+双机械臂 + 全向四轮底盘 + 升降躯干的复合移动机器人仿真，基于 **ROS2 Humble + Gazebo Classic**，全模型 30 关节。控制层按"算法 / 控制"解耦，共七个功能包：
 
 | 包 | 职责 |
 |----|------|
 | `ylr1d_description` | 模型资产单一来源（xacro / mesh / config / rviz / world） |
 | `ylr1d_plant` | 物理层（中控）：Gazebo + ros2_control |
-| `ylr1d_control_sim` | 控制层（软仿真）：PID 过渡 → 5 组命令 |
+| `ylr1d_algorithm_sim` | **算法层**（ROS2 包）：纯 C++ 算法核心（PID + P=1 协同 + 位置/速度整体仿真对象，Eigen 向量化）+ 5 个仿真控制器节点（composition 单进程），控制参数（pid/限位/分组）单一来源 |
+| `ylr1d_control` | **控制层**（采样保持器 + 通信节点）：接收期望值与算法层仿真输出，采样保持后转发（`/ctrl/<组>/*`）并下发 5 组命令，不做算法计算 |
 | `ylr1d_translate` | 转译层：上层 action → `/desired_joint_states` |
 | `ylr1d_hmi` | 人机界面：Qt5 四面板观测 + 控制 |
 | `ylr1d_bringup` | 一键启动：聚合各包 launch |
@@ -62,7 +63,7 @@ export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:$(pwd)/src
 ```bash
 ros2 launch ylr1d_bringup bringup_control.launch.py
 ```
-等价于依次启动 `gazebo.launch.py`（position 方案）+ `position_simulate.launch.py` + `hmi.launch.py` + `sensor_panel.launch.py`。
+等价于依次启动 `gazebo.launch.py`（position 方案）+ `sim_controller.launch.py`（算法层 composition）+ `position_simulate.launch.py`（控制层）+ `hmi.launch.py` + `sensor_panel.launch.py`。
 
 #### 力控测试（effort 方案，单独启动）
 ```bash
@@ -126,9 +127,9 @@ pkill -f gzserver; pkill -f gzclient
 **问题**: spawner 在 Gazebo 完全加载前启动会连不上 controller_manager 服务
 **解决**: launch 文件中使用 `TimerAction(period=8.0)` 延迟 spawner 启动
 
-#### 10. control_sim 建议经 launch 启动
-**问题**: 直接 `ros2 run`（不经 launch）时 `pid.yaml` 未加载，pid 退化为预设默认值（kp=4/kd=0.2，非 yaml 的 150/20），控制响应偏软（limit 已编译进头文件，不再受此影响）
-**解决**: 用 `ros2 launch ylr1d_control_sim position_simulate.launch.py` 启动；改 pid 需改 `config/pid.yaml` 后重启节点（运行中 `ros2 param set` 不生效），改 limit 需改头文件后重新编译
+#### 10. control 建议经 launch 启动
+**问题**: 直接 `ros2 run`（不经 launch）时 `pid.yaml` 未加载，pid 退化为预设默认值（位置 kp=150/kd=20、轮子 kp=4/kd=0.1，非 yaml 实际值），控制响应偏离预期（limit 已编译进头文件，不再受此影响）
+**解决**: 算法层用 `ros2 launch ylr1d_algorithm_sim sim_controller.launch.py` 启动（composition 加载 `pid.yaml` → 各组件 `<关节>/pid/*` 参数）；控制层用 `ros2 launch ylr1d_control position_simulate.launch.py` 启动。改 pid 需改 `ylr1d_algorithm_sim/config/pid.yaml` 后重启算法层容器（运行中 `ros2 param set` 不生效），改 limit 需改算法层 `joint_config.hpp` 后重新编译
 
 #### 11. pkill -f 会自匹配（WSL bash）
 **问题**: `pkill -f chassis_simulate` 会匹配到 bash 自身命令行里的同名模式，把执行 shell 杀掉（exit 15）
@@ -137,8 +138,15 @@ pkill -f gzserver; pkill -f gzclient
 #### 12. ylr1d_hmi 静态配置单一来源
 **约定**: `ylr1d_hmi` 的关节定义统一在 `include/ylr1d_hmi/config/joint_defs.hpp`（30 关节原子 + 控制/监视/转译三组视图），传感器话题统一在 `config/sensor_topics.hpp`。改限位/话题只改这两处，并对照 `ylr1d_description/config/limits.yaml` 语境；action 发送公共逻辑在 `common/action_sender.hpp`。
 
-#### 13. ylr1d_control_sim 静态配置单一来源
-**约定**: `ylr1d_control_sim` 的 limit 与关节分组唯一在 `include/ylr1d_control_sim/config/joint_config.hpp`（`kPositionLimits`[26] / `kVelocityLimits`[4] + `jointLimitFor(name)` + 底盘/臂分组常量），pid 在 `config/pid.yaml`（经 launch 加载为 `<关节>/pid/*` 参数）。改限位/关节分组只改头文件后重新编译；改 pid 只改 yaml 后重启节点；改限位前对照 `ylr1d_description/config/limits.yaml` 语境。
+#### 13. 算法层静态配置单一来源（阶段 B 迁移）
+**约定**: 阶段 B 起，`joint_config.hpp` 与 `pid.yaml` 移交算法层 `ylr1d_algorithm_sim`。limit 与关节分组唯一在 `include/algorithm/config/joint_config.hpp`（`kPositionLimits`[26] / `kVelocityLimits`[4] + `jointLimitFor(name)` + `kJointGroups` 组注册表 + 命令话题常量），pid 在 `config/pid.yaml`（launch 全量注入各组件，组件只 declare 自己组内关节参数，多余参数无害）。控制层 include 该头文件取分组/限位/话题。改限位/分组只改头文件后重新编译；改 pid 只改 yaml 后重启算法层容器；改限位前对照 `ylr1d_description/config/limits.yaml` 语境。
+
+#### 15. 算法层仿真控制器话题与启动
+**约定**: 算法层每个仿真控制器节点固定框架 `输入(desired/feedback) → 协同(P=1) → 独立(PID) → 仿真对象(整体 Eigen) → 输出`，经 `/ctrl/<组>/{desired,feedback,output}` 与控制层通信（组：steering/wheels/torso/left_arm/right_arm，定义在 `joint_config.hpp` `kJointGroups`）。节点**只等首帧期望**即初始化（plant 状态 = 期望、feedback = 期望，无瞬态），不依赖反馈首帧——脱离 Gazebo 也能跑软仿真闭环。直通（bypass）参数已支持、launch 切换留待后续。层间时序：`bringup_control.launch.py` 已按「物理层 → 算法层 → 控制层 → HMI」聚合，单独启动须先起算法层再起控制层。
+
+#### 14. 算法层 .so 的头文件传递（ament_export_targets）
+**问题**: `ament_export_libraries(ylr1d_algorithm_sim)` 只导出链接名、不导出 CMake target，消费方 `target_link_libraries(foo ylr1d_algorithm_sim)` 会当裸库名链接，include 目录与编译特性**传不过去**（fatal: ylr1d_algorithm_sim/controller/pid.hpp: No such file）
+**解决**: 算法层必须 `install(TARGETS ... EXPORT <名>)` + `ament_export_targets(<名> HAS_LIBRARY_TARGET)`（名一致），消费方链接**命名空间 target** `ylr1d_algorithm_sim::ylr1d_algorithm_sim`。改了 export 后若仍报错，删 `build/ylr1d_control` 强制重配（colcon 缓存旧 config）。
 
 ---
 

@@ -4,8 +4,8 @@
 检查项：
   1. 工具链    ros2 / colcon / gazebo / xacro（xacro 为空是正常，需经 xacro_utils）
   2. Python 依赖 rclpy / yaml / ament_index_python / launch / launch_ros
-  3. 工作空间   install/setup.bash、6 包 install/share 齐全、各包 launch/config 存在
-  4. 配置完整性 description limits.yaml、control_sim joint_config.hpp + pid.yaml、plant controllers.yaml
+  3. 工作空间   install/setup.bash、7 包 install/share 齐全、各包 launch/config 存在
+  4. 配置完整性 description limits.yaml、control joint_config.hpp + pid.yaml、plant controllers.yaml
   5. 残留进程   gzserver/gzclient 有 → WARN
   6. WSL 环境   /proc/version 含 microsoft、DISPLAY、/mnt/wslg
   7. GAZEBO_MODEL_PATH 是否含 src
@@ -16,16 +16,20 @@ import sys
 
 from . import common
 
-PACKAGES = ["ylr1d_description", "ylr1d_plant", "ylr1d_control_sim",
-            "ylr1d_translate", "ylr1d_hmi", "ylr1d_bringup"]
+PACKAGES = ["ylr1d_description", "ylr1d_plant", "ylr1d_control",
+            "ylr1d_algorithm_sim", "ylr1d_translate", "ylr1d_hmi", "ylr1d_bringup"]
 
 # 各包期望存在的 launch / config 文件（相对 src/<pkg>/）
 PACKAGE_FILES = {
     "ylr1d_description": ["launch", "urdf/ylr1d.xacro", "config/limits.yaml",
                           "config/sensors.yaml", "worlds/empty.world"],
     "ylr1d_plant": ["launch/gazebo.launch.py", "config/controllers.yaml"],
-    "ylr1d_control_sim": ["launch/position_simulate.launch.py",
-                          "config/pid.yaml", "include/ylr1d_control_sim/config/joint_config.hpp"],
+    "ylr1d_control": ["launch/position_simulate.launch.py"],
+    "ylr1d_algorithm_sim": ["launch/sim_controller.launch.py",
+                            "config/pid.yaml",
+                            "include/algorithm/config/joint_config.hpp",
+                            "controller/include/controller/controller.hpp",
+                            "plant/include/plant/plant.hpp"],
     "ylr1d_translate": ["launch/translate.launch.py"],
     "ylr1d_hmi": ["launch/hmi.launch.py"],
     "ylr1d_bringup": ["launch/bringup_control.launch.py",
@@ -34,8 +38,8 @@ PACKAGE_FILES = {
 
 CONFIG_CHECKS = [
     "src/ylr1d_description/config/limits.yaml",
-    "src/ylr1d_control_sim/include/ylr1d_control_sim/config/joint_config.hpp",
-    "src/ylr1d_control_sim/config/pid.yaml",
+    "src/ylr1d_algorithm_sim/include/algorithm/config/joint_config.hpp",
+    "src/ylr1d_algorithm_sim/config/pid.yaml",
     "src/ylr1d_plant/config/controllers.yaml",
 ]
 
@@ -92,7 +96,7 @@ def run():
             return (os.path.isdir(os.path.join(ws, "install", p, "share", p)) or
                     os.path.isdir(os.path.join(ws, "install", "share", p)))
         missing_pkgs = [p for p in PACKAGES if not _installed(p)]
-        check("6 包已安装", not missing_pkgs,
+        check("7 包已安装", not missing_pkgs,
               note=("齐全" if not missing_pkgs else "缺失: " + ",".join(missing_pkgs)))
         src_missing = {}
         for p, rels in PACKAGE_FILES.items():

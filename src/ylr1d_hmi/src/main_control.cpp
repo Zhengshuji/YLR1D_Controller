@@ -12,7 +12,7 @@ int main(int argc, char ** argv) {
   // ROS2 初始化
   rclcpp::init(argc, argv);
 
-  // 创建节点（面向控制层 ylr1d_control_sim）
+  // 创建节点（面向控制层 ylr1d_control）
   auto node = std::make_shared<rclcpp::Node>("ylr1d_hmi_control");
 
   // 主窗口（lite 布局）

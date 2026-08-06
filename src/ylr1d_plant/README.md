@@ -6,7 +6,7 @@
 
 ## 一、功能定位
 
-- **架构位置**：物理层/中控，承接 `ylr1d_control_sim` 下发的命令，模拟真实机器人。
+- **架构位置**：物理层/中控，承接 `ylr1d_control` 下发的命令，模拟真实机器人。
 - **职责**：spawn 机器人、启动 6 个 ros2_control 控制器、把命令落到 Gazebo、发布关节反馈。
 - **提供两套物理接口**：**position 方案**直接下发目标角度；**effort 力控方案**下发力矩（更贴近真实执行器）。
 - **不做什么**：不涉及上层控制逻辑（软仿真 / 转译 / HMI），只负责"执行命令 + 给反馈"。
@@ -40,7 +40,7 @@ ros2 launch ylr1d_plant gazebo_effort.launch.py
 ros2 launch ylr1d_plant gazebo.launch.py world:=sensors_test.world
 ```
 
-与 `ylr1d_control_sim` + `ylr1d_hmi` 组成完整闭环时，用 `ylr1d_bringup` 一键启动：
+与 `ylr1d_control` + `ylr1d_hmi` 组成完整闭环时，用 `ylr1d_bringup` 一键启动：
 
 ```bash
 ros2 launch ylr1d_bringup bringup.launch.py

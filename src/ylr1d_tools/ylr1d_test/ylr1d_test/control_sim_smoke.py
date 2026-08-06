@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
-"""Tier1 control_sim 无头冒烟测试（迁移自 ylr1d_control_sim/test/position_simulate_smoke_test.py）。
+"""Tier1 control_sim 无头冒烟测试（阶段 B：算法层 ROS2 化后适配）。
 
 流程：
-  1. 后台启动 ros2 launch ylr1d_control_sim position_simulate.launch.py
-  2. 校验 pid.yaml 已映射为节点参数（<关节>/pid/*；limit 为头文件常量，无 <关节>/limit/*）
-  3. 发布 /joint_states 初始位置，触发节点初始化
-  4. 发布 /desired_joint_states 期望值
-  5. 采样 5 个控制器命令话题 + /simulated_* 状态，断言:
-     - 位置关节趋近期望且不越限位
+  1. 后台启动算法层 sim_controller.launch.py（composition） + 控制层 position_simulate.launch.py
+  2. 校验 pid.yaml 已映射为算法层仿真控制器节点参数（<关节>/pid/*；limit 为头文件常量）
+  3. 发布 /desired_joint_states 期望值（算法层只等首帧期望即初始化，无需 /joint_states）
+  4. 采样 5 个控制器命令话题 + /simulated_* 状态，断言:
+     - 位置关节趋近期望且不越限位（超限期望被钳制到限位）
      - 轮子速度趋近期望且受 max_vel 限制
      - 命令话题长度正确 (4/4/4/9/9)
 """
@@ -24,7 +23,8 @@ from std_msgs.msg import Float64MultiArray
 
 from . import common
 
-PACKAGE = "ylr1d_control_sim"
+PACKAGE = "ylr1d_control"
+ALG_PACKAGE = "ylr1d_algorithm_sim"
 
 # ── 30 个关节（固定顺序，与 controllers.yaml 一致） ──
 STEERING = ["Joint_Base_to_RFWheelF", "Joint_Base_to_LFWheelF",
@@ -43,9 +43,7 @@ RIGHT = ["Joint_Body2_to_RightArm1", "Joint_RightArm1_to_RightArm2",
          "Joint_RightArm4_to_RightArm5", "Joint_RightArm5_to_RightArm6",
          "Joint_RightArm6_to_RightArm7", "Joint_RightArm7_to_RightFinger1",
          "Joint_RightArm7_to_RightFinger2"]
-ALL_NAMES = STEERING + WHEELS + TORSO + LEFT + RIGHT
-
-# 初始位置（模拟 /joint_states 首条反馈）
+# 初始位置（物理层期望初始值，用于 steer 趋近断言）
 INIT_POS = {
     "Joint_Base_to_RFWheelF": 2.497, "Joint_Base_to_LFWheelF": -2.497,
     "Joint_Base_to_RBWheelF": 0.644, "Joint_Base_to_LBWheelF": -0.644,
@@ -76,6 +74,22 @@ CMD_TOPICS = [
 ]
 
 
+def wait_for_nodes(node_names, timeout=30):
+    """轮询 ros2 node list 直到所有节点出现（组件加载/DDS 发现慢，见 CLAUDE 坑 3）。"""
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        try:
+            proc = subprocess.run(["ros2", "node", "list"],
+                                  capture_output=True, text=True, timeout=10.0)
+            seen = set(proc.stdout.split()) if proc.returncode == 0 else set()
+            if all(("/" + n) in seen for n in node_names):
+                return True
+        except subprocess.TimeoutExpired:
+            pass
+        time.sleep(1.0)
+    return False
+
+
 class SmokeTestNode(Node):
     def __init__(self):
         super().__init__("smoke_test")
@@ -88,7 +102,6 @@ class SmokeTestNode(Node):
         for t in self.sim_samples:
             self.create_subscription(JointState, t,
                                      self._mk_sim_cb(t), 10)
-        self.js_pub = self.create_publisher(JointState, "/joint_states", 10)
         self.desired_pub = self.create_publisher(JointState, "/desired_joint_states", 10)
 
     def _mk_cmd_cb(self, topic):
@@ -101,16 +114,6 @@ class SmokeTestNode(Node):
             d = dict(zip(msg.name, zip(msg.position, msg.velocity)))
             self.sim_samples[topic].append(d)
         return cb
-
-    def publish_initial(self):
-        msg = JointState()
-        msg.header.stamp = self.get_clock().now().to_msg()
-        for n in ALL_NAMES:
-            msg.name.append(n)
-            msg.position.append(INIT_POS.get(n, 0.0))
-            msg.velocity.append(0.0)
-            msg.effort.append(0.0)
-        self.js_pub.publish(msg)
 
     def publish_desired(self):
         # name/position/velocity/effort 必须等长（并行数组）
@@ -142,12 +145,17 @@ class SmokeTestNode(Node):
 def run():
     """执行 control_sim 冒烟测试，返回 (ok, detail_lines, missing_layer)。"""
     lines = []
-    launch = None
+    launch_alg = None
+    launch_ctl = None
     ok = False
     try:
-        # 1) 后台启动 launch（独立进程组）
-        common.log("启动 position_simulate.launch.py ...")
-        launch = common.start_process_group(
+        # 1) 后台启动算法层 + 控制层（独立进程组，脱离 Gazebo 软仿真闭环）
+        common.log("启动 sim_controller.launch.py（算法层 composition） ...")
+        launch_alg = common.start_process_group(
+            ["ros2", "launch", ALG_PACKAGE, "sim_controller.launch.py"])
+        time.sleep(6.0)
+        common.log("启动 position_simulate.launch.py（控制层） ...")
+        launch_ctl = common.start_process_group(
             ["ros2", "launch", PACKAGE, "position_simulate.launch.py"])
         time.sleep(5.0)
 
@@ -156,23 +164,37 @@ def run():
         spin = rclpy.executors.SingleThreadedExecutor()
         spin.add_node(node)
 
-        # 2) 参数校验（pid.yaml -> <关节>/pid/*；limit 为头文件常量）
-        common.log("[1] 参数校验 (pid.yaml -> 节点参数; limit 为头文件常量)")
+        # 2) 等 5 个 sim 节点就绪（组件加载/DDS 发现慢，避免参数查询返回 None）
+        common.log("等待算法层 5 个 sim 节点就绪 ...")
+        if not wait_for_nodes(["steering_sim", "wheels_sim", "torso_sim",
+                               "left_arm_sim", "right_arm_sim"]):
+            lines.append("FAIL 算法层 sim 节点未全部就绪")
+            return False, lines, "control_sim"
+
+        # 3) 参数校验（pid.yaml -> 算法层仿真控制器节点参数；limit 为头文件常量）
+        common.log("[1] 参数校验 (pid.yaml -> 算法层节点参数; limit 为头文件常量)")
         ok = True
-        chassis_params = {
+        # 位置组节点（steering_sim）：转向 pid
+        steering_params = {
             "Joint_Base_to_RFWheelF/pid/kp": 150.0,
             "Joint_Base_to_RFWheelF/pid/kd": 20.0,
-            # Joint_Base_to_Body1 属 arm 节点管理，此处不声明，不在此校验
-            "Joint_RFWheelF_to_RFWheel/pid/kp": 4.0,
         }
-        vals = node.get_param("chassis_simulate", list(chassis_params.keys()))
-        for name, got in zip(chassis_params.keys(), vals):
-            exp = chassis_params[name]
+        vals = node.get_param("steering_sim", list(steering_params.keys()))
+        for name, got in zip(steering_params.keys(), vals):
+            exp = steering_params[name]
             good = got is not None and abs(got - exp) < 1e-9
             ok = ok and good
             lines.append("%s %s = %s (期望 %s)" % ("PASS" if good else "FAIL", name, got, exp))
-        vals = node.get_param("arm_simulate", [
-            "Joint_Body2_to_LeftArm1/pid/kp",   # 期望 150.0
+        # 速度组节点（wheels_sim）：轮子 pid
+        vals = node.get_param("wheels_sim", ["Joint_RFWheelF_to_RFWheel/pid/kp"])
+        for name, got, exp in zip(["Joint_RFWheelF_to_RFWheel/pid/kp"],
+                                  vals, [4.0]):
+            good = got is not None and abs(got - exp) < 1e-9
+            ok = ok and good
+            lines.append("%s %s = %s (期望 %s)" % ("PASS" if good else "FAIL", name, got, exp))
+        # 臂节点（left_arm_sim）：主关节 + 夹爪 pid
+        vals = node.get_param("left_arm_sim", [
+            "Joint_Body2_to_LeftArm1/pid/kp",    # 期望 150.0
             "Joint_LeftArm7_to_LeftFinger1/pid/kp",  # 期望 10.0
         ])
         for name, got, exp in zip(
@@ -187,27 +209,20 @@ def run():
             return False, lines, "control_sim"
         lines.append("PASS 参数校验全部通过")
 
-        # 3) 发布初始 joint_states（多发几次确保收到）
-        common.log("[2] 初始化: 发布 /joint_states")
-        for _ in range(15):
-            node.publish_initial()
-            for _ in range(2):
-                spin.spin_once(timeout_sec=0.1)
+        # 4) 发布期望（算法层只等首帧期望即初始化，无需 /joint_states）
+        common.log("[2] 发布 /desired_joint_states")
+        node.publish_desired()
         time.sleep(1.0)
 
-        # 4) 发布期望
-        common.log("[3] 发布 /desired_joint_states")
-        node.publish_desired()
-
         # 5) 采样 5s
-        common.log("[4] 采样控制器命令 + 仿真状态 (5s)...")
+        common.log("[3] 采样控制器命令 + 仿真状态 (5s)...")
         end = time.time() + 5.0
         while time.time() < end:
             spin.spin_once(timeout_sec=0.05)
             node.publish_desired()  # 持续刷新期望，避免丢失
 
         # 6) 断言
-        common.log("[5] 断言")
+        common.log("[4] 断言")
         fail = []
 
         def check(cond, desc):
@@ -271,7 +286,9 @@ def run():
                 rclpy.shutdown()
         except Exception:
             pass
-        if launch is not None:
-            common.kill_process_group(launch)
+        if launch_alg is not None:
+            common.kill_process_group(launch_alg)
+        if launch_ctl is not None:
+            common.kill_process_group(launch_ctl)
         common.cleanup_residual(verbose=False)
     return ok, lines, ("control_sim" if not ok else None)

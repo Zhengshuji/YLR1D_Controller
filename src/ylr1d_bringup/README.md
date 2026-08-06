@@ -1,6 +1,6 @@
 # ylr1d_bringup — 一键启动编排
 
-聚合 `ylr1d_plant` / `ylr1d_control_sim` / `ylr1d_translate` / `ylr1d_hmi` 的 launch 为**单一启动入口**，避免逐个手动拉起。本包**不含节点**，仅做 launch 编排。
+聚合 `ylr1d_plant` / `ylr1d_control` / `ylr1d_translate` / `ylr1d_hmi` 的 launch 为**单一启动入口**，避免逐个手动拉起。本包**不含节点**，仅做 launch 编排。
 
 ---
 
