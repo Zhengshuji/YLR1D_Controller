@@ -27,9 +27,12 @@ PACKAGE_FILES = {
     "ylr1d_control": ["launch/position_simulate.launch.py"],
     "ylr1d_algorithm_sim": ["launch/sim_controller.launch.py",
                             "config/pid.yaml",
-                            "include/algorithm/config/joint_config.hpp",
-                            "controller/include/controller/controller.hpp",
-                            "plant/include/plant/plant.hpp"],
+                            "include/ylr1d_algorithm_sim/config/joint_config.hpp",
+                            "include/ylr1d_algorithm_sim/cooperative_controller.hpp",
+                            "include/ylr1d_algorithm_sim/independent_controller.hpp",
+                            "include/ylr1d_algorithm_sim/plant.hpp",
+                            "include/ylr1d_algorithm_sim/control_law/pid.hpp",
+                            "include/ylr1d_algorithm_sim/ros/sim_controller.hpp"],
     "ylr1d_translate": ["launch/translate.launch.py"],
     "ylr1d_hmi": ["launch/hmi.launch.py"],
     "ylr1d_bringup": ["launch/bringup_control.launch.py",
@@ -38,7 +41,7 @@ PACKAGE_FILES = {
 
 CONFIG_CHECKS = [
     "src/ylr1d_description/config/limits.yaml",
-    "src/ylr1d_algorithm_sim/include/algorithm/config/joint_config.hpp",
+    "src/ylr1d_algorithm_sim/include/ylr1d_algorithm_sim/config/joint_config.hpp",
     "src/ylr1d_algorithm_sim/config/pid.yaml",
     "src/ylr1d_plant/config/controllers.yaml",
 ]

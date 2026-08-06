@@ -1,7 +1,7 @@
 #ifndef YLR1D_CONTROL__GROUPS__GROUP_FORWARDER_HPP_
 #define YLR1D_CONTROL__GROUPS__GROUP_FORWARDER_HPP_
 
-#include "algorithm/config/joint_config.hpp"
+#include "ylr1d_algorithm_sim/config/joint_config.hpp"
 
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>

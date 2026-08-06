@@ -125,7 +125,7 @@ ros2 topic echo /ctrl/left_arm/output --once   # 观察算法层仿真输出
 
 ### 6.1 30 关节完整列表
 
-所有关节在 `/joint_states` 中以固定顺序发布，命令数组顺序与下表一致。限位数值来源：`ylr1d_algorithm_sim/include/algorithm/config/joint_config.hpp`（迁移自本层，阶段 B 移交）。
+所有关节在 `/joint_states` 中以固定顺序发布，命令数组顺序与下表一致。限位数值来源：`ylr1d_algorithm_sim/include/ylr1d_algorithm_sim/config/joint_config.hpp`（迁移自本层，阶段 B 移交）。
 
 **底盘 — 转向（4 关节，位置接口，发布到 `/chassis_steering_controller/commands`）**
 
@@ -212,7 +212,7 @@ control: 订阅 /desired_joint_states → set_desired（采样保持）
 
 ### 6.5 位置限幅
 
-位置限位来自算法层 `joint_config.hpp` 头文件常量，在算法层 `PositionGroupPlant::update()` 内**硬钳制**到 `[lower, upper]`（越限目标只会停在限位处，不会越过）。HMI 或上层节点仍应遵守限位约束：转向 ±3.14；轮子无位置限位（速度上限 `max_vel`）；躯干 `Joint_Base_to_Body1` ±0.30（米）；双臂大部分 ±1.57~±2.62、`*Arm6_to_*Arm7` ±6.28；夹爪左指 [-0.014, 0]、右指 [0, 0.014]。
+位置限位来自算法层 `joint_config.hpp` 头文件常量，在算法层各组具名仿真对象内部的积分器（`src/control_law/integrator.cpp`）中**硬钳制**到 `[lower, upper]`（越限目标只会停在限位处，不会越过）。HMI 或上层节点仍应遵守限位约束：转向 ±3.14；轮子无位置限位（速度上限 `max_vel`）；躯干 `Joint_Base_to_Body1` ±0.30（米）；双臂大部分 ±1.57~±2.62、`*Arm6_to_*Arm7` ±6.28；夹爪左指 [-0.014, 0]、右指 [0, 0.014]。
 
 ---
 

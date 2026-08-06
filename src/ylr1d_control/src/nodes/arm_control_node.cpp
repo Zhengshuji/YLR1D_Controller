@@ -1,6 +1,6 @@
 #include "ylr1d_control/nodes/arm_control_node.hpp"
 
-#include "algorithm/config/joint_config.hpp"
+#include "ylr1d_algorithm_sim/config/joint_config.hpp"
 
 #include <chrono>
 #include <memory>

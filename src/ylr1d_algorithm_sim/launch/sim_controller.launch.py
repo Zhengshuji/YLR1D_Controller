@@ -42,13 +42,13 @@ def _collect_pid_params(pid_file):
     return params
 
 
-# 组名 → 组件类（位置/速度型）
+# 组名 → 具名仿真控制器节点（与控制层分组一一对应，位置/速度由组定义决定）
 GROUPS = [
-    ("steering", "ylr1d_algorithm_sim::PositionSimController"),
-    ("wheels", "ylr1d_algorithm_sim::VelocitySimController"),
-    ("torso", "ylr1d_algorithm_sim::PositionSimController"),
-    ("left_arm", "ylr1d_algorithm_sim::PositionSimController"),
-    ("right_arm", "ylr1d_algorithm_sim::PositionSimController"),
+    ("steering", "ylr1d_algorithm_sim::SteeringSimNode"),
+    ("wheels", "ylr1d_algorithm_sim::WheelSimNode"),
+    ("torso", "ylr1d_algorithm_sim::TorsoSimNode"),
+    ("left_arm", "ylr1d_algorithm_sim::LeftArmSimNode"),
+    ("right_arm", "ylr1d_algorithm_sim::RightArmSimNode"),
 ]
 
 
