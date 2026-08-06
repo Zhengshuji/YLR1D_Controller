@@ -20,8 +20,8 @@ inline const ExpectedNode kExpectedNodes[] = {
   {"robot_state_publisher", "URDF + TF", false},
   {"gazebo_ros2_control",   "ros2_control plugin", false},
   {"controller_manager",    "controller manager", false},
-  {"arm_simulate",          "arm soft-sim (position)", false},
-  {"chassis_simulate",      "chassis soft-sim (position)", false},
+  {"arm_control",           "arm sampler/forwarder", false},
+  {"chassis_control",       "chassis sampler/forwarder", false},
   {"translate_server",      "translate (3 action servers)", true},
   {"rviz2",                 "3D view", true},
 };
